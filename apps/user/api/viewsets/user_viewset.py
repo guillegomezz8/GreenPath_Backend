@@ -21,7 +21,7 @@ from apps.base.logger import configure_logging
 configure_logging()
 
 from apps.base.permissions import IsOwnerOrStaffOrSuperUser
-from apps.user.models import User
+from apps.user.models.user import User
 from apps.user.api.serializers.user_serializers import (
     CreateUserSerializer,
     PartialUpdateUserSerializer,
@@ -40,8 +40,6 @@ class UserFilter(FilterSet):
         fields = [
             'username',
             'email', 
-            'name', 
-            'last_name',
             'is_active',
             'is_superuser',
             'is_staff'
@@ -109,14 +107,10 @@ class UserViewSet(viewsets.ModelViewSet):
         queryset = super().get_queryset()
         
         username = self.request.query_params.get('username', None)
-        name = self.request.query_params.get('name', None)
         email = self.request.query_params.get('email', None)
         
         if username:
             queryset = queryset.filter(username__icontains=username)
-        
-        if name:
-            queryset = queryset.filter(name__icontains=name)
             
         if email:
             queryset = queryset.filter(email__icontains=email)

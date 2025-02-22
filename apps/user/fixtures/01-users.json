@@ -4,9 +4,7 @@
         "pk": 1,
         "fields": {
             "email": "admin@example.com",
-            "name": "Admin",
             "username": "admin",
-            "is_active": true,
             "is_staff": true,
             "is_superuser": true
         }
@@ -16,10 +14,7 @@
         "pk": 2,
         "fields": {
             "email": "user@example.com",
-            "name": "Regular",
-            "username": "user",
-            "is_active": true,
-            "is_staff": false
+            "username": "user"
         }
     }
 ]

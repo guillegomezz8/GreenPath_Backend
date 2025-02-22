@@ -16,7 +16,7 @@ from apps.user.api.serializers.authentication_serializers import (
     CustomTokenObtainPairSerializer,
     LogoutSerializer
 )
-from .models import User
+from .models.user import User
 
 
 class Login(TokenObtainPairView):

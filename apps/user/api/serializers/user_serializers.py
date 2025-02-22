@@ -1,17 +1,17 @@
 from rest_framework import serializers
-from apps.user.models import User
+from apps.user.models.user import User
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('username','email','name','last_name')
+        fields = ('username','email')
 
 
 class CreateUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('username','email','name','last_name', 'password','image')
+        fields = ('username','email', 'password')
     
     def create(self,validated_data):
         user = User(**validated_data)
@@ -29,12 +29,10 @@ class UserSerializer(serializers.ModelSerializer):
 class UpdateUserSerializer(serializers.ModelSerializer):
     username = serializers.CharField(required=True, allow_blank=False)
     email = serializers.EmailField(required=True, allow_blank=False)
-    name = serializers.CharField(required=True, allow_blank=True)
-    last_name = serializers.CharField(required=True, allow_blank=True)
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'name', 'last_name')
+        fields = ('username', 'email')
 
     def update(self, instance, validated_data):
         for attr, value in validated_data.items():
@@ -46,12 +44,10 @@ class UpdateUserSerializer(serializers.ModelSerializer):
 class PartialUpdateUserSerializer(serializers.ModelSerializer):
     username = serializers.CharField(required=False, allow_blank=True)
     email = serializers.EmailField(required=False, allow_blank=True)
-    name = serializers.CharField(required=False, allow_blank=True)
-    last_name = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'name', 'last_name')
+        fields = ('username', 'email')
 
     def update(self, instance, validated_data):
         for attr, value in validated_data.items():
@@ -80,7 +76,6 @@ class UserListSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         return {
             'id': instance['id'],
-            'name': instance['name'],
             'username': instance['username'],
             'email': instance['email']
         }

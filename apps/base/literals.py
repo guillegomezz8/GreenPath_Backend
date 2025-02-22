@@ -13,3 +13,6 @@ GOOGLE_LOGIN_FAILED = 'Failed to get token from Google'
 INCORRECT_CREDENTIALS = 'Contraseña o nombre de usuario incorrectos'
 USER_DOESNT_EXISTS = 'No existe este usuario.'
 SUCCESSFULL_LOGOUT = 'Sesión cerrada correctamente.'
+
+#Empresas
+ERROR_CREATING_COMPANY = 'Error creando empresa'

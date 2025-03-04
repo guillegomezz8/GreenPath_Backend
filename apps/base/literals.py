@@ -16,3 +16,6 @@ SUCCESSFULL_LOGOUT = 'Sesión cerrada correctamente.'
 
 #Empresas
 ERROR_CREATING_COMPANY = 'Error creando empresa'
+
+#Trabajadores
+ERROR_CREATING_WORKER = 'Error creando trabajador'

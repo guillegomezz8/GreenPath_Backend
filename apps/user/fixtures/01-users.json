@@ -16,5 +16,18 @@
             "email": "user@example.com",
             "username": "user"
         }
+    },
+    {
+        "model": "user.worker",
+        "pk": 1,
+        "fields": {
+            "user": 1,
+            "role" : "owner",
+            "name": "Guillermo",
+            "surname": "Gómez Romero",
+            "address": "Calle Falsa 123",
+            "phone": "123456789",
+            "dni": "12345678Z"
+        }
     }
 ]

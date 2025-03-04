@@ -32,7 +32,7 @@ class Worker(BaseModel):
         max_length=255,
         blank=True
     )
-    adress = models.CharField(
+    address = models.CharField(
         'Dirección',
         max_length=255,
         blank=True
@@ -53,5 +53,5 @@ class Worker(BaseModel):
         verbose_name_plural = 'Trabajadores'
 
     def __str__(self):
-        return f'{self.user.username} - {self.get_role_display()}'
+        return f'{self.name} - {self.get_role_display()}'
 

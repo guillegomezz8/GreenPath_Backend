@@ -1,5 +1,5 @@
 # Use an official Python runtime as a parent image
-FROM python
+FROM python:3.11
 
 # Install PostgreSQL client and development libraries
 RUN apt-get update && apt-get install -y \
@@ -15,6 +15,8 @@ COPY requirements.txt .
 COPY docker-entrypoint.sh .
 
 # Install any needed packages specified in requirements.txt
+RUN python -m pip install --upgrade --force-reinstall pip
+
 RUN pip install --no-cache -r requirements.txt
 
 # Copy the current directory contents into the container at /src

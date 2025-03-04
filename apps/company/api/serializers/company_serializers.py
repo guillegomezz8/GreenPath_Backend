@@ -14,21 +14,25 @@ class CompanySerializer(serializers.ModelSerializer):
 
 
 class CreateCompanySerializer(serializers.ModelSerializer):
+    name = serializers.CharField(required=True)
+    address = serializers.CharField(required=True)
+    phone = serializers.CharField(required=True)
+    email = serializers.EmailField(required=True)
+    cif = serializers.CharField(required=True)
+    logo = serializers.ImageField(required=False)
 
     class Meta:
         model = Company
-        fields = ('name', 'address', 'phone', 'email', 'cif', 'logo')
-
-    def create(self, validated_data):
-        try:
-            company = Company.objects.create(**validated_data)
-            return company
-        except Exception as e:
-            logging.error(f"Error creating company: {str(e)}")
-            raise serializers.ValidationError(f"Error creating company: {str(e)}")
+        fields = ('name', 'address', 'phone', 'email', 'cif', 'logo')     
 
 
 class UpdateCompanySerializer(serializers.ModelSerializer):
+    name = serializers.CharField(required=True)
+    address = serializers.CharField(required=True)
+    phone = serializers.CharField(required=True)
+    email = serializers.EmailField(required=True)
+    cif = serializers.CharField(required=True)
+    logo = serializers.ImageField(required=True)
 
     class Meta:
         model = Company
@@ -46,6 +50,12 @@ class UpdateCompanySerializer(serializers.ModelSerializer):
 
 
 class PartialUpdateCompanySerializer(serializers.ModelSerializer):
+    name = serializers.CharField(required=False)
+    address = serializers.CharField(required=False)
+    phone = serializers.CharField(required=False)
+    email = serializers.EmailField(required=False)
+    cif = serializers.CharField(required=False)
+    logo = serializers.ImageField(required=False)
 
     class Meta:
         model = Company

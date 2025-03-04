@@ -22,7 +22,9 @@ urlpatterns = [
 
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     
-    path('users/',include('apps.user.api.routers')),
+    path('users/',include('apps.user.api.routers.user_router')),
+    path('workers/',include('apps.user.api.routers.worker_router')),
+    path('clients/',include('apps.user.api.routers.client_router')),
     path('companies/',include('apps.company.api.routers')),
 ]
 

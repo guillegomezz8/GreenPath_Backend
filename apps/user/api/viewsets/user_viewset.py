@@ -20,7 +20,7 @@ from apps.base.literals import (
 from apps.base.logger import configure_logging
 configure_logging()
 
-from apps.base.permissions import IsOwnerOrStaffOrSuperUser
+from apps.base.permissions import IsOwnerOrStaffOrSuperUser, IsOwnerUser
 from apps.user.models.user import User
 from apps.user.api.serializers.user_serializers import (
     CreateUserSerializer,
@@ -55,7 +55,7 @@ class UserViewSet(viewsets.ModelViewSet):
     
     def get_permissions(self):
         if self.action == 'create':
-            return [AllowAny()]
+            return [IsOwnerUser()]
         elif self.action in ['update', 'retrieve', 'partial_update', 'destroy', 'set_password', 'list']:
             return [IsAuthenticated(), IsOwnerOrStaffOrSuperUser()]
         return [IsAuthenticated()]

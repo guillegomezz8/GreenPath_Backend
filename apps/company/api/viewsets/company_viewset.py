@@ -9,8 +9,8 @@ from apps.company.models import Company
 from apps.base.permissions import IsOwnerUser
 from apps.company.api.serializers.company_serializers import (
     CompanySerializer,
-    CreateCompanySerializer,
     UpdateCompanySerializer,
+    CreateCompanySerializer,
     PartialUpdateCompanySerializer
 )
 from apps.base.literals import(
@@ -36,10 +36,13 @@ class CompanyFilter(FilterSet):
 
 class CompanyViewSet(viewsets.ModelViewSet):
     model = Company
+    queryset = Company.objects.all().order_by('id')
     parser_classes = (MultiPartParser, FormParser,)
-    queryset = Company.objects.all()
     filter_backends = [DjangoFilterBackend]
     filterset_class = CompanyFilter
+    serializer_class = CompanySerializer
+
+    # TODO: get_queryset un user solo puede ver la empresa a la que pertenece
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -53,7 +56,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            self.permission_classes = [IsOwnerUser]
+            self.permission_classes = [IsOwnerUser, IsAuthenticated]
         elif self.action == 'list':
             self.permission_classes = [AllowAny]
         else:

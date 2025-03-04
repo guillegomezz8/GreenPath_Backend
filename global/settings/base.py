@@ -1,15 +1,21 @@
 from datetime import timedelta
 from pathlib import Path
+from dotenv import load_dotenv
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Cargar el archivo .env
+dotenv_path = os.path.join(BASE_DIR, '.env')
+load_dotenv(dotenv_path)
+
+# Variables de entorno cargadas
+SECRET_KEY = os.getenv('SECRET_KEY', 'default_secret_key')
+# DEBUG = os.getenv('DEBUG', 'False').lower() in ['true', '1']
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'e+3qek7(i5evq)87ff5d8e@bjsd&q_h)w5qejoojqhhx%$4j+h'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -136,8 +142,8 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'Your API Title',
-    'DESCRIPTION': 'Your API Description',
+    'TITLE': 'GreenPath API',
+    'DESCRIPTION': 'Welcome to the GreenPath API',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,  # Set to True if you want to serve the schema at /schema/
     'SCHEMA_PATH_PREFIX': '/api/v1',  # Adjust as needed

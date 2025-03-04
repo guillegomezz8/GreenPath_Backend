@@ -9,9 +9,9 @@ class BaseModel(models.Model):
 
     # TODO: Define fields here
     id = models.AutoField(primary_key=True)
-    created_date = models.DateField('Fecha de Creación', auto_now=False, auto_now_add=True)
-    modified_date = models.DateField('Fecha de Modificación', auto_now=True, auto_now_add=False)
-    deleted_date = models.DateField('Fecha de Eliminación', auto_now=True, auto_now_add=False)
+    created_date = models.DateField('Fecha de Creación', auto_now=False, auto_now_add=True, blank=True, null=True)
+    modified_date = models.DateField('Fecha de Modificación', auto_now=True, auto_now_add=False, blank=True, null=True)
+    deleted_date = models.DateField('Fecha de Eliminación', auto_now=True, auto_now_add=False, blank=True, null=True)
     historical = HistoricalRecords(user_model=User, inherit=True)
 
     @property

@@ -26,6 +26,8 @@ urlpatterns = [
     path('workers/',include('apps.user.api.routers.worker_router')),
     path('clients/',include('apps.user.api.routers.client_router')),
     path('companies/',include('apps.company.api.routers')),
+    path('routes/',include('apps.route.api.routers')),
+    path('collections/',include('apps.colletion.api.routers')),
 ]
 
 urlpatterns += [

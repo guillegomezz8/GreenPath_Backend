@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # Cargar el archivo .env
 dotenv_path = os.path.join(BASE_DIR, '.env')
@@ -38,6 +38,8 @@ LOCAL_APPS = [
     'apps.base',
     'apps.user',
     'apps.company',
+    'apps.route',
+    'apps.collection'
 ]
 
 THIRD_APPS = [

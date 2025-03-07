@@ -15,8 +15,6 @@ COPY requirements.txt .
 COPY docker-entrypoint.sh .
 
 # Install any needed packages specified in requirements.txt
-RUN python -m pip install --upgrade --force-reinstall pip
-
 RUN pip install --no-cache -r requirements.txt
 
 # Copy the current directory contents into the container at /src

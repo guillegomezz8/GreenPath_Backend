@@ -22,3 +22,9 @@ ERROR_CREATING_WORKER = 'Error creando trabajador'
 
 #Clientes
 ERROR_CREATING_CLIENT = 'Error creando cliente'
+
+#Rutas
+ERROR_CREATING_ROUTE = 'Error creando ruta'
+
+#Recogida
+ERROR_CREATING_COLLECTION = 'Error creando recogida'

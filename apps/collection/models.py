@@ -1,5 +1,5 @@
 from django.db import models
-from apps.client.models import Client
+from apps.user.models.client import Client
 from apps.user.models.worker import Worker
 from apps.route.models import Route
 from apps.base.models import BaseModel

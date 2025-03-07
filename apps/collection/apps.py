@@ -4,5 +4,5 @@ from django.utils.translation import gettext_lazy as _
 
 class CompaniesConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'apps.company'
+    name = 'apps.collection'
     verbose_name = _('Recogidas')

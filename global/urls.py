@@ -35,3 +35,7 @@ urlpatterns += [
         'document_root': settings.MEDIA_ROOT,
     }),
 ]
+
+admin.site.site_title = "GreenPath BackOffice"
+admin.site.site_header = "GreenPath BackOffice"
+admin.site.index_title = "Site administration"

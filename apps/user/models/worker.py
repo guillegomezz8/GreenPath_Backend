@@ -8,19 +8,21 @@ class Worker(BaseModel):
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
-        related_name='worker_profile'
+        related_name='worker_profile',
+        verbose_name='Usuario'
+    )
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Empresa'
     )
     role = models.CharField(
         'Rol',
         max_length=10,
         choices=Role.choices,
         default=Role.WORKER
-    )
-    company = models.ForeignKey(
-        Company,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
     )
     name = models.CharField(
         'Nombre',

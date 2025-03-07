@@ -7,12 +7,14 @@ class Client(BaseModel):
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
-        related_name='client_profile'
+        related_name='client_profile',
+        verbose_name='Usuario'
     )
     companies = models.ManyToManyField(
         Company,
         related_name='clients',
-        blank=True
+        blank=True,
+        verbose_name='Empresa'
     )
     name = models.CharField(
         max_length=255,

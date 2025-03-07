@@ -7,16 +7,19 @@ class Route(BaseModel):
     company = models.ForeignKey(
         Company,
         on_delete=models.CASCADE,
-        related_name='routes'
+        related_name='routes',
+        verbose_name='Compañia'
     )
     workers = models.ManyToManyField(
         Worker,
-        related_name='routes'
+        related_name='routes',
+        verbose_name='Trabajadores'
     )
-    date = models.DateField()
-    start_time = models.TimeField()
-    end_time = models.TimeField(null=True, blank=True)
+    date = models.DateField('Fecha')
+    start_time = models.TimeField('Hora Inicial')
+    end_time = models.TimeField('Hora Final',null=True, blank=True)
     status = models.CharField(
+        'Estado',
         max_length=20,
         choices=[
             ('PENDING', 'Pendiente'),

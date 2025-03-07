@@ -10,7 +10,7 @@ class Company(BaseModel):
     cif = models.CharField('CIF', max_length=20, blank=True, null=True)
     logo = models.ImageField('Logo', upload_to='logo/', max_length=255, null=True, blank=True)
 
-    owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='companies')
+    owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='companies', verbose_name='Dueño')
 
     class Meta:
         verbose_name = 'Empresa'

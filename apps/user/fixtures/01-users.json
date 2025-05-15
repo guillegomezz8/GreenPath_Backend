@@ -13,21 +13,24 @@
         "model": "user.user",
         "pk": 2,
         "fields": {
-            "email": "user@example.com",
-            "username": "user"
+            "email": "worker@example.com",
+            "username": "worker"
         }
     },
     {
-        "model": "user.worker",
-        "pk": 1,
+        "model": "user.user",
+        "pk": 3,
         "fields": {
-            "user": 1,
-            "role" : "owner",
-            "name": "Guillermo",
-            "surname": "Gómez Romero",
-            "address": "Calle Falsa 123",
-            "phone": "123456789",
-            "dni": "12345678Z"
+            "email": "owner@example.com",
+            "username": "owner"
+        }
+    },
+    {
+        "model": "user.user",
+        "pk": 4,
+        "fields": {
+            "email": "client@example.com",
+            "username": "client"
         }
     }
 ]

@@ -11,7 +11,9 @@ class Command(BaseCommand):
         # Definir contraseñas para cada usuario por su email o ID
         users_passwords = {
             'admin@example.com': 'adminpassword',
-            'user@example.com': 'userpassword',
+            'worker@example.com': 'workerpassword',
+            'client@example.com': 'clientpassword',
+            'owner@example.com': 'ownerpassword',
         }
         
         for email, password in users_passwords.items():

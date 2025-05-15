@@ -20,18 +20,38 @@ class Client(BaseModel):
         max_length=255,
         blank=True
     )
-    adress = models.CharField(
-        max_length=255,
-        blank=True
-    )
     phone = models.CharField(
-        max_length=20,
+        'Teléfono', 
+        max_length=20, 
         blank=True
     )
     cif = models.CharField(
-        max_length=255,
+        'CIF', 
+        max_length=20, 
         blank=True
     )
+    address = models.CharField(
+        'Dirección', 
+        max_length=255, 
+        blank=True
+    )
+    city = models.CharField(
+        'Ciudad', 
+        max_length=100, 
+        blank=True
+    )
+    postal_code = models.CharField(
+        'Código Postal', 
+        max_length=10, 
+        blank=True
+    )
+    country = models.CharField(
+        'País', 
+        max_length=100, 
+        default='España', 
+        blank=True
+    )
+
 
     class Meta:
         verbose_name = 'Cliente'

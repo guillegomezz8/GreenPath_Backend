@@ -1,0 +1,17 @@
+[
+    {
+        "model": "user.client",
+        "pk": 1,
+        "fields": {
+            "user": 4,
+            "companies": [1],
+            "name": "Manuel Coria",
+            "phone": "123456789",
+            "cif": "B12345678",
+            "address": "Calle Rumba, 8",
+            "city": "Coria del Río",
+            "postal_code": "41100",
+            "country": "España"
+        }
+    }
+]

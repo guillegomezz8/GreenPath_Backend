@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from apps.route.models import Route
+from apps.route.models import Route, RouteDay, RouteDayClient
+from apps.user.api.serializers.client_serializers import ClientSerializer
 import logging
 from apps.base.logger import configure_logging
 
@@ -14,12 +15,13 @@ class RouteSerializer(serializers.ModelSerializer):
 
 class CreateRouteSerializer(serializers.ModelSerializer):
 
-    date = serializers.DateField(required=True)
-    start_time = serializers.TimeField(required=True)
+    start_date = serializers.DateField(required=True)
+    end_date = serializers.DateField(required=True)
+
 
     class Meta:
         model = Route
-        fields = ('company', 'workers', 'date', 'start_time', 'end_time', 'status')
+        fields = ('company', 'workers', 'start_date', 'end_date')
 
     def create(self, validated_data):
         try:
@@ -32,12 +34,13 @@ class CreateRouteSerializer(serializers.ModelSerializer):
 
 class UpdateRouteSerializer(serializers.ModelSerializer):
 
-    date = serializers.DateField(required=True)
-    start_time = serializers.TimeField(required=True)
+    start_date = serializers.DateField(required=True)
+    end_date = serializers.DateField(required=True)
+
 
     class Meta:
         model = Route
-        fields = ('workers', 'date', 'start_time', 'end_time', 'status')
+        fields = ('company', 'workers', 'start_date', 'end_date')
 
     def update(self, instance, validated_data):
         try:
@@ -52,12 +55,13 @@ class UpdateRouteSerializer(serializers.ModelSerializer):
 
 class PartialUpdateRouteSerializer(serializers.ModelSerializer):
 
-    date = serializers.DateField(required=False)
-    start_time = serializers.TimeField(required=False)
+    start_date = serializers.DateField(required=True)
+    end_date = serializers.DateField(required=True)
+
 
     class Meta:
         model = Route
-        fields = ('workers', 'date', 'start_time', 'end_time', 'status')
+        fields = ('company', 'workers', 'start_date', 'end_date')
 
     def update(self, instance, validated_data):
         try:
@@ -68,3 +72,35 @@ class PartialUpdateRouteSerializer(serializers.ModelSerializer):
         except Exception as e:
             logging.error(f"Error updating route with id {instance.id}: {str(e)}")
             raise serializers.ValidationError(f"Error updating route: {str(e)}")
+
+
+class RouteDayClientSerializer(serializers.ModelSerializer):
+    client = ClientSerializer()
+
+    class Meta:
+        model = RouteDayClient
+        fields = ['client', 'order']
+
+
+class RouteDaySerializer(serializers.ModelSerializer):
+    ordered_clients = RouteDayClientSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = RouteDay
+        fields = ['id', 'route', 'date', 'name', 'ordered_clients']
+
+
+class GenerateManualDayInputSerializer(serializers.Serializer):
+    date = serializers.DateField()
+    client_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        min_length=1
+    )
+
+
+class GenerateWeeklyRoutesFromClientsInputSerializer(serializers.Serializer):
+    client_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        min_length=1,
+        help_text="Lista de IDs de clientes a tener en cuenta para generar rutas semanales"
+    )

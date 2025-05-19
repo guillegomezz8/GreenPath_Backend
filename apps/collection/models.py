@@ -1,18 +1,12 @@
 from django.db import models
 from django.core.validators import MinValueValidator
+from decimal import Decimal
+from apps.base.enums import ContainerType, CollectionStatus
 from apps.user.models.client import Client
 from apps.user.models.worker import Worker
 from apps.route.models import Route
 from apps.base.models import BaseModel
 
-class CollectionStatus(models.TextChoices):
-    PENDING = 'PENDING', 'Pendiente'
-    COMPLETED = 'COMPLETED', 'Completada'
-    CANCELED = 'CANCELED', 'Cancelada'
-
-class ContainerType(models.TextChoices):
-    BIDONES = 'BIDONES', 'Bidones (60L)'
-    IBC = 'IBC', 'IBC (1000L)'
 
 class Collection(BaseModel):
     client = models.ForeignKey(
@@ -20,6 +14,12 @@ class Collection(BaseModel):
         on_delete=models.CASCADE,
         related_name='collections',
         verbose_name='Cliente'
+    )
+    route = models.ForeignKey(
+        Route,
+        on_delete=models.CASCADE,
+        related_name='collections',
+        verbose_name='Ruta'
     )
     worker = models.ForeignKey(
         Worker,
@@ -29,30 +29,29 @@ class Collection(BaseModel):
         related_name='collections',
         verbose_name='Trabajador'
     )
-    route = models.ForeignKey(
-        Route,
-        on_delete=models.CASCADE,
-        related_name='collections',
-        verbose_name='Ruta'
-    )
-    collection_date = models.DateTimeField('Fecha de Recogida')
+    collection_date = models.DateField('Fecha de Recogida')
+
     container_type = models.CharField(
         'Tipo de Envase',
         max_length=10,
         choices=ContainerType.choices,
         default=ContainerType.BIDONES
     )
-    liters_collected = models.DecimalField(
-        'Litros Recolectados',
-        max_digits=10,
-        decimal_places=2,
-        validators=[MinValueValidator(0)]
+    container_number = models.PositiveIntegerField(
+        'Número de Envases',
+        validators=[MinValueValidator(1)]
     )
     price_per_liter = models.DecimalField(
         'Precio por Litro',
         max_digits=5,
         decimal_places=2,
-        validators=[MinValueValidator(0)]
+        validators=[MinValueValidator(Decimal('0.01'))]
+    )
+    liters_collected = models.DecimalField(
+        'Litros Recolectados',
+        max_digits=10,
+        decimal_places=2,
+        editable=False
     )
     total_price = models.DecimalField(
         'Precio Total',
@@ -72,8 +71,10 @@ class Collection(BaseModel):
         verbose_name_plural = 'Recogidas'
 
     def save(self, *args, **kwargs):
+        volume_per_container = Decimal('60') if self.container_type == ContainerType.BIDONES else Decimal('1000')
+        self.liters_collected = self.container_number * volume_per_container
         self.total_price = self.liters_collected * self.price_per_liter
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f'Recogida {self.id} - {self.client.name} - {self.collection_date}'
+        return f'Recogida #{self.id} - {self.client.name} - {self.collection_date.strftime("%Y-%m-%d")}'

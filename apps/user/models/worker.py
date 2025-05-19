@@ -1,7 +1,7 @@
 from django.db import models
 from apps.user.models.user import User
 from apps.company.models import Company
-from apps.user.models.roles import Role
+from apps.base.enums import Role
 from apps.base.models import BaseModel
 
 class Worker(BaseModel):

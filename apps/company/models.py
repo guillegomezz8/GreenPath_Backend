@@ -2,7 +2,7 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from apps.base.models import BaseModel
 from apps.user.models.user import User
-from apps.user.models.roles import Role
+from apps.base.enums import Role
 
 class Company(BaseModel):
     name = models.CharField('Nombre', max_length=255)

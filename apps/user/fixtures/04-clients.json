@@ -1,17 +1,257 @@
 [
-    {
-        "model": "user.client",
-        "pk": 1,
-        "fields": {
-            "user": 4,
-            "companies": [1],
-            "name": "Manuel Coria",
-            "phone": "123456789",
-            "cif": "B12345678",
-            "address": "Calle Rumba, 8",
-            "city": "Coria del Río",
-            "postal_code": "41100",
-            "country": "España"
-        }
+  {
+    "model": "user.client",
+    "pk": 1,
+    "fields": {
+      "user": 4,
+      "companies": [1],
+      "name": "Manuel Coria",
+      "phone": "123456789",
+      "cif": "B12345678",
+      "address": "Calle Rumba, 8",
+      "city": "Coria del Río",
+      "postal_code": "41100",
+      "country": "España",
+      "latitude": 37.2857,
+      "longitude": -6.0526
     }
+  },
+  {
+    "model": "user.client",
+    "pk": 2,
+    "fields": {
+      "user": 5,
+      "companies": [1],
+      "name": "Panadería La Tahona",
+      "phone": "954111222",
+      "cif": "B11223344",
+      "address": "Avda. de Andalucía, 12",
+      "city": "Sevilla",
+      "postal_code": "41006",
+      "country": "España",
+      "latitude": 37.3726,
+      "longitude": -5.9869
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 3,
+    "fields": {
+      "user": 6,
+      "companies": [1],
+      "name": "Bar El Tapeo",
+      "phone": "954112233",
+      "cif": "B22334455",
+      "address": "Calle Betis, 20",
+      "city": "Sevilla",
+      "postal_code": "41010",
+      "country": "España",
+      "latitude": 37.3774,
+      "longitude": -6.0036
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 4,
+    "fields": {
+      "user": 7,
+      "companies": [1],
+      "name": "Frutería El Huerto",
+      "phone": "954556677",
+      "cif": "B33445566",
+      "address": "Calle Feria, 45",
+      "city": "Sevilla",
+      "postal_code": "41003",
+      "country": "España",
+      "latitude": 37.4006,
+      "longitude": -5.9901
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 5,
+    "fields": {
+      "user": 8,
+      "companies": [1],
+      "name": "Cafetería Luna",
+      "phone": "954778899",
+      "cif": "B44556677",
+      "address": "Calle Sierpes, 10",
+      "city": "Sevilla",
+      "postal_code": "41004",
+      "country": "España",
+      "latitude": 37.3872,
+      "longitude": -5.9954
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 6,
+    "fields": {
+      "user": 9,
+      "companies": [1],
+      "name": "Carnicería El Corte",
+      "phone": "954334455",
+      "cif": "B55667788",
+      "address": "Calle Asunción, 22",
+      "city": "Sevilla",
+      "postal_code": "41011",
+      "country": "España",
+      "latitude": 37.3736,
+      "longitude": -6.0079
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 7,
+    "fields": {
+      "user": 10,
+      "companies": [1],
+      "name": "Pescadería Azul",
+      "phone": "954998877",
+      "cif": "B66778899",
+      "address": "Calle San Jacinto, 100",
+      "city": "Sevilla",
+      "postal_code": "41010",
+      "country": "España",
+      "latitude": 37.3776,
+      "longitude": -6.0123
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 8,
+    "fields": {
+      "user": 11,
+      "companies": [1],
+      "name": "Mercado Central",
+      "phone": "954321123",
+      "cif": "B77889900",
+      "address": "Plaza de la Encarnación, s/n",
+      "city": "Sevilla",
+      "postal_code": "41003",
+      "country": "España",
+      "latitude": 37.3935,
+      "longitude": -5.9912
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 9,
+    "fields": {
+      "user": 12,
+      "companies": [1],
+      "name": "Kiosko Alameda",
+      "phone": "954332211",
+      "cif": "B88990011",
+      "address": "Alameda de Hércules, 50",
+      "city": "Sevilla",
+      "postal_code": "41002",
+      "country": "España",
+      "latitude": 37.4009,
+      "longitude": -5.9958
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 10,
+    "fields": {
+      "user": 13,
+      "companies": [1],
+      "name": "Pollería Hermanos García",
+      "phone": "954221133",
+      "cif": "B99001122",
+      "address": "Calle Torneo, 95",
+      "city": "Sevilla",
+      "postal_code": "41002",
+      "country": "España",
+      "latitude": 37.4035,
+      "longitude": -6.0002
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 11,
+    "fields": {
+      "user": 14,
+      "companies": [1],
+      "name": "Bar El Punto",
+      "phone": "954000111",
+      "cif": "B00112233",
+      "address": "Calle Amor de Dios, 23",
+      "city": "Sevilla",
+      "postal_code": "41002",
+      "country": "España",
+      "latitude": 37.3980,
+      "longitude": -5.9943
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 12,
+    "fields": {
+      "user": 15,
+      "companies": [1],
+      "name": "Heladería La Flor",
+      "phone": "954111333",
+      "cif": "B00223344",
+      "address": "Calle Adriano, 15",
+      "city": "Sevilla",
+      "postal_code": "41001",
+      "country": "España",
+      "latitude": 37.3841,
+      "longitude": -6.0021
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 13,
+    "fields": {
+      "user": 16,
+      "companies": [1],
+      "name": "Minimarket 24h",
+      "phone": "954112211",
+      "cif": "B00334455",
+      "address": "Avda. Menéndez Pelayo, 56",
+      "city": "Sevilla",
+      "postal_code": "41004",
+      "country": "España",
+      "latitude": 37.3801,
+      "longitude": -5.9856
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 14,
+    "fields": {
+      "user": 17,
+      "companies": [1],
+      "name": "Librería Santa Clara",
+      "phone": "954778800",
+      "cif": "B00445566",
+      "address": "Calle Santa Clara, 10",
+      "city": "Sevilla",
+      "postal_code": "41002",
+      "country": "España",
+      "latitude": 37.4031,
+      "longitude": -5.9949
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 15,
+    "fields": {
+      "user": 18,
+      "companies": [1],
+      "name": "Autoservicio Triana",
+      "phone": "954112244",
+      "cif": "B00556677",
+      "address": "Calle Castilla, 80",
+      "city": "Sevilla",
+      "postal_code": "41010",
+      "country": "España",
+      "latitude": 37.3770,
+      "longitude": -6.0107
+    }
+  }
 ]

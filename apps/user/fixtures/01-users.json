@@ -32,5 +32,117 @@
             "email": "client@example.com",
             "username": "client"
         }
+    },
+    {
+    "model": "user.user",
+    "pk": 5,
+    "fields": {
+      "email": "client2@example.com",
+      "username": "client2"
     }
+  },
+  {
+    "model": "user.user",
+    "pk": 6,
+    "fields": {
+      "email": "client3@example.com",
+      "username": "client3"
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 7,
+    "fields": {
+      "email": "client4@example.com",
+      "username": "client4"
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 8,
+    "fields": {
+      "email": "client5@example.com",
+      "username": "client5"
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 9,
+    "fields": {
+      "email": "client6@example.com",
+      "username": "client6"
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 10,
+    "fields": {
+      "email": "client7@example.com",
+      "username": "client7"
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 11,
+    "fields": {
+      "email": "client8@example.com",
+      "username": "client8"
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 12,
+    "fields": {
+      "email": "client9@example.com",
+      "username": "client9"
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 13,
+    "fields": {
+      "email": "client10@example.com",
+      "username": "client10"
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 14,
+    "fields": {
+      "email": "client11@example.com",
+      "username": "client11"
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 15,
+    "fields": {
+      "email": "client12@example.com",
+      "username": "client12"
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 16,
+    "fields": {
+      "email": "client13@example.com",
+      "username": "client13"
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 17,
+    "fields": {
+      "email": "client14@example.com",
+      "username": "client14"
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 18,
+    "fields": {
+      "email": "client15@example.com",
+      "username": "client15"
+    }
+  }
 ]

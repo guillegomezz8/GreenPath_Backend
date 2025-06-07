@@ -36,7 +36,6 @@ class WorkerFilter(FilterSet):
 
 class WorkerViewSet(viewsets.ModelViewSet):
     model = Worker
-    parser_classes = (MultiPartParser, FormParser,)
     queryset = Worker.objects.all()
     filter_backends = [DjangoFilterBackend]
     filterset_class = WorkerFilter

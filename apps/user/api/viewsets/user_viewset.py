@@ -49,7 +49,6 @@ class UserFilter(FilterSet):
 class UserViewSet(viewsets.ModelViewSet):
     model = User
     queryset = User.objects.all().order_by('id')
-    parser_classes = (MultiPartParser, FormParser,)
     filter_backends = [DjangoFilterBackend]
     filterset_class = UserFilter
     

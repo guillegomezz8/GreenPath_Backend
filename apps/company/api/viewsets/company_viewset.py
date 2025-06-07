@@ -24,7 +24,7 @@ configure_logging()
 
 class CompanyFilter(FilterSet):
     name = CharFilter(field_name='name', lookup_expr='icontains')
-    adress = CharFilter(field_name='adress', lookup_expr='icontains')
+    address = CharFilter(field_name='address', lookup_expr='icontains')
     phone = CharFilter(field_name='phone', lookup_expr='icontains')
     email = CharFilter(field_name='email', lookup_expr='icontains')
     cif = CharFilter(field_name='cif', lookup_expr='icontains')
@@ -37,7 +37,6 @@ class CompanyFilter(FilterSet):
 class CompanyViewSet(viewsets.ModelViewSet):
     model = Company
     queryset = Company.objects.all().order_by('id')
-    parser_classes = (MultiPartParser, FormParser,)
     filter_backends = [DjangoFilterBackend]
     filterset_class = CompanyFilter
     serializer_class = CompanySerializer

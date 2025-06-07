@@ -26,16 +26,15 @@ class ClientFilter(FilterSet):
     name = CharFilter(field_name='name', lookup_expr='icontains')
     phone = CharFilter(field_name='phone', lookup_expr='icontains')
     cif = CharFilter(field_name='cif', lookup_expr='icontains')
-    adress = CharFilter(field_name='adress', lookup_expr='icontains')
+    address = CharFilter(field_name='address', lookup_expr='icontains')
 
     class Meta:
         model = Client
-        fields = ['name', 'phone', 'cif', 'adress']
+        fields = ['name', 'phone', 'cif', 'address']
 
 
 class ClientViewSet(viewsets.ModelViewSet):
     model = Client
-    parser_classes = (MultiPartParser, FormParser,)
     queryset = Client.objects.all()
     filter_backends = [DjangoFilterBackend]
     filterset_class = ClientFilter

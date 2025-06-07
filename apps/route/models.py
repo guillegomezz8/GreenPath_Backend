@@ -4,6 +4,8 @@ from apps.base.enums import Weekday, RouteFrequency
 from apps.user.models.worker import Worker
 from apps.base.models import BaseModel
 from apps.user.models.client import Client
+from django.utils.html import format_html
+from django.urls import reverse
 
 
 class Route(BaseModel):
@@ -70,7 +72,13 @@ class RouteDay(models.Model):
         verbose_name_plural = 'Rutas Diarias'
 
     def __str__(self):
-        return f'{self.route.name} - {self.date.strftime("%A %d/%m/%Y")}'
+        return f"{self.name} ({self.date.strftime('%A %d/%m')})"
+    
+    def admin_link(self):
+        url = reverse("admin:route_routeday_change", args=[self.id])
+        return format_html('<a href="{}">Editar</a>', url)
+
+    admin_link.short_description = "Editar Día"
 
 
 class RouteDayClient(models.Model):

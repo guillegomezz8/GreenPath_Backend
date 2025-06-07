@@ -7,19 +7,21 @@ from apps.user.models.client import Client
 configure_logging()
 
 class ClientSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(source='user.email', read_only=True)
+
     class Meta:
         model = Client
         exclude = ('modified_date', 'deleted_date', 'created_date')
 
 class CreateClientSerializer(serializers.ModelSerializer):
     name = serializers.CharField(required=True)
-    adress = serializers.CharField(required=True)
+    address = serializers.CharField(required=True)
     phone = serializers.CharField(required=True)
     cif = serializers.CharField(required=True)
     
     class Meta:
         model = Client
-        fields = ('user', 'companies', 'name', 'adress', 'phone', 'cif')
+        fields = ('user', 'companies', 'name', 'address', 'phone', 'cif')
     
     def create(self, validated_data):
         try:
@@ -36,13 +38,13 @@ class CreateClientSerializer(serializers.ModelSerializer):
 
 class UpdateClientSerializer(serializers.ModelSerializer):
     name = serializers.CharField(required=True)
-    adress = serializers.CharField(required=True)
+    address = serializers.CharField(required=True)
     phone = serializers.CharField(required=True)
     cif = serializers.CharField(required=True)
     
     class Meta:
         model = Client
-        fields = ('companies', 'name', 'adress', 'phone', 'cif')
+        fields = ('companies', 'name', 'address', 'phone', 'cif')
     
     def update(self, instance, validated_data):
         try:
@@ -62,13 +64,13 @@ class UpdateClientSerializer(serializers.ModelSerializer):
 
 class PartialUpdateClientSerializer(serializers.ModelSerializer):
     name = serializers.CharField(required=False)
-    adress = serializers.CharField(required=False)
+    address = serializers.CharField(required=False)
     phone = serializers.CharField(required=False)
     cif = serializers.CharField(required=False)
     
     class Meta:
         model = Client
-        fields = ('companies', 'name', 'adress', 'phone', 'cif')
+        fields = ('companies', 'name', 'address', 'phone', 'cif')
     
     def update(self, instance, validated_data):
         try:

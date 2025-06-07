@@ -3,10 +3,11 @@ from apps.user.models.user import User
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
+    role_type = serializers.CharField(read_only=True)
+
     class Meta:
         model = User
-        fields = ('username','email')
-
+        fields = ('username', 'email', 'role_type')
 
 class CreateUserSerializer(serializers.ModelSerializer):
     class Meta:

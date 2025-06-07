@@ -17,8 +17,8 @@ class CollectionInline(admin.TabularInline):
 class RouteDayInline(admin.TabularInline):
     model = RouteDay
     extra = 0
-    fields = ('date', 'name', 'date_generated')
-    readonly_fields = ('date_generated',)
+    fields = ('date', 'name', 'date_generated', 'admin_link')
+    readonly_fields = ('date_generated','admin_link')
     ordering = ('date',)
 
 

@@ -19,6 +19,7 @@ class Client(BaseModel):
         verbose_name='Empresa'
     )
     name = models.CharField(
+        'Nombre',
         max_length=255,
         blank=True
     )

@@ -27,7 +27,9 @@ from apps.user.api.serializers.user_serializers import (
     PartialUpdateUserSerializer,
     PasswordSerializer,
     UpdateUserSerializer,
-    UserSerializer
+    UserSerializer,
+    UserProfileSerializer,
+    UserProfileUpdateSerializer
 )
 
 
@@ -70,6 +72,8 @@ class UserViewSet(viewsets.ModelViewSet):
             return UpdateUserSerializer
         elif self.action == 'partial_update':
             return PartialUpdateUserSerializer
+        elif self.action == 'profile':
+            return UserProfileSerializer
         return UserSerializer 
 
     def list(self, request, *args, **kwargs):
@@ -134,3 +138,28 @@ class UserViewSet(viewsets.ModelViewSet):
         user.save()
         logging.info(f"{USER_APP}: Deleted User with id {pk}.")
         return Response({MESSAGE: USER_SUCCESSFULLY_DELETED})
+
+    @action(detail=False, methods=['get', 'put'], url_path='profile')
+    def profile(self, request):
+        method = request.method.lower()
+        user = request.user
+        
+        if method == 'put':
+            logging.info(f"{USER_APP}: Updating user profile.")
+            
+            serializer = UserProfileUpdateSerializer(user, data=request.data, partial=True)
+            
+            if serializer.is_valid():
+                serializer.save()
+                
+                response_serializer = UserProfileSerializer(user)
+                logging.info(f"{USER_APP}: User profile updated successfully.")
+                return Response(response_serializer.data)
+                
+            logging.error(f"{USER_APP}: Failed when updating user profile. \n{ERRORS}: {serializer.errors}")
+            return Response({MESSAGE: ERRORS_IN_THE_INFORMATION, ERRORS: serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+    
+        elif method == 'get':
+            serializer = UserProfileSerializer(user)
+            logging.info(f"{USER_APP}: User profile retrieved successfully.")
+            return Response(serializer.data)

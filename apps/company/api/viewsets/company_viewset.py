@@ -15,8 +15,9 @@ from apps.company.api.serializers.company_serializers import (
 )
 from apps.base.literals import(
     ERROR,
-    ERROR_CREATING_COMPANY 
-    )
+    ERROR_CREATING_COMPANY,
+    ONLY_OWNERS_CAN_CREATE_COMPANIES
+)
 import logging
 
 configure_logging()
@@ -68,7 +69,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
                 serializer.save(owner=self.request.user)
             else:
                 logging.error("Solo los dueños pueden crear empresas")
-                raise ValueError("Solo los dueños pueden crear empresas")
+                raise ValueError(ONLY_OWNERS_CAN_CREATE_COMPANIES)
         except Exception as e:
             logging.error(f"Error creando empresa: {str(e)}")
             raise Exception(f"{ERROR}: {ERROR_CREATING_COMPANY} - {str(e)}")

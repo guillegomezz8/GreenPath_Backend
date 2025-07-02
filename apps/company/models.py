@@ -3,6 +3,11 @@ from django.core.exceptions import ValidationError
 from apps.base.models import BaseModel
 from apps.user.models.user import User
 from apps.base.enums import Role
+import logging
+from apps.base.logger import configure_logging
+
+configure_logging()
+
 
 class Company(BaseModel):
     name = models.CharField('Nombre', max_length=255)
@@ -29,10 +34,9 @@ class Company(BaseModel):
         return self.name
 
     def clean(self):
-        """
-        Validación para asegurarse de que el dueño tenga el rol de Owner.
-        """
+        logging("Validando que el dueño es un owner")
         if self.owner and self.owner.role_type and self.owner.role_type != Role.OWNER:
+            logging.error("El dueño no tiene el rol de owners")
             raise ValidationError({'owner': 'El dueño debe tener el rol de "owner".'})
 
     def save(self, *args, **kwargs):

@@ -48,3 +48,7 @@ django-celery-beat==2.7.0
 redis==4.3.4
 django-celery-results==2.5.1
 geopy>=2.3.0
+geojson
+Shapely>=2.0.2
+pyproj>=3.6.0
+GDAL==3.6.2    

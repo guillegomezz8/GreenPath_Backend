@@ -2,7 +2,8 @@ from django.db import models
 from apps.user.models.user import User
 from apps.company.models import Company
 from apps.base.models import BaseModel
-from apps.base.enums import Weekday, PickupFrequency
+from apps.base.enums import PickupFrequency
+from django.contrib.gis.db import models as geomodels
 
 
 class Client(BaseModel):
@@ -54,8 +55,13 @@ class Client(BaseModel):
         default='España', 
         blank=True
     )
-    latitude = models.DecimalField('Latitud', max_digits=9, decimal_places=6, null=True, blank=True)
-    longitude = models.DecimalField('Longitud', max_digits=9, decimal_places=6, null=True, blank=True)
+    frequency = models.CharField(
+        'Frecuencia',
+        max_length=10,
+        choices=PickupFrequency.choices,
+        default=PickupFrequency.WEEKLY
+    )   
+    location = geomodels.PointField(null=True, blank=True, geography=True)
 
 
     class Meta:
@@ -64,34 +70,3 @@ class Client(BaseModel):
 
     def __str__(self):
         return f'{self.name} - Cliente'
-
-
-class ClientPickupSchedule(models.Model):
-    client = models.ForeignKey(
-        Client,
-        on_delete=models.CASCADE,
-        related_name='pickup_schedules'
-    )
-    company = models.ForeignKey(
-        Company,
-        on_delete=models.CASCADE,
-        related_name='pickup_schedules'
-    )
-    weekday = models.IntegerField(
-        'Día de la Semana',
-        choices=Weekday.choices
-    )
-    frequency = models.CharField(
-        'Frecuencia',
-        max_length=10,
-        choices=PickupFrequency.choices,
-        default=PickupFrequency.WEEKLY
-    )
-
-
-    class Meta:
-        verbose_name = 'Horario de Recogida de Cliente'
-        verbose_name_plural = 'Horarios de Recogida de Clientes'
-
-    def __str__(self):
-        return f'{self.client.name} - {self.get_weekday_display()} - {self.get_frequency_display()}'

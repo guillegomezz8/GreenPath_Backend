@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from datetime import date
 from apps.route.models import Route, RouteDay, RouteDayClient
 from apps.user.api.serializers.client_serializers import ClientSerializer
 import logging
@@ -90,17 +91,53 @@ class RouteDaySerializer(serializers.ModelSerializer):
         fields = ['id', 'route', 'date', 'name', 'ordered_clients']
 
 
-class GenerateManualDayInputSerializer(serializers.Serializer):
-    date = serializers.DateField()
-    client_ids = serializers.ListField(
-        child=serializers.IntegerField(),
-        min_length=1
+class GenerateWeeklyZoneRoutesInputSerializer(serializers.Serializer):
+    zone_config = serializers.DictField(
+        child=serializers.ListField(
+            child=serializers.CharField(max_length=100)
+        ),
+        help_text="Configuración de zonas por día. Clave: día de semana (0-6), Valor: lista de zonas"
+    )
+    max_clients_per_day = serializers.IntegerField(
+        default=25,
+        min_value=1,
+        max_value=50,
+        help_text="Máximo número de clientes por día"
     )
 
+    def validate_zone_config(self, value):
+        for key in value.keys():
+            try:
+                day = int(key)
+                if day < 0 or day > 6:
+                    raise serializers.ValidationError(
+                        f"Día {key} no válido. Debe estar entre 0 (lunes) y 6 (domingo)"
+                    )
+            except ValueError:
+                raise serializers.ValidationError(
+                    f"Clave {key} no válida. Debe ser un número entre 0 y 6"
+                )
+        return value
 
-class GenerateWeeklyRoutesFromClientsInputSerializer(serializers.Serializer):
-    client_ids = serializers.ListField(
-        child=serializers.IntegerField(),
-        min_length=1,
-        help_text="Lista de IDs de clientes a tener en cuenta para generar rutas semanales"
+
+class GenerateDailyZoneRouteInputSerializer(serializers.Serializer):
+    date = serializers.DateField(
+        help_text="Fecha para la ruta (formato: YYYY-MM-DD)"
     )
+    zones = serializers.ListField(
+        child=serializers.CharField(max_length=100),
+        help_text="Lista de zonas para incluir en la ruta"
+    )
+    max_clients = serializers.IntegerField(
+        default=25,
+        min_value=1,
+        max_value=50,
+        help_text="Máximo número de clientes para esta ruta"
+    )
+
+    def validate_date(self, value):
+        if value < date.today():
+            raise serializers.ValidationError(
+                "La fecha no puede ser anterior a hoy"
+            )
+        return value

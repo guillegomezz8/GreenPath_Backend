@@ -32,6 +32,7 @@ BASE_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.gis',
 ]
 
 LOCAL_APPS = [
@@ -39,7 +40,8 @@ LOCAL_APPS = [
     'apps.user',
     'apps.company',
     'apps.route',
-    'apps.collection'
+    'apps.collection',
+    'apps.zone',
 ]
 
 THIRD_APPS = [

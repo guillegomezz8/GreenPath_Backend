@@ -15,12 +15,11 @@ class CollectionSerializer(serializers.ModelSerializer):
 class CreateCollectionSerializer(serializers.ModelSerializer):
 
     collection_date = serializers.DateTimeField(required=True)
-    liters_collected = serializers.DecimalField(max_digits=10, decimal_places=2, required=True)
     price_per_liter = serializers.DecimalField(max_digits=5, decimal_places=2, required=True)
 
     class Meta:
         model = Collection
-        fields = ('client', 'worker', 'route', 'collection_date', 'liters_collected', 'price_per_liter', 'total_price', 'status')
+        fields = ('client', 'worker', 'route', 'collection_date', 'container_number', 'price_per_liter', 'total_price', 'status')
 
     def create(self, validated_data):
         try:

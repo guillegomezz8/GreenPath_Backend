@@ -6,6 +6,10 @@ from apps.user.models.client import Client
 from apps.user.models.worker import Worker
 from apps.route.models import Route
 from apps.base.models import BaseModel
+import logging
+from apps.base.logger import configure_logging
+
+configure_logging()
 
 
 class Collection(BaseModel):
@@ -51,13 +55,17 @@ class Collection(BaseModel):
         'Litros Recolectados',
         max_digits=10,
         decimal_places=2,
-        editable=False
+        editable=False,
+        null=True,
+        blank=True
     )
     total_price = models.DecimalField(
         'Precio Total',
         max_digits=10,
         decimal_places=2,
-        editable=False
+        editable=False,
+        null=True,
+        blank=True
     )
     status = models.CharField(
         'Estado',
@@ -71,9 +79,11 @@ class Collection(BaseModel):
         verbose_name_plural = 'Recogidas'
 
     def save(self, *args, **kwargs):
+        logging.info(f"Calculando total de litros y precio final")
         volume_per_container = Decimal('60') if self.container_type == ContainerType.BIDONES else Decimal('1000')
         self.liters_collected = self.container_number * volume_per_container
         self.total_price = self.liters_collected * self.price_per_liter
+        logging.info(f"Se va a guadar una recogida con un total de {self.liters_collected} litros por un precio de {self.total_price}")
         super().save(*args, **kwargs)
 
     def __str__(self):

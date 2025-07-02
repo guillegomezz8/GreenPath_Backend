@@ -14,7 +14,8 @@ from apps.collection.api.serializers.collection_serializers import (
 )
 from apps.base.literals import (
     ERROR,
-    ERROR_CREATING_COLLECTION
+    ERROR_CREATING_COLLECTION,
+    ONLY_OWNERS_AND_WORKERS_CAN_REGISTER_COLLECTIONS
 )
 import logging
 
@@ -62,7 +63,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
                 serializer.save()
             else:
                 logging.error("Solo los dueños y trabajadores pueden registrar recogidas")
-                raise ValueError("Solo los dueños y trabajadores pueden registrar recogidas")
+                raise ValueError(ONLY_OWNERS_AND_WORKERS_CAN_REGISTER_COLLECTIONS)
         except Exception as e:
             logging.error(f"Error creando recogida: {str(e)}")
             raise Exception(f"{ERROR}: {ERROR_CREATING_COLLECTION} - {str(e)}")

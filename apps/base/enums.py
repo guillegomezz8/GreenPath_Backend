@@ -7,9 +7,10 @@ class Role(models.TextChoices):
 
 
 class PickupFrequency(models.TextChoices):
-    WEEKLY = 'WEEKLY', 'Semanal'
-    BIWEEKLY = 'BIWEEKLY', 'Quincenal'
-    MONTHLY = 'MONTHLY', 'Mensual'
+    WEEKLY = "WEEKLY", "Cada semana"
+    TWO_WEEKS = "2_WEEKS", "Cada 2 semanas"
+    THREE_WEEKS = "3_WEEKS", "Cada 3 semanas"
+    FOUR_WEEKS = "4_WEEKS", "Cada 4 semanas"
 
 
 class Weekday(models.IntegerChoices):

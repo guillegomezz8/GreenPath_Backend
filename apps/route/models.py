@@ -1,6 +1,7 @@
 from django.db import models
 from apps.company.models import Company
-from apps.base.enums import Weekday, RouteFrequency
+from apps.base.enums import Weekday
+from apps.zone.models import Zone
 from apps.user.models.worker import Worker
 from apps.base.models import BaseModel
 from apps.user.models.client import Client
@@ -24,12 +25,6 @@ class Route(BaseModel):
         Worker,
         related_name='routes',
         verbose_name='Trabajadores'
-    )
-    frequency = models.CharField(
-        'Frecuencia',
-        max_length=10,
-        choices=RouteFrequency.choices,
-        default=RouteFrequency.WEEKLY
     )
     start_date = models.DateField('Fecha de Inicio')
     end_date = models.DateField('Fecha de Fin', null=True, blank=True)
@@ -103,3 +98,30 @@ class RouteDayClient(models.Model):
 
     def __str__(self):
         return f'{self.client.name} - Orden {self.order}'
+
+class RouteZoneDay(models.Model):
+    route = models.ForeignKey(
+        Route,
+        on_delete=models.CASCADE,
+        related_name='zone_days',
+        verbose_name='Ruta'
+    )
+    weekday = models.IntegerField(
+        'Día de la Semana',
+        choices=Weekday.choices
+    )
+    zones = models.ManyToManyField(
+        Zone,
+        related_name='route_zone_days',
+        verbose_name='Zonas asignadas'
+    )
+
+    class Meta:
+        unique_together = ('route', 'weekday')
+        verbose_name = 'Zona por Día de Ruta'
+        verbose_name_plural = 'Zonas por Día de Ruta'
+
+    def __str__(self):
+        day_name = Weekday(self.weekday).label
+        zones_str = ', '.join(self.zones)
+        return f'{self.route.name} - {day_name}: {zones_str}'

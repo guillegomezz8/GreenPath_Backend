@@ -1,101 +1,122 @@
-from datetime import date
-from geopy.distance import geodesic
-from apps.user.models.client import ClientPickupSchedule
-from apps.route.models import RouteDay, RouteDayClient
-from apps.user.models.client import Client
-from apps.base.enums import Weekday
 from datetime import timedelta
+from django.conf import settings
+import requests
+import logging
+
+from apps.user.models.client import Client
+from apps.route.models import RouteDay, RouteDayClient, RouteZoneDay
+from apps.zone.models import Zone
+from apps.base.enums import PickupFrequency
+
+logger = logging.getLogger(__name__)
 
 
-def generate_weekly_routes_from_clients(route, client_ids):
-    """
-    A partir de una ruta y lista de clientes, agrupa por días de recogida
-    y genera rutas diarias optimizadas automáticamente.
-    """
-    clients = Client.objects.filter(id__in=client_ids)
+def should_pickup_client(client, target_date):
+    week_number = target_date.isocalendar()[1]
 
-    # Obtener todos los horarios de recogida de estos clientes
-    schedules = ClientPickupSchedule.objects.filter(
-        client__in=clients
-    ).select_related('client')
+    if client.frequency == PickupFrequency.WEEKLY:
+        return True
+    elif client.frequency == PickupFrequency.TWO_WEEKS:
+        return week_number % 2 == 0
+    elif client.frequency == PickupFrequency.THREE_WEEKS:
+        return week_number % 3 == 0
+    elif client.frequency == PickupFrequency.FOUR_WEEKS:
+        return week_number % 4 == 0
 
-    if not schedules.exists():
-        raise ValueError("Ningún cliente tiene horario de recogida asignado.")
+    return False
 
-    # Agrupar por día de la semana
-    grouped_by_weekday = {}
-    for s in schedules:
-        grouped_by_weekday.setdefault(s.weekday, []).append(s.client)
 
-    route_days_created = []
+def get_clients_for_day(route, date):
+    weekday = date.weekday()
 
-    for weekday, clients_for_day in grouped_by_weekday.items():
-        if not clients_for_day:
+    try:
+        zone_day = RouteZoneDay.objects.get(route=route, weekday=weekday)
+    except RouteZoneDay.DoesNotExist:
+        logger.info(f"No zone config for weekday {weekday} in route {route.id}")
+        return []
+
+    zones = zone_day.zones.all()
+    clients = Client.objects.filter(companies=route.company, location__isnull=False)
+
+    active_clients = []
+    for client in clients:
+        if not should_pickup_client(client, date):
             continue
+        if any(zone.polygon.contains(client.location) for zone in zones):
+            active_clients.append(client)
 
-        # Calcular la próxima fecha real para ese día de la semana
-        start = route.start_date
-        while start.weekday() != weekday:
-            start += timedelta(days=1)
-
-        # Verificar coordenadas
-        for c in clients_for_day:
-            if c.latitude is None or c.longitude is None:
-                raise ValueError(f"El cliente '{c.name}' no tiene coordenadas.")
-
-        origin = (clients_for_day[0].latitude, clients_for_day[0].longitude)
-        ordered = sorted(
-            clients_for_day,
-            key=lambda c: geodesic(origin, (c.latitude, c.longitude)).km
-        )
-
-        # Crear o actualizar RouteDay para esa fecha
-        route_day, _ = RouteDay.objects.get_or_create(
-            route=route,
-            date=start,
-            defaults={'name': f'{route.name} - {Weekday(weekday).label}'}
-        )
-        route_day.ordered_clients.all().delete()
-
-        for i, client in enumerate(ordered, start=1):
-            RouteDayClient.objects.create(
-                route_day=route_day,
-                client=client,
-                order=i
-            )
-
-        route_days_created.append(route_day)
-
-    return route_days_created
+    return active_clients
 
 
-def generate_manual_day_route(route, route_date, client_ids: list[int]):
-    """
-    Genera un RouteDay manual ignorando horarios, para una fecha y lista de clientes específica.
-    """
-    clients = Client.objects.filter(id__in=client_ids)
+def get_optimized_order_from_google(clients):
+    if len(clients) < 2:
+        return clients
 
-    for c in clients:
-        if c.latitude is None or c.longitude is None:
-            raise ValueError(f"El cliente {c.name} no tiene coordenadas.")
+    api_key = settings.GOOGLE_MAPS_API_KEY
+    waypoints = '|'.join(f"{c.location.y},{c.location.x}" for c in clients)
+    origin = f"{clients[0].location.y},{clients[0].location.x}"
+    destination = f"{clients[-1].location.y},{clients[-1].location.x}"
 
-    origin = (clients[0].latitude, clients[0].longitude)
-    ordered = sorted(clients, key=lambda c: geodesic(origin, (c.latitude, c.longitude)).km)
-
-    route_day, _ = RouteDay.objects.get_or_create(
-        route=route,
-        date=route_date,
-        defaults={'name': f"{route.name} - {route_date.strftime('%A %d/%m/%Y')}"}
+    url = (
+        f"https://maps.googleapis.com/maps/api/directions/json"
+        f"?origin={origin}&destination={destination}"
+        f"&waypoints=optimize:true|{waypoints}"
+        f"&key={api_key}"
     )
 
-    route_day.ordered_clients.all().delete()
+    response = requests.get(url)
+    data = response.json()
 
-    for i, client in enumerate(ordered, start=1):
-        RouteDayClient.objects.create(
-            route_day=route_day,
-            client=client,
-            order=i
-        )
+    if 'routes' not in data or not data['routes']:
+        logger.error(f"Google Maps API error: {data}")
+        raise ValueError("Google Maps no devolvió una ruta válida")
 
-    return route_day
+    order = data['routes'][0]['waypoint_order']
+    return [clients[i] for i in order]
 
+
+def generate_routes_for_date_range(route, start_date, end_date, zone_schedule, max_clients=25):
+    current_date = start_date
+    route_days = []
+
+    while current_date <= end_date:
+        weekday = current_date.weekday()
+
+        if weekday in zone_schedule:
+            zone_names = zone_schedule[weekday]
+            logger.info(f"Generando ruta para {current_date} (día {weekday}) con zonas: {zone_names}")
+
+            zone_objs = Zone.objects.filter(name__in=zone_names)
+            route_zone_day, _ = RouteZoneDay.objects.get_or_create(route=route, weekday=weekday)
+            route_zone_day.zones.set(zone_objs)
+
+            clients = get_clients_for_day(route, current_date)
+
+            if not clients:
+                current_date += timedelta(days=1)
+                continue
+
+            clients = clients[:max_clients]
+            optimized_clients = get_optimized_order_from_google(clients)
+
+            route_day, created = RouteDay.objects.get_or_create(
+                route=route,
+                date=current_date,
+                defaults={"name": f"{route.name} - {current_date.strftime('%A %d/%m')}"}
+            )
+
+            if not created:
+                route_day.ordered_clients.all().delete()
+
+            for i, client in enumerate(optimized_clients, start=1):
+                RouteDayClient.objects.create(
+                    route_day=route_day,
+                    client=client,
+                    order=i
+                )
+
+            route_days.append(route_day)
+
+        current_date += timedelta(days=1)
+
+    return route_days

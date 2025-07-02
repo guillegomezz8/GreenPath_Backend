@@ -31,8 +31,8 @@ class RouteDayClientInline(admin.TabularInline):
 
 @admin.register(Route)
 class RouteAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'company', 'frequency', 'start_date', 'end_date')
-    list_filter = ('company', 'frequency', 'week_start')
+    list_display = ('id', 'name', 'company', 'start_date', 'end_date')
+    list_filter = ('company', 'week_start')
     search_fields = ('name',)
     ordering = ('-start_date',)
     inlines = [CollectionInline, RouteDayInline]

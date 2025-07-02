@@ -1,32 +1,70 @@
 from django.contrib import admin
 from apps.user.models.user import User
-from apps.user.models.client import Client, ClientPickupSchedule
+from apps.user.models.client import Client
 from apps.user.models.worker import Worker
 
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('id', 'email', 'is_active', 'is_staff')
-    search_fields = ('email',)
+    list_display = ('id', 'email', 'username', 'is_active', 'is_staff')
+    search_fields = ('email', 'username')
     list_filter = ('is_active', 'is_staff')
+    readonly_fields = ('id',)
+
+    fieldsets = (
+        ('Información de Usuario', {
+            'fields': ('id', 'username', 'email', 'password')
+        }),
+        ('Permisos', {
+            'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')
+        }),
+        ('Fechas', {
+            'fields': ('last_login',)
+        }),
+    )
 
 
 @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'phone', 'city', 'cif')
     search_fields = ('name', 'cif', 'phone')
-    list_filter = ('city', 'country')
+    list_filter = ('city',)
+    list_select_related = ('user',)
+    readonly_fields = ('id',)
 
-
-@admin.register(ClientPickupSchedule)
-class ClientPickupScheduleAdmin(admin.ModelAdmin):
-    list_display = ('client', 'company', 'weekday', 'frequency')
-    list_filter = ('weekday', 'frequency', 'company')
-    search_fields = ('client__name',)
+    fieldsets = (
+        ('Información de Cliente', {
+            'fields': ('id', 'user', 'name', 'phone', 'cif')
+        }),
+        ('Ubicación', {
+            'fields': ('address', 'city', 'postal_code', 'country', 'location')
+        }),
+        ('Frecuencia de Recogida', {
+            'fields': ('frequency',)
+        }),
+        ('Empresas Asociadas', {
+            'fields': ('companies',)
+        }),
+    )
 
 
 @admin.register(Worker)
 class WorkerAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'surname', 'company', 'role')
-    list_filter = ('company', 'role')
     search_fields = ('name', 'surname', 'dni')
+    list_filter = ('company', 'role')
+
+    list_select_related = ('user', 'company')
+    readonly_fields = ('id',)
+
+    fieldsets = (
+        ('Información Personal', {
+            'fields': ('id', 'user', 'name', 'surname', 'dni', 'phone')
+        }),
+        ('Ubicación', {
+            'fields': ('address',)
+        }),
+        ('Datos Laborales', {
+            'fields': ('company', 'role')
+        }),
+    )

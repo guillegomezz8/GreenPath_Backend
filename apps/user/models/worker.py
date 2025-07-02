@@ -16,7 +16,8 @@ class Worker(BaseModel):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name='Empresa'
+        verbose_name='Empresa',
+        related_name='workers'
     )
     role = models.CharField(
         'Rol',

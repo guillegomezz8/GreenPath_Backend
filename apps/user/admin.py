@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.html import format_html
 from apps.user.models.user import User
 from apps.user.models.client import Client
 from apps.user.models.worker import Worker
@@ -55,11 +56,11 @@ class WorkerAdmin(admin.ModelAdmin):
     list_filter = ('company', 'role')
 
     list_select_related = ('user', 'company')
-    readonly_fields = ('id',)
+    readonly_fields = ('id', 'photo_preview')
 
     fieldsets = (
         ('Información Personal', {
-            'fields': ('id', 'user', 'name', 'surname', 'dni', 'phone')
+            'fields': ('id', 'user', 'name', 'surname', 'dni', 'phone', 'photo', 'photo_preview')
         }),
         ('Ubicación', {
             'fields': ('address',)
@@ -68,3 +69,9 @@ class WorkerAdmin(admin.ModelAdmin):
             'fields': ('company', 'role')
         }),
     )
+
+    @admin.display(description="Previsualización de Foto")
+    def photo_preview(self, obj):
+        if obj.photo:
+            return format_html('<img src="{}" width="150" height="150" style="object-fit: cover;"/>', obj.photo.url)
+        return "No hay foto"

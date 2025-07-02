@@ -50,6 +50,12 @@ class Worker(BaseModel):
         max_length=255,
         blank=True
     )
+    photo = models.ImageField(
+        'Foto',
+        upload_to='workers/',
+        null=True,
+        blank=True
+    )
 
     class Meta:
         verbose_name = 'Trabajador'
@@ -57,4 +63,3 @@ class Worker(BaseModel):
 
     def __str__(self):
         return f'{self.name} - {self.get_role_display()}'
-

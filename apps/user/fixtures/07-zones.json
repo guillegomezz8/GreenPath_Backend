@@ -1,0 +1,66 @@
+[
+  {
+    "model": "zone.zone",
+    "pk": 1,
+    "fields": {
+      "name": "Sevilla Centro",
+      "polygon": "POLYGON((-5.9950 37.3826, -5.9950 37.3926, -5.9850 37.3926, -5.9850 37.3826, -5.9950 37.3826))"
+    }
+  },
+  {
+    "model": "zone.zone",
+    "pk": 2,
+    "fields": {
+      "name": "Triana",
+      "polygon": "POLYGON((-6.0040 37.3770, -6.0040 37.3870, -5.9940 37.3870, -5.9940 37.3770, -6.0040 37.3770))"
+    }
+  },
+  {
+    "model": "zone.zone",
+    "pk": 3,
+    "fields": {
+      "name": "Dos Hermanas",
+      "polygon": "POLYGON((-5.9310 37.2700, -5.9310 37.2800, -5.9210 37.2800, -5.9210 37.2700, -5.9310 37.2700))"
+    }
+  },
+  {
+    "model": "zone.zone",
+    "pk": 4,
+    "fields": {
+      "name": "Alcalá de Guadaíra",
+      "polygon": "POLYGON((-5.8610 37.3320, -5.8610 37.3420, -5.8510 37.3420, -5.8510 37.3320, -5.8610 37.3320))"
+    }
+  },
+  {
+    "model": "zone.zone",
+    "pk": 5,
+    "fields": {
+      "name": "La Rinconada",
+      "polygon": "POLYGON((-5.9740 37.4880, -5.9740 37.4980, -5.9640 37.4980, -5.9640 37.4880, -5.9740 37.4880))"
+    }
+  },
+  {
+    "model": "zone.zone",
+    "pk": 6,
+    "fields": {
+      "name": "Camas",
+      "polygon": "POLYGON((-6.0360 37.4020, -6.0360 37.4120, -6.0260 37.4120, -6.0260 37.4020, -6.0360 37.4020))"
+    }
+  },
+  {
+    "model": "zone.zone",
+    "pk": 7,
+    "fields": {
+      "name": "San Juan de Aznalfarache",
+      "polygon": "POLYGON((-6.0350 37.3550, -6.0350 37.3650, -6.0250 37.3650, -6.0250 37.3550, -6.0350 37.3550))"
+    }
+  },
+  {
+    "model": "zone.zone",
+    "pk": 8,
+    "fields": {
+      "name": "Mairena del Aljarafe",
+      "polygon": "POLYGON((-6.0660 37.3440, -6.0660 37.3540, -6.0560 37.3540, -6.0560 37.3440, -6.0660 37.3440))"
+    }
+  }
+]

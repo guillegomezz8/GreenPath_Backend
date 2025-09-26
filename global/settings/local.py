@@ -13,17 +13,17 @@ CSRF_TRUSTED_ORIGINS = ['https://localhost:8000', 'https://green-path-frontend.v
 DATABASES = {
     "default": {
          # Add the docker environment ENGINE variable or for local development use sqlite3 engine
-        "ENGINE": os.environ.get("ENGINE", ""), 
+        "DB_ENGINE": os.environ.get("DB_ENGINE", ""), 
          # Add the docker environment DATABASE variable or use the local sqlite database soruce
-        "NAME": os.environ.get("NAME",""),
+        "DB_NAME": os.environ.get("DB_NAME",""),
          # Add the docker USER environment variable or on need password for sqlite3
-        "USER": os.environ.get("USER", ""),
+        "DB_USER": os.environ.get("DB_USER", ""),
          # Add the docker PASSWORD environment variable or on need password for sqlite3
-        "PASSWORD": os.environ.get("PASSWORD", ""),
+        "DB_PASSWORD": os.environ.get("DB_PASSWORD", ""),
          # Add the docker HOST environment variable or on need host for sqlite3
-        "HOST": os.environ.get("HOST", ""),
+        "DB_HOST": os.environ.get("DB_HOST", ""),
          # Add the docker HOST environment variable or on need port for sqlite3
-        "PORT": os.environ.get("PORT", ""),
+        "DB_PORT": os.environ.get("DB_PORT", ""),
     }
 }
 

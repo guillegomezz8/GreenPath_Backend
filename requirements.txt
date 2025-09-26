@@ -52,3 +52,4 @@ geojson
 Shapely>=2.0.2
 pyproj>=3.6.0
 GDAL==3.6.2    
+gunicorn==21.2.0

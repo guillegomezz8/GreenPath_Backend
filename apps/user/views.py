@@ -1,5 +1,7 @@
 from django.contrib.auth import authenticate
 
+import logging
+
 from rest_framework.permissions import AllowAny
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
@@ -16,7 +18,10 @@ from apps.user.api.serializers.authentication_serializers import (
     CustomTokenObtainPairSerializer,
     LogoutSerializer
 )
-from .models import User
+from apps.user.models.user import User
+from apps.base.logger import configure_logging
+
+configure_logging()
 
 
 class Login(TokenObtainPairView):
@@ -24,6 +29,7 @@ class Login(TokenObtainPairView):
     permission_classes = [AllowAny] 
 
     def post(self, request, *args, **kwargs):
+        logging.info(f"Inicio de sesión para el usuario: {request.data.get('username', 'Desconocido')}")
         username = request.data.get('username', '')
         password = request.data.get('password', '')
         user = authenticate(
@@ -49,6 +55,7 @@ class Logout(GenericAPIView):
     serializer_class = LogoutSerializer
     
     def post(self, request, *args, **kwargs):
+        logging.info(f"Cierre de sesión para el usuario ID: {request.data.get('user', 'Desconocido')}")
         user = User.objects.filter(id=request.data.get('user', 0))
         if user.exists():
             RefreshToken.for_user(user.first())

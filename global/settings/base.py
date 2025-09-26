@@ -1,20 +1,26 @@
 from datetime import timedelta
 from pathlib import Path
+from dotenv import load_dotenv
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
+# Cargar el archivo .env
+dotenv_path = os.path.join(BASE_DIR, '.env')
+load_dotenv(dotenv_path)
+
+# Variables de entorno cargadas
+SECRET_KEY = os.getenv('SECRET_KEY', 'default_secret_key')
+# DEBUG = os.getenv('DEBUG', 'False').lower() in ['true', '1']
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'e+3qek7(i5evq)87ff5d8e@bjsd&q_h)w5qejoojqhhx%$4j+h'
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -26,11 +32,17 @@ BASE_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.gis',
 ]
 
 LOCAL_APPS = [
     'apps.base',
     'apps.user',
+    'apps.company',
+    'apps.route',
+    'apps.collection',
+    'apps.zone',
+    'apps.truck',
 ]
 
 THIRD_APPS = [
@@ -58,7 +70,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication', 
     ],
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'DEFAULT_PAGINATION_CLASS': 'apps.base.pagination.CustomPageNumberPagination',
     'PAGE_SIZE': 10,
 }
 
@@ -79,7 +91,7 @@ ROOT_URLCONF = 'global.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -130,23 +142,23 @@ USE_TZ = True
 AUTH_USER_MODEL = 'user.User'
 
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',
+    'http://localhost:5173',
     'https://example.com',
 ]
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'Your API Title',
-    'DESCRIPTION': 'Your API Description',
+    'TITLE': 'GreenPath API',
+    'DESCRIPTION': 'Welcome to the GreenPath API',
     'VERSION': '1.0.0',
-    'SERVE_INCLUDE_SCHEMA': False,  # Set to True if you want to serve the schema at /schema/
-    'SCHEMA_PATH_PREFIX': '/api/v1',  # Adjust as needed
-    'COMPONENT_SPLIT_REQUEST': True, # Important to manage files
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SCHEMA_PATH_PREFIX': '/api/v1',
+    'COMPONENT_SPLIT_REQUEST': True,
     'AUTHENTICATION': [
         {
             'name': 'Bearer',
             'type': 'http',
             'scheme': 'bearer',
-            'bearerFormat': 'JWT',  # Optional, depending on your token format
+            'bearerFormat': 'JWT',
         }
     ],
 }
@@ -162,3 +174,12 @@ SIMPLE_JWT = {
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+EMAIL_HOST=os.environ.get("SMTP_SERVER", "")
+EMAIL_PORT=os.environ.get("SMTP_PORT", 587)
+EMAIL_HOST_USER=os.environ.get("EMAIL_USER", "greenpath@soporte.com")
+EMAIL_HOST_PASSWORD=os.environ.get("EMAIL_PASSWORD", "XXXX")
+EMAIL_USE_TLS = True 

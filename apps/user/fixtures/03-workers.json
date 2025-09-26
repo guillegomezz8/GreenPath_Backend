@@ -1,0 +1,32 @@
+[
+        {
+        "model": "user.worker",
+        "pk": 1,
+        "fields": {
+            "user": 2,
+            "role" : "worker",
+            "name": "Guillermo",
+            "surname": "Gómez Romero",
+            "address": "Calle Falsa 123",
+            "phone": "123456789",
+            "dni": "12345678Z",
+            "company": 1,
+            "birth_date": "2002-06-08"
+        }
+    },
+    {
+        "model": "user.worker",
+        "pk": 2,
+        "fields": {
+            "user": 3,
+            "role" : "owner",
+            "name": "Antonio Manuel",
+            "surname": "Gómez Martin",
+            "address": "Calle Falsa 123",
+            "phone": "123456789",
+            "dni": "12345678Z",
+            "company": 1,
+            "birth_date": "2004-07-19"
+        }
+    }
+]

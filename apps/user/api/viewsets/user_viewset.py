@@ -20,14 +20,16 @@ from apps.base.literals import (
 from apps.base.logger import configure_logging
 configure_logging()
 
-from apps.base.permissions import IsOwnerOrStaffOrSuperUser
-from apps.user.models import User
+from apps.base.permissions import IsOwnerOrStaffOrSuperUser, IsOwnerUser
+from apps.user.models.user import User
 from apps.user.api.serializers.user_serializers import (
     CreateUserSerializer,
     PartialUpdateUserSerializer,
     PasswordSerializer,
     UpdateUserSerializer,
-    UserSerializer
+    UserSerializer,
+    UserProfileSerializer,
+    UserProfileUpdateSerializer
 )
 
 
@@ -40,8 +42,6 @@ class UserFilter(FilterSet):
         fields = [
             'username',
             'email', 
-            'name', 
-            'last_name',
             'is_active',
             'is_superuser',
             'is_staff'
@@ -51,13 +51,12 @@ class UserFilter(FilterSet):
 class UserViewSet(viewsets.ModelViewSet):
     model = User
     queryset = User.objects.all().order_by('id')
-    parser_classes = (MultiPartParser, FormParser,)
     filter_backends = [DjangoFilterBackend]
     filterset_class = UserFilter
     
     def get_permissions(self):
         if self.action == 'create':
-            return [AllowAny()]
+            return [IsOwnerUser()]
         elif self.action in ['update', 'retrieve', 'partial_update', 'destroy', 'set_password', 'list']:
             return [IsAuthenticated(), IsOwnerOrStaffOrSuperUser()]
         return [IsAuthenticated()]
@@ -73,6 +72,8 @@ class UserViewSet(viewsets.ModelViewSet):
             return UpdateUserSerializer
         elif self.action == 'partial_update':
             return PartialUpdateUserSerializer
+        elif self.action == 'profile':
+            return UserProfileSerializer
         return UserSerializer 
 
     def list(self, request, *args, **kwargs):
@@ -109,14 +110,10 @@ class UserViewSet(viewsets.ModelViewSet):
         queryset = super().get_queryset()
         
         username = self.request.query_params.get('username', None)
-        name = self.request.query_params.get('name', None)
         email = self.request.query_params.get('email', None)
         
         if username:
             queryset = queryset.filter(username__icontains=username)
-        
-        if name:
-            queryset = queryset.filter(name__icontains=name)
             
         if email:
             queryset = queryset.filter(email__icontains=email)
@@ -141,3 +138,28 @@ class UserViewSet(viewsets.ModelViewSet):
         user.save()
         logging.info(f"{USER_APP}: Deleted User with id {pk}.")
         return Response({MESSAGE: USER_SUCCESSFULLY_DELETED})
+
+    @action(detail=False, methods=['get', 'put'], url_path='profile')
+    def profile(self, request):
+        method = request.method.lower()
+        user = request.user
+        
+        if method == 'put':
+            logging.info(f"{USER_APP}: Actualizando perfil de usuario.")
+            
+            serializer = UserProfileUpdateSerializer(user, data=request.data, partial=True)
+            
+            if serializer.is_valid():
+                serializer.save()
+                
+                response_serializer = UserProfileSerializer(user)
+                logging.info(f"{USER_APP}: Perfil de usuario actualizado correctamente.")
+                return Response(response_serializer.data)
+
+            logging.error(f"{USER_APP}: Falló al actualizar el perfil de usuario. \n{ERRORS}: {serializer.errors}")
+            return Response({MESSAGE: ERRORS_IN_THE_INFORMATION, ERRORS: serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+    
+        elif method == 'get':
+            serializer = UserProfileSerializer(user)
+            logging.info(f"{USER_APP}: Perfil de usuario recuperado correctamente.")
+            return Response(serializer.data)

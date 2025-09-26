@@ -1,8 +1,7 @@
 from django.db import models
+from apps.user.models.user import User
 
 from simple_history.models import HistoricalRecords
-
-from apps.user.models import User
 
 # Create your models here.
 class BaseModel(models.Model):
@@ -10,10 +9,10 @@ class BaseModel(models.Model):
 
     # TODO: Define fields here
     id = models.AutoField(primary_key=True)
-    state = models.BooleanField('Estado',default=True)
-    created_date = models.DateField('Fecha de Creación', auto_now=False, auto_now_add=True)
-    modified_date = models.DateField('Fecha de Modificación', auto_now=True, auto_now_add=False)
-    deleted_date = models.DateField('Fecha de Eliminación', auto_now=True, auto_now_add=False)
+    disabled = models.BooleanField('Deshabilitado', default=False)
+    created_date = models.DateTimeField('Fecha de Creación', auto_now=False, auto_now_add=True, blank=True, null=True)
+    modified_date = models.DateTimeField('Fecha de Modificación', auto_now=True, auto_now_add=False, blank=True, null=True)
+    deleted_date = models.DateTimeField('Fecha de Eliminación', auto_now=True, auto_now_add=False, blank=True, null=True)
     historical = HistoricalRecords(user_model=User, inherit=True)
 
     @property

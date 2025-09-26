@@ -20,8 +20,20 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'default_secret_key')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost 127.0.0.1').split(' ')
+CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'https://localhost:8000').split(' ')
+CORS_ALLOW_ALL_ORIGINS = True
 
+CORS_ALLOW_HEADERS = [
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'Accept',
+    'Origin',
+    'skipauthorization'
+]
+
+CORS_EXPOSE_HEADERS = ['Content-Disposition']
 
 # Application definition
 
@@ -151,7 +163,6 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'Welcome to the GreenPath API',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
-    'SCHEMA_PATH_PREFIX': '/api/v1',
     'COMPONENT_SPLIT_REQUEST': True,
     'AUTHENTICATION': [
         {
@@ -183,3 +194,14 @@ EMAIL_PORT=os.environ.get("SMTP_PORT", 587)
 EMAIL_HOST_USER=os.environ.get("EMAIL_USER", "greenpath@soporte.com")
 EMAIL_HOST_PASSWORD=os.environ.get("EMAIL_PASSWORD", "XXXX")
 EMAIL_USE_TLS = True 
+
+DATABASES = {
+    "default": {
+        "ENGINE": os.environ.get("DB_ENGINE", ""), 
+        "NAME": os.environ.get("DB_NAME",""),
+        "USER": os.environ.get("DB_USER", ""),
+        "PASSWORD": os.environ.get("DB_PASSWORD", ""),
+        "HOST": os.environ.get("DB_HOST", ""),
+        "PORT": os.environ.get("DB_PORT", ""),
+    }
+}

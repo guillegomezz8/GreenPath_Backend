@@ -4,8 +4,8 @@ from .base import *
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '.ngrok-free.app']
-CSRF_TRUSTED_ORIGINS = ['https://localhost:8000', 'https://epic-supreme-panther.ngrok-free.app']
+ALLOWED_HOSTS = ['localhost', '.vercel.app', '.railway.app']
+CSRF_TRUSTED_ORIGINS = ['https://localhost:8000', 'https://green-path-frontend.vercel.app/']
 
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases

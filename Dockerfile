@@ -2,7 +2,6 @@ FROM python:3.11
 
 RUN apt-get update && apt-get install -y \
     binutils \
-    python3-distutils \
     gdal-bin \
     libgdal-dev \
     libproj-dev \

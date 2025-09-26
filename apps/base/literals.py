@@ -27,6 +27,7 @@ ONLY_OWNERS_CAN_CREATE_WORKERS = 'Solo los dueños pueden crear trabajadores'
 ERROR_CREATING_CLIENT = 'Error creando cliente'
 ONLY_OWNERS_CAN_CREATE_CLIENTS = 'Solo los dueños pueden crear clientes'
 USER_COMPANY_DOES_NOT_EXIST = 'El usuario no tiene una empresa asociada'
+CLIENT_NOT_FOUND = 'Cliente no encontrado'
 
 #Rutas
 ERROR_CREATING_ROUTE = 'Error creando ruta'
@@ -41,3 +42,10 @@ ONLY_OWNERS_AND_WORKERS_CAN_REGISTER_COLLECTIONS = 'Solo los dueños y trabajado
 
 #Dashboard
 ERROR_GETTING_DASHBOARD_DATA = 'Error obteniendo datos del dashboard'
+
+#Camiones
+ERROR_CREATING_TRUCK = 'Error creando camión'
+ONLY_OWNERS_CAN_CREATE_TRUCKS = 'Solo los dueños pueden crear camiones'
+NEED_COMPANY_FOR_TRUCK_CREATION = 'Debes indicar la empresa para crear un camión'
+DRIVER_TRUCK_SAME_COMPANY = 'El conductor debe pertenecer a la misma empresa que el camión'
+ONLY_UPDATE_TRUCKS_SAME_COMPANY = 'Solo puedes actualizar camiones de tu empresa'

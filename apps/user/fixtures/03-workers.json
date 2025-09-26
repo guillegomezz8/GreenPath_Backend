@@ -10,7 +10,8 @@
             "address": "Calle Falsa 123",
             "phone": "123456789",
             "dni": "12345678Z",
-            "company": 1
+            "company": 1,
+            "birth_date": "2002-06-08"
         }
     },
     {
@@ -24,7 +25,8 @@
             "address": "Calle Falsa 123",
             "phone": "123456789",
             "dni": "12345678Z",
-            "company": 1
+            "company": 1,
+            "birth_date": "2004-07-19"
         }
     }
 ]

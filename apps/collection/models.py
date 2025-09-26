@@ -73,6 +73,10 @@ class Collection(BaseModel):
         choices=CollectionStatus.choices,
         default=CollectionStatus.PENDING
     )
+    notes = models.TextField(
+        'Notas',
+        blank=True
+    )
 
     class Meta:
         verbose_name = 'Recogida'

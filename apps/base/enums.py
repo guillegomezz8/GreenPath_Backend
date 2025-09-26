@@ -32,8 +32,24 @@ class CollectionStatus(models.TextChoices):
 class ContainerType(models.TextChoices):
     BIDONES = 'BIDONES', 'Bidones (60L)'
     IBC = 'IBC', 'IBC (1000L)'
-    
+
+
 class RouteFrequency(models.TextChoices):
     WEEKLY = 'WEEKLY', 'Semanal'
     MONTHLY = 'MONTHLY', 'Mensual'
     TEMPORAL = 'TEMPORAL', 'Temporal'
+
+
+class TruckStatus(models.TextChoices):
+    ACTIVE = "ACTIVE", "Activo"
+    IN_SERVICE = "IN_SERVICE", "En servicio"
+    MAINTENANCE = "MAINTENANCE", "Mantenimiento"
+    OUT_OF_SERVICE = "OUT_OF_SERVICE", "Fuera de servicio"
+    DECOMMISSIONED = "DECOMMISSIONED", "Retirado"
+
+
+class Fuel(models.TextChoices):
+    DIESEL = "DIESEL", "Diésel"
+    PETROL = "PETROL", "Gasolina"
+    ELECTRIC = "ELECTRIC", "Eléctrico"
+    HYBRID = "HYBRID", "Híbrido"

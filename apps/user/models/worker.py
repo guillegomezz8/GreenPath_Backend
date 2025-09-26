@@ -56,6 +56,11 @@ class Worker(BaseModel):
         null=True,
         blank=True
     )
+    birth_date = models.DateField(
+        'Fecha de Nacimiento',
+        null=True,
+        blank=True
+    )
 
     class Meta:
         verbose_name = 'Trabajador'

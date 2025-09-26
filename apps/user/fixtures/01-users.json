@@ -37,272 +37,272 @@
     "model": "user.user",
     "pk": 5,
     "fields": {
-      "email": "client2@example.com",
-      "username": "client2"
+      "email": "taberna-el-tapeo@example.com",
+      "username": "taberna-el-tapeo"
     }
   },
   {
     "model": "user.user",
     "pk": 6,
     "fields": {
-      "email": "client3@example.com",
-      "username": "client3"
+      "email": "cerveceria-triana@example.com",
+      "username": "cerveceria-triana"
     }
   },
   {
     "model": "user.user",
     "pk": 7,
     "fields": {
-      "email": "client4@example.com",
-      "username": "client4"
+      "email": "bodeguilla-del-centro@example.com",
+      "username": "bodeguilla-del-centro"
     }
   },
   {
     "model": "user.user",
     "pk": 8,
     "fields": {
-      "email": "client5@example.com",
-      "username": "client5"
+      "email": "bar-cafetin-sierpes@example.com",
+      "username": "bar-cafetin-sierpes"
     }
   },
   {
     "model": "user.user",
     "pk": 9,
     "fields": {
-      "email": "client6@example.com",
-      "username": "client6"
+      "email": "taberna-el-cortijo@example.com",
+      "username": "taberna-el-cortijo"
     }
   },
   {
     "model": "user.user",
     "pk": 10,
     "fields": {
-      "email": "client7@example.com",
-      "username": "client7"
+      "email": "bar-pescador@example.com",
+      "username": "bar-pescador"
     }
   },
   {
     "model": "user.user",
     "pk": 11,
     "fields": {
-      "email": "client8@example.com",
-      "username": "client8"
+      "email": "el-rincon-de-la-plaza@example.com",
+      "username": "el-rincon-de-la-plaza"
     }
   },
   {
     "model": "user.user",
     "pk": 12,
     "fields": {
-      "email": "client9@example.com",
-      "username": "client9"
+      "email": "kiosko-alameda-bar@example.com",
+      "username": "kiosko-alameda-bar"
     }
   },
   {
     "model": "user.user",
     "pk": 13,
     "fields": {
-      "email": "client10@example.com",
-      "username": "client10"
+      "email": "polleria-bar-el-torneo@example.com",
+      "username": "polleria-bar-el-torneo"
     }
   },
   {
     "model": "user.user",
     "pk": 14,
     "fields": {
-      "email": "client11@example.com",
-      "username": "client11"
+      "email": "bar-el-punto@example.com",
+      "username": "bar-el-punto"
     }
   },
   {
     "model": "user.user",
     "pk": 15,
     "fields": {
-      "email": "client12@example.com",
-      "username": "client12"
+      "email": "heladeria-bar-la-flor@example.com",
+      "username": "heladeria-bar-la-flor"
     }
   },
   {
     "model": "user.user",
     "pk": 16,
     "fields": {
-      "email": "client13@example.com",
-      "username": "client13"
+      "email": "bar-24h-nervion@example.com",
+      "username": "bar-24h-nervion"
     }
   },
   {
     "model": "user.user",
     "pk": 17,
     "fields": {
-      "email": "client14@example.com",
-      "username": "client14"
+      "email": "taberna-santa-clara@example.com",
+      "username": "taberna-santa-clara"
     }
   },
   {
     "model": "user.user",
     "pk": 18,
     "fields": {
-      "email": "client15@example.com",
-      "username": "client15"
+      "email": "bar-triana-clasico@example.com",
+      "username": "bar-triana-clasico"
     }
   },
   {
     "model": "user.user",
     "pk": 19,
     "fields": {
-      "email": "client16@example.com",
-      "username": "client16"
+      "email": "freiduria-bar-la-alameda@example.com",
+      "username": "freiduria-bar-la-alameda"
     }
   },
   {
     "model": "user.user",
     "pk": 20,
     "fields": {
-      "email": "client17@example.com",
-      "username": "client17"
+      "email": "churreria-el-salvador@example.com",
+      "username": "churreria-el-salvador"
     }
   },
   {
     "model": "user.user",
     "pk": 21,
     "fields": {
-      "email": "client18@example.com",
-      "username": "client18"
+      "email": "bar-comedor-el-prado@example.com",
+      "username": "bar-comedor-el-prado"
     }
   },
   {
     "model": "user.user",
     "pk": 22,
     "fields": {
-      "email": "client19@example.com",
-      "username": "client19"
+      "email": "bar-cocina-aljarafe@example.com",
+      "username": "bar-cocina-aljarafe"
     }
   },
   {
     "model": "user.user",
     "pk": 23,
     "fields": {
-      "email": "client20@example.com",
-      "username": "client20"
+      "email": "restobar-puerta-carmona@example.com",
+      "username": "restobar-puerta-carmona"
     }
   },
   {
     "model": "user.user",
     "pk": 24,
     "fields": {
-      "email": "client21@example.com",
-      "username": "client21"
+      "email": "bar-los-remedios@example.com",
+      "username": "bar-los-remedios"
     }
   },
   {
     "model": "user.user",
     "pk": 25,
     "fields": {
-      "email": "client22@example.com",
-      "username": "client22"
+      "email": "bar-hotel-dona-ines@example.com",
+      "username": "bar-hotel-dona-ines"
     }
   },
   {
     "model": "user.user",
     "pk": 26,
     "fields": {
-      "email": "client23@example.com",
-      "username": "client23"
+      "email": "pizzeria-bar-il-forno@example.com",
+      "username": "pizzeria-bar-il-forno"
     }
   },
   {
     "model": "user.user",
     "pk": 27,
     "fields": {
-      "email": "client24@example.com",
-      "username": "client24"
+      "email": "asador-bar-el-barranco@example.com",
+      "username": "asador-bar-el-barranco"
     }
   },
   {
     "model": "user.user",
     "pk": 28,
     "fields": {
-      "email": "client25@example.com",
-      "username": "client25"
+      "email": "bar-manolo-macarena@example.com",
+      "username": "bar-manolo-macarena"
     }
   },
   {
     "model": "user.user",
     "pk": 29,
     "fields": {
-      "email": "client26@example.com",
-      "username": "client26"
+      "email": "bar-la-alcoba@example.com",
+      "username": "bar-la-alcoba"
     }
   },
   {
     "model": "user.user",
     "pk": 30,
     "fields": {
-      "email": "client27@example.com",
-      "username": "client27"
+      "email": "bar-sevilla-centro@example.com",
+      "username": "bar-sevilla-centro"
     }
   },
   {
     "model": "user.user",
     "pk": 31,
     "fields": {
-      "email": "client28@example.com",
-      "username": "client28"
+      "email": "la-taperia-del-arenal@example.com",
+      "username": "la-taperia-del-arenal"
     }
   },
   {
     "model": "user.user",
     "pk": 32,
     "fields": {
-      "email": "client29@example.com",
-      "username": "client29"
+      "email": "bar-el-corral@example.com",
+      "username": "bar-el-corral"
     }
   },
   {
     "model": "user.user",
     "pk": 33,
     "fields": {
-      "email": "client30@example.com",
-      "username": "client30"
+      "email": "bar-la-taberna-de-enmedio@example.com",
+      "username": "bar-la-taberna-de-enmedio"
     }
   },
   {
     "model": "user.user",
     "pk": 34,
     "fields": {
-      "email": "client31@example.com",
-      "username": "client31"
+      "email": "bar-plaza-nueva@example.com",
+      "username": "bar-plaza-nueva"
     }
   },
   {
     "model": "user.user",
     "pk": 35,
     "fields": {
-      "email": "client32@example.com",
-      "username": "client32"
+      "email": "bar-mercado-feria@example.com",
+      "username": "bar-mercado-feria"
     }
   },
   {
     "model": "user.user",
     "pk": 36,
     "fields": {
-      "email": "client33@example.com",
-      "username": "client33"
+      "email": "bar-callejon-del-agua@example.com",
+      "username": "bar-callejon-del-agua"
     }
   },
   {
     "model": "user.user",
     "pk": 37,
     "fields": {
-      "email": "client34@example.com",
-      "username": "client34"
+      "email": "bar-el-buhio@example.com",
+      "username": "bar-el-buhio"
     }
   },
   {
     "model": "user.user",
     "pk": 38,
     "fields": {
-      "email": "client35@example.com",
-      "username": "client35"
+      "email": "bar-la-esquina-de-sevilla@example.com",
+      "username": "bar-la-esquina-de-sevilla"
     }
   }
 ]

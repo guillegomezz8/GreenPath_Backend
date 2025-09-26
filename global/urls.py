@@ -29,6 +29,7 @@ urlpatterns = [
     path('routes/',include('apps.route.api.routers')),
     path('collections/',include('apps.collection.api.routers')),
     path('zones/',include('apps.zone.api.routers')),
+    path('trucks/',include('apps.truck.api.routers'))
 ]
 
 urlpatterns += [

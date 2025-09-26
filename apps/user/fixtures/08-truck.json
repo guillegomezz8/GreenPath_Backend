@@ -1,0 +1,40 @@
+[
+  {
+    "model": "truck.truck",
+    "pk": 1,
+    "fields": {
+      "registration_number": "1234-ABC",
+      "brand": "Mercedes-Benz",
+      "model": "Actros",
+      "year": 2020,
+      "capacity": "18000.00",
+      "status": "ACTIVE",
+      "fuel": "DIESEL",
+      "driver": 1,
+      "company": 1,
+      "created_date": "2025-01-01T08:00:00Z",
+      "modified_date": "2025-01-01T08:00:00Z",
+      "deleted_date": null,
+      "disabled": false
+    }
+  },
+  {
+    "model": "truck.truck",
+    "pk": 2,
+    "fields": {
+      "registration_number": "5678-DEF",
+      "brand": "Volvo",
+      "model": "FH16",
+      "year": 2022,
+      "capacity": "20000.00",
+      "status": "ACTIVE",
+      "fuel": "DIESEL",
+      "driver": 2,
+      "company": 1,
+      "created_date": "2025-01-01T08:00:00Z",
+      "modified_date": "2025-01-01T08:00:00Z",
+      "deleted_date": null,
+      "disabled": false
+    }
+  }
+]

@@ -7,9 +7,17 @@ configure_logging()
 
 
 class CollectionSerializer(serializers.ModelSerializer):
+
+    status = serializers.SerializerMethodField()
+    client_name = serializers.CharField(source='client.name', read_only=True)
+    route_name = serializers.CharField(source='route.name', read_only=True)
+    
     class Meta:
         model = Collection
         exclude = ('modified_date', 'deleted_date', 'created_date')
+
+    def get_status(self, obj):
+        return obj.get_status_display()
 
 
 class CreateCollectionSerializer(serializers.ModelSerializer):
@@ -19,7 +27,7 @@ class CreateCollectionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Collection
-        fields = ('client', 'worker', 'route', 'collection_date', 'container_number', 'price_per_liter', 'total_price', 'status')
+        fields = ('client', 'worker', 'route', 'collection_date', 'container_number', 'price_per_liter', 'total_price', 'status', 'notes')
 
     def create(self, validated_data):
         try:
@@ -38,7 +46,7 @@ class UpdateCollectionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Collection
-        fields = ('client', 'worker', 'route', 'collection_date', 'liters_collected', 'price_per_liter', 'total_price', 'status')
+        fields = ('client', 'worker', 'route', 'collection_date', 'liters_collected', 'price_per_liter', 'total_price', 'status', 'notes')
 
     def update(self, instance, validated_data):
         try:
@@ -59,7 +67,7 @@ class PartialUpdateCollectionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Collection
-        fields = ('client', 'worker', 'route', 'collection_date', 'liters_collected', 'price_per_liter', 'total_price', 'status')
+        fields = ('client', 'worker', 'route', 'collection_date', 'liters_collected', 'price_per_liter', 'total_price', 'status', 'notes')
 
     def update(self, instance, validated_data):
         try:

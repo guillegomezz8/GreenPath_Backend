@@ -32,6 +32,9 @@ class CollectionAdmin(admin.ModelAdmin):
         ('Cálculos', {
             'fields': ('liters_collected', 'price_per_liter', 'total_price'),
         }),
+        ('Información Adicional', {
+            'fields': ('notes',),
+        }),
     )
 
     actions = ['mark_as_completed']

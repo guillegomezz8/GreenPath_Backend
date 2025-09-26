@@ -1,22 +1,59 @@
 from rest_framework import serializers
+
+import logging
+
+from apps.base.logger import configure_logging
+from apps.user.api.serializers.user_nested_serializers import UserNestedWriteSerializer
 from apps.user.models.worker import Worker
 from apps.user.models.client import Client
 from apps.route.models import Route
-import logging
-from apps.base.logger import configure_logging
 
 configure_logging()
 
 
 class WorkerSerializer(serializers.ModelSerializer):
     photo = serializers.ImageField(required=False, allow_null=True)
+    email = serializers.SerializerMethodField()
+    username = serializers.SerializerMethodField()
+    assigned_trucks = serializers.SerializerMethodField()
+    total_liters_collected = serializers.SerializerMethodField()
+    total_routes = serializers.IntegerField(source='routes.count', read_only=True)
+    total_collections = serializers.IntegerField(source='collections.count', read_only=True)
+    total_incomes = serializers.SerializerMethodField()
 
     class Meta:
         model = Worker
         exclude = ('modified_date', 'deleted_date', 'created_date')
 
+    def get_email(self, obj):
+        return obj.user.email
+
+    def get_username(self, obj):
+        return obj.user.username
+    
+    def get_assigned_trucks(self, obj):
+        if hasattr(obj, 'truck'):
+            return f"{obj.truck.registration_number} ({obj.truck.brand} {obj.truck.model})"
+        return "Sin asignar"
+
+    def get_total_liters_collected(self, obj):
+        total = 0
+        collections = obj.collections.all()
+        for collection in collections:
+            total += collection.liters_collected
+        return total
+    
+    def get_total_incomes(self, obj):
+        total = 0
+        collections = obj.collections.all()
+        for collection in collections:
+            total += collection.total_price
+        return total
 
 class CreateWorkerSerializer(serializers.ModelSerializer):
+    get_access = serializers.BooleanField(required=True, write_only=True)
+    user = UserNestedWriteSerializer(required=True)
+    
     name = serializers.CharField(required=True)
     surname = serializers.CharField(required=True)
     address = serializers.CharField(required=True)

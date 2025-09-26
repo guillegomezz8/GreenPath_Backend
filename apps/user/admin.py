@@ -27,15 +27,15 @@ class UserAdmin(admin.ModelAdmin):
 
 @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'phone', 'city', 'cif')
+    list_display = ('id', 'name', 'phone', 'city', 'cif', 'disabled')
     search_fields = ('name', 'cif', 'phone')
-    list_filter = ('city',)
+    list_filter = ('city', 'disabled')
     list_select_related = ('user',)
     readonly_fields = ('id',)
 
     fieldsets = (
         ('Información de Cliente', {
-            'fields': ('id', 'user', 'name', 'phone', 'cif')
+            'fields': ('id', 'user', 'name', 'phone', 'cif', 'disabled')
         }),
         ('Ubicación', {
             'fields': ('address', 'city', 'postal_code', 'country', 'location')

@@ -4,6 +4,7 @@ import logging
 
 from apps.base.logger import configure_logging
 from apps.user.api.serializers.user_nested_serializers import UserNestedWriteSerializer
+from apps.user.models.client import Client
 from apps.user.models.worker import Worker
 from apps.route.models import Route
 
@@ -178,3 +179,26 @@ class PartialUpdateWorkerSerializer(serializers.ModelSerializer):
         except Exception as e:
             logging.error(f"Error updating worker with id {instance.id}: {str(e)}")
             raise serializers.ValidationError(f"Error actualizando trabajador: {str(e)}")
+        
+class ClientSimpleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Client
+        fields = ["id", "name"]
+
+
+class RouteSimpleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Route
+        fields = ["id", "name"]
+
+
+class MonthlyDataSerializer(serializers.Serializer):
+    liters = serializers.DecimalField(max_digits=10, decimal_places=2)
+    income = serializers.DecimalField(max_digits=10, decimal_places=2)
+
+
+class DashboardSerializer(serializers.Serializer):
+    clients = ClientSimpleSerializer(many=True)
+    workers = WorkerSerializer(many=True)
+    routes = RouteSimpleSerializer(many=True)
+    dashboard = serializers.DictField(child=MonthlyDataSerializer())

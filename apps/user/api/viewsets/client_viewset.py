@@ -115,6 +115,8 @@ class ClientViewSet(viewsets.ModelViewSet):
                 if company:
                     client.companies.add(company)
 
+                client.save()
+
             logging.info(f"[client_viewset - perform_create] Cliente creado con éxito: {client.id}")
         except Exception as e:
             logging.error(f"[client_viewset - perform_create] Error creando cliente: {str(e)}")

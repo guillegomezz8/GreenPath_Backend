@@ -20,6 +20,8 @@ class WorkerSerializer(serializers.ModelSerializer):
     total_routes = serializers.IntegerField(source='routes.count', read_only=True)
     total_collections = serializers.IntegerField(source='collections.count', read_only=True)
     total_incomes = serializers.SerializerMethodField()
+    disabled = serializers.BooleanField()
+    role = serializers.CharField(source='get_role_display', read_only=True)    
 
     class Meta:
         model = Worker
@@ -59,19 +61,15 @@ class CreateWorkerSerializer(serializers.ModelSerializer):
     address = serializers.CharField(required=True)
     phone = serializers.CharField(required=True)
     dni = serializers.CharField(required=True)
+    birth_date = serializers.DateField(required=False)
     photo = serializers.ImageField(required=False, allow_null=True)
 
     class Meta:
         model = Worker
-        fields = ('user', 'role', 'company', 'name', 'surname', 'address', 'phone', 'dni', 'photo')
-
-    def create(self, validated_data):
-        try:
-            worker = Worker.objects.create(**validated_data)
-            return worker
-        except Exception as e:
-            logging.error(f"Error creating worker: {str(e)}")
-            raise serializers.ValidationError(f"Error creating worker: {str(e)}")
+        fields = ('get_access', 'user', 'role',
+                  'company', 'name', 'surname', 
+                  'address', 'phone', 'dni',
+                  'birth_date', 'photo')
 
 
 class UpdateWorkerSerializer(serializers.ModelSerializer):
@@ -80,17 +78,29 @@ class UpdateWorkerSerializer(serializers.ModelSerializer):
     address = serializers.CharField(required=True)
     phone = serializers.CharField(required=True)
     dni = serializers.CharField(required=True)
+    birth_date = serializers.DateField(required=False)
     photo = serializers.ImageField(required=False, allow_null=True)
+
+    email = serializers.EmailField(source='user.email', read_only=True)
 
     class Meta:
         model = Worker
-        fields = ('role', 'company', 'name', 'surname', 'address', 'phone', 'dni', 'photo')
+        fields = ('role', 'company', 'name', 'surname', 'address', 'phone', 'dni', 'photo', 'email', 'birth_date')
 
     def update(self, instance, validated_data):
         try:
+            user_data = validated_data.pop('user', {})
+            email = user_data.get('email')
+
             for attr, value in validated_data.items():
                 setattr(instance, attr, value)
+
             instance.save()
+
+            if email and hasattr(instance, 'user'):
+                instance.user.email = email
+                instance.user.save(update_fields=["email"])
+
             return instance
         except Exception as e:
             logging.error(f"Error updating worker with id {instance.id}: {str(e)}")
@@ -103,17 +113,29 @@ class PartialUpdateWorkerSerializer(serializers.ModelSerializer):
     address = serializers.CharField(required=False)
     phone = serializers.CharField(required=False)
     dni = serializers.CharField(required=False)
+    birth_date = serializers.DateField(required=False)
     photo = serializers.ImageField(required=False, allow_null=True)
+
+    email = serializers.EmailField(source='user.email', read_only=True)
 
     class Meta:
         model = Worker
-        fields = ('role', 'company', 'name', 'surname', 'address', 'phone', 'dni', 'photo')
+        fields = ('role', 'company', 'name', 'surname', 'address', 'phone', 'dni', 'photo', 'email', 'birth_date')
 
     def update(self, instance, validated_data):
         try:
+            user_data = validated_data.pop('user', {})
+            email = user_data.get('email')
+
             for attr, value in validated_data.items():
                 setattr(instance, attr, value)
+
             instance.save()
+
+            if email and hasattr(instance, 'user'):
+                instance.user.email = email
+                instance.user.save(update_fields=["email"])
+
             return instance
         except Exception as e:
             logging.error(f"Error updating worker with id {instance.id}: {str(e)}")

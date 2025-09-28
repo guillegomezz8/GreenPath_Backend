@@ -1,6 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
+from rest_framework import serializers
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
 import django_filters
@@ -19,13 +20,9 @@ from apps.base.permissions import IsOwnerUser
 from apps.collection.api.serializers.collection_serializers import CollectionSerializer
 from apps.user.api.serializers.worker_serializers import WorkerSerializer,CreateWorkerSerializer,UpdateWorkerSerializer,PartialUpdateWorkerSerializer,DashboardSerializer
 from apps.base.literals import (
-    ERROR,
-    ERROR_CREATING_WORKER,
     INTERNAL_ERROR,
     DETAILS,
-    USER_COMPANY_DOES_NOT_EXIST,
-    ONLY_OWNERS_CAN_CREATE_WORKERS,
-    ERROR_GETTING_DASHBOARD_DATA
+    ALREADY_ACTIVE_WORKER
 )
 
 configure_logging()
@@ -96,7 +93,6 @@ class WorkerViewSet(viewsets.ModelViewSet):
             worker_data = dict(serializer.validated_data)
             user_data = worker_data.pop("user")
             get_access = worker_data.pop("get_access", False)
-            companies = worker_data.pop("companies", None)
 
             company = getattr(getattr(self.request.user, "worker_profile", None), "company", None)
 
@@ -119,15 +115,15 @@ class WorkerViewSet(viewsets.ModelViewSet):
 
                 worker = Worker.objects.create(user=user, **worker_data)
 
-                if companies:
-                    worker.companies.set(companies)
-
                 if company:
-                    worker.companies.add(company)
+                    worker.company = company
+                
+                worker.save()
 
+            logging.info(f"[worker_viewset - perform_create] Trabajador creado con éxito: {worker.id}")
         except Exception as e:
             logging.error(f"[worker_viewset - perform_create] Error creando trabajador: {str(e)}")
-            raise Exception({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_400_BAD_REQUEST)
+            raise serializers.ValidationError({"detail": str(e)})
         
     def perform_destroy(self, instance):
         try:
@@ -176,4 +172,26 @@ class WorkerViewSet(viewsets.ModelViewSet):
 
         except Exception as e:
             logging.error(f"[client_viewset - list] Error al listar clientes: {str(e)}")
+            return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_400_BAD_REQUEST)
+        
+    @action(detail=True, methods=['put'])
+    def activate(self, request, pk=None):
+        try:
+            logging.info(f"[worker_viewset - activate] Habilitando trabajador {pk} por usuario {request.user.id}")
+            
+            worker = self.get_object()
+            
+            if not worker.disabled:
+                return Response({DETAILS: ALREADY_ACTIVE_WORKER}, status=status.HTTP_400_BAD_REQUEST)
+            
+            worker.disabled = False
+            worker.save(update_fields=['disabled'])
+            
+            logging.info(f"[worker_viewset - activate] Trabajador habilitado con éxito: {worker.id}")
+            
+            serializer = self.get_serializer(worker)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logging.error(f"[worker_viewset - activate] Error habilitando trabajador: {str(e)}")
             return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_400_BAD_REQUEST)

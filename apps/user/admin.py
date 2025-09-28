@@ -60,7 +60,7 @@ class WorkerAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('Información Personal', {
-            'fields': ('id', 'user', 'name', 'surname', 'dni', 'phone', 'photo', 'photo_preview')
+            'fields': ('id', 'user', 'name', 'surname', 'dni', 'phone', 'photo', 'photo_preview', 'disabled')
         }),
         ('Ubicación', {
             'fields': ('address',)

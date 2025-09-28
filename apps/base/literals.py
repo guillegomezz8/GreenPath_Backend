@@ -22,6 +22,7 @@ ONLY_OWNERS_CAN_CREATE_COMPANIES = 'Solo los dueños pueden crear empresas'
 #Trabajadores
 ERROR_CREATING_WORKER = 'Error creando trabajador'
 ONLY_OWNERS_CAN_CREATE_WORKERS = 'Solo los dueños pueden crear trabajadores'
+ALREADY_ACTIVE_WORKER = 'El trabajador ya está activo'
 
 #Clientes
 ERROR_CREATING_CLIENT = 'Error creando cliente'

@@ -179,6 +179,7 @@ class PartialUpdateWorkerSerializer(serializers.ModelSerializer):
         except Exception as e:
             logging.error(f"Error updating worker with id {instance.id}: {str(e)}")
             raise serializers.ValidationError(f"Error actualizando trabajador: {str(e)}")
+   
         
 class ClientSimpleSerializer(serializers.ModelSerializer):
     class Meta:

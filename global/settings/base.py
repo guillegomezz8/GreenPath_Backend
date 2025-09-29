@@ -198,6 +198,8 @@ EMAIL_PORT=os.getenv("SMTP_PORT", 587)
 EMAIL_HOST_USER=os.getenv("EMAIL_USER", "xxx@xxx.com")
 EMAIL_HOST_PASSWORD=os.getenv("EMAIL_PASSWORD", "XXXX")
 EMAIL_USE_TLS = True 
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "xxx")
+
 
 DATABASES = {
     "default": {

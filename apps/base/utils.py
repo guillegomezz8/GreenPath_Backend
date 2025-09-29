@@ -1,12 +1,15 @@
 from datetime import datetime
-import logging
+import logging, requests
 import secrets, string
+
+from apps.base.logger import configure_logging
+
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.utils import timezone
 from django.utils.html import strip_tags
 from django.core.mail import send_mail
-from apps.base.logger import configure_logging
+from django.template import TemplateDoesNotExist
 
 configure_logging()
 
@@ -65,4 +68,50 @@ def send_access_email(user, temp_password, subject=None):
         return True
     except Exception as e:
         logging.error(f"send_access_email: error enviando email a {getattr(user, 'email', None)}: {e}")
+        return False
+
+def send_access_email_production(user, temp_password, subject=None):
+    try:
+        to_email = getattr(user, "email", None)
+        if not to_email:
+            logging.warning("send_access_email: usuario sin email: %s", user)
+            return False
+
+        if not settings.RESEND_API_KEY:
+            logging.warning("send_access_email: falta RESEND_API_KEY, no se envía.")
+            return False 
+
+        subject = subject or "Acceso a GreenPath como Trabajador"
+        ctx = {"username": user.username, "temp_password": temp_password, "year": timezone.now().year}
+
+        try:
+            html = render_to_string("email/new_user.html", ctx)
+        except TemplateDoesNotExist:
+            html = (
+                f"<p>Hola {user.username},</p>"
+                f"<p>Tu contraseña temporal es: <b>{temp_password}</b></p>"
+                "<p>Por favor, cámbiala al iniciar sesión.</p>"
+            )
+        text = strip_tags(html)
+
+        r = requests.post(
+            "https://api.resend.com/emails",
+            headers={
+                "Authorization": f"Bearer {settings.RESEND_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "from": settings.EMAIL_HOST_USER,
+                "to": [to_email],
+                "subject": subject,
+                "html": html,
+                "text": text,
+            },
+            timeout=10,
+        )
+        if not r.ok:
+            logging.error("send_access_email: fallo API %s %s %s", r.status_code, r.text, r.headers)
+        return r.ok
+    except Exception as e:
+        logging.exception("send_access_email: error: %s", e)
         return False

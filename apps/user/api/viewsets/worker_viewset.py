@@ -107,7 +107,7 @@ class WorkerViewSet(viewsets.ModelViewSet):
                 if get_access:
                     temp_password = gen_password()
                     user.set_password(temp_password)
-                    transaction.on_commit(lambda: send_access_email(user, temp_password, subject="Acceso a GreenPath como Trabajador"))
+                    send_access_email(user, temp_password, subject="Acceso a GreenPath como Trabajador")
                 else:
                     user.set_unusable_password()
 

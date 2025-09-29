@@ -96,9 +96,6 @@ class WorkerViewSet(viewsets.ModelViewSet):
 
             company = getattr(getattr(self.request.user, "worker_profile", None), "company", None)
 
-            temp_password = None
-            created_user = None
-            
             with transaction.atomic():
                 user = User.objects.create_user(
                     username=user_data["username"],
@@ -106,14 +103,15 @@ class WorkerViewSet(viewsets.ModelViewSet):
                     password=None,
                 )
 
+                temp_password = None
                 if get_access:
                     temp_password = gen_password()
                     user.set_password(temp_password)
+                    transaction.on_commit(lambda: send_access_email(user, temp_password, subject="Acceso a GreenPath como Trabajador"))
                 else:
                     user.set_unusable_password()
 
                 user.save(update_fields=["password"])
-                created_user = user
 
                 worker = Worker.objects.create(user=user, **worker_data)
 
@@ -121,19 +119,10 @@ class WorkerViewSet(viewsets.ModelViewSet):
                     worker.company = company
                 
                 worker.save()
-                
-                logging.info(f"[worker_viewset - perform_create] Trabajador creado con éxito: {worker.id}")
 
-            if get_access and temp_password and created_user:
-                logging.info(f"[worker_viewset - perform_create] Intentando enviar email a {created_user.email}")
-                email_sent = send_access_email(created_user, temp_password, subject="Acceso a GreenPath como Trabajador")
-                if email_sent:
-                    logging.info(f"[worker_viewset - perform_create] Email enviado exitosamente a {created_user.email}")
-                else:
-                    logging.warning(f"[worker_viewset - perform_create] No se pudo enviar email a {created_user.email}")
-                    
+            logging.info(f"[worker_viewset - perform_create] Trabajador creado con éxito: {worker.id}")
         except Exception as e:
-            logging.error(f"[worker_viewset - perform_create] Error creando trabajador: {str(e)}", exc_info=True)
+            logging.error(f"[worker_viewset - perform_create] Error creando trabajador: {str(e)}")
             raise serializers.ValidationError({"detail": str(e)})
         
     def perform_destroy(self, instance):

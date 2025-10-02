@@ -14,6 +14,9 @@ INCORRECT_CREDENTIALS = 'Contraseña o nombre de usuario incorrectos'
 USER_DOESNT_EXISTS = 'No existe este usuario.'
 SUCCESSFULL_LOGOUT = 'Sesión cerrada correctamente.'
 INTERNAL_ERROR = 'Error interno:'
+USER_NOT_FOUND = 'Usuario no encontrado'
+INVALID_EMAIL_RECEIVED = 'Email inválido recibido de Google'
+INVALID_GOOGLE_ID_TOKEN = 'ID token de Google inválido'
 
 #Empresas
 ERROR_CREATING_COMPANY = 'Error creando empresa'

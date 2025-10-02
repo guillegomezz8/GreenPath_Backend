@@ -20,7 +20,6 @@ class GoogleLoginAPIView(APIView):
 
     def post(self, request, *args, **kwargs):
         try:
-            # Aceptar tanto "credential" como "token"
             credential = request.data.get("credential") or request.data.get("token")
             
             if not credential:
@@ -47,7 +46,6 @@ class GoogleLoginAPIView(APIView):
             if not email or not idinfo.get("email_verified"):
                 return Response({ERROR: INVALID_EMAIL_RECEIVED}, status=status.HTTP_400_BAD_REQUEST)
 
-            # FIX: Usar .first() en lugar de devolver QuerySet
             user = User.objects.filter(email__iexact=email).first()
             
             if not user:
@@ -56,14 +54,23 @@ class GoogleLoginAPIView(APIView):
             refresh = RefreshToken.for_user(user)
             access = str(refresh.access_token)
 
+            if user.role_type == "client":
+                role = 'Cliente'
+            elif user.role_type == "owner":
+                role = 'Propietario'
+            elif user.role_type == "worker":
+                role = 'Trabajador'
+            else:
+                role = 'Desconocido'
+
             data = {
-                "t": access,  # Cambiar "token" por "t" según tu frontend espera
+                "t": access,
                 "refresh-token": str(refresh),
                 "user": {
                     "id": user.id,
                     "username": user.username,
                     "email": user.email,
-                    "role_type": user.role_type,
+                    "role_type": role,
                 }
             }
 

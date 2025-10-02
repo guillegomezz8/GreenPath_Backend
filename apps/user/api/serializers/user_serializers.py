@@ -5,11 +5,20 @@ from apps.user.models.user import User
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
-    role_type = serializers.CharField(read_only=True)
+    role_type = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = ('username', 'email', 'role_type')
+
+    def get_role_type(self, obj):
+        if obj.role_type == "client":
+            return 'Cliente'
+        elif obj.role_type == "owner":
+            return 'Propietario'
+        elif obj.role_type == "worker":
+            return 'Trabajador'
+        return 'Desconocido'
 
 class CreateUserSerializer(serializers.ModelSerializer):
     class Meta:

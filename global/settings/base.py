@@ -197,14 +197,13 @@ EMAIL_HOST=os.getenv("SMTP_SERVER", "")
 EMAIL_PORT=os.getenv("SMTP_PORT", 587)
 EMAIL_HOST_USER=os.getenv("EMAIL_USER", "xxx@xxx.com")
 EMAIL_HOST_PASSWORD=os.getenv("EMAIL_PASSWORD", "XXXX")
-EMAIL_USE_TLS = True 
-RESEND_API_KEY = os.getenv("RESEND_API_KEY", "xxx")
-
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True") == "True"
+EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "False") == "True"
 
 DATABASES = {
     "default": {
-        "ENGINE": os.getenv("DB_ENGINE", ""), 
-        "NAME": os.getenv("DB_NAME",""),
+        "ENGINE": os.getenv("DB_ENGINE", ""),
+        "NAME": os.getenv("DB_NAME", ""),
         "USER": os.getenv("DB_USER", ""),
         "PASSWORD": os.getenv("DB_PASSWORD", ""),
         "HOST": os.getenv("DB_HOST", ""),

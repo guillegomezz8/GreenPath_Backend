@@ -12,7 +12,7 @@ from django_filters.rest_framework import FilterSet, CharFilter, DjangoFilterBac
 import logging
 
 from apps.base.logger import configure_logging
-from apps.base.utils import gen_password, send_access_email_production
+from apps.base.utils import gen_password, send_access_email, send_access_email_google_api
 from apps.user.models.client import Client
 from apps.user.models.user import User
 from apps.collection.models import Collection
@@ -101,7 +101,7 @@ class ClientViewSet(viewsets.ModelViewSet):
                 if get_access:
                     temp_password = gen_password()
                     user.set_password(temp_password)
-                    transaction.on_commit(lambda: send_access_email_production(user, temp_password, subject="Acceso a GreenPath como Cliente"))
+                    transaction.on_commit(lambda: send_access_email_google_api(user, temp_password, subject="Acceso a GreenPath como Cliente"))
                 else:
                     user.set_unusable_password()
 

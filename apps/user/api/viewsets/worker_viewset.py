@@ -13,7 +13,7 @@ from datetime import datetime
 import logging
 
 from apps.base.logger import configure_logging
-from apps.base.utils import gen_password, send_access_email_production
+from apps.base.utils import gen_password, send_access_email, send_access_email_google_api
 from apps.user.models.user import User
 from apps.user.models.worker import Worker
 from apps.base.permissions import IsOwnerUser
@@ -107,7 +107,7 @@ class WorkerViewSet(viewsets.ModelViewSet):
                 if get_access:
                     temp_password = gen_password()
                     user.set_password(temp_password)
-                    transaction.on_commit(lambda: send_access_email_production(user, temp_password, subject="Acceso a GreenPath como Trabajador"))
+                    transaction.on_commit(lambda: send_access_email_google_api(user, temp_password, subject="Acceso a GreenPath como Trabajador"))
                 else:
                     user.set_unusable_password()
 

@@ -149,15 +149,14 @@ class TruckViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         try:
             instance = self.get_object()
-            new_company = serializer.validated_data.get("company", instance.company)
-
+            new_company = serializer.validated_data.get("company") or instance.company
             user = self.request.user
             if not (user.is_staff or user.is_superuser):
                 if getattr(user, "role_type", None) != "owner" or _user_company_id(user) != new_company.id:
                     logging.error("[truck_viewset - perform_update] Solo puedes actualizar camiones de tu empresa.")
                     return Response({DETAILS: ONLY_UPDATE_TRUCKS_SAME_COMPANY}, status=status.HTTP_400_BAD_REQUEST)
 
-            serializer.save()
+            serializer.save(company=new_company)
         except Exception as e:
             logging.error(f"[truck_viewset - perform_update] Error actualizando camión: {str(e)}")
             return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

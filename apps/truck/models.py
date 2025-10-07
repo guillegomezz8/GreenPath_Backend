@@ -5,7 +5,7 @@ from apps.base.enums import TruckStatus, Fuel
 
 
 class Truck(BaseModel):
-    registration_number = models.CharField('Matrícula', max_length=255)
+    registration_number = models.CharField('Matrícula', max_length=255, unique=True)
     brand = models.CharField('Marca', max_length=64, blank=True, null=True)
     model = models.CharField('Modelo', max_length=255, blank=True, null=True)
     year = models.IntegerField('Año', blank=True, null=True)

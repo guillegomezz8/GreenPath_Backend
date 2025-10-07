@@ -133,7 +133,7 @@ class WorkerViewSet(viewsets.ModelViewSet):
             logging.info(f"[worker_viewset - perform_destroy] Trabajador deshabilitado con éxito: {instance.id}")
         except Exception as e:
             logging.error(f"[worker_viewset - perform_destroy] Error eliminando trabajador: {str(e)}")
-            return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
     def list(self, request):
         try:
@@ -172,7 +172,7 @@ class WorkerViewSet(viewsets.ModelViewSet):
 
         except Exception as e:
             logging.error(f"[client_viewset - list] Error al listar clientes: {str(e)}")
-            return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
     @action(detail=True, methods=['put'])
     def activate(self, request, pk=None):
@@ -182,7 +182,7 @@ class WorkerViewSet(viewsets.ModelViewSet):
             worker = self.get_object()
             
             if not worker.disabled:
-                return Response({DETAILS: ALREADY_ACTIVE_WORKER}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({DETAILS: ALREADY_ACTIVE_WORKER}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
             worker.disabled = False
             worker.save(update_fields=['disabled'])
@@ -194,4 +194,4 @@ class WorkerViewSet(viewsets.ModelViewSet):
             
         except Exception as e:
             logging.error(f"[worker_viewset - activate] Error habilitando trabajador: {str(e)}")
-            return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

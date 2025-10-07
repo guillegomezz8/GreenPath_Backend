@@ -4,13 +4,16 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
 
+import django_filters
 from django_filters.rest_framework import FilterSet, CharFilter, NumberFilter, DjangoFilterBackend
+from django.db.models import Q, Count
 
 import logging
 
 from apps.base.logger import configure_logging
 from apps.base.permissions import IsOwnerUser
 from apps.truck.models import Truck
+from apps.base.enums import TruckStatus
 from apps.user.models.worker import Worker
 from apps.truck.api.serializers.truck_serializers import (
     TruckSerializer,
@@ -47,9 +50,16 @@ class TruckFilter(FilterSet):
     company = NumberFilter(field_name="company", lookup_expr="exact")
     driver = NumberFilter(field_name="driver", lookup_expr="exact")
 
+    search = django_filters.CharFilter(method="filter_search")
+
     class Meta:
         model = Truck
         fields = ["registration_number", "brand", "model", "status", "fuel", "year", "company", "driver"]
+        
+    def filter_search(self, queryset, name, value):
+        return queryset.filter(
+            Q(registration_number__icontains=value) | Q(brand__icontains=value) | Q(model__icontains=value)
+        )
 
 
 def _user_company_id(user):
@@ -150,6 +160,47 @@ class TruckViewSet(viewsets.ModelViewSet):
             serializer.save()
         except Exception as e:
             logging.error(f"[truck_viewset - perform_update] Error actualizando camión: {str(e)}")
+            return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+    def list(self, request):
+        try:
+            logging.info(f"[truck_viewset - list] Listando camiones para usuario {request.user.id}")
+            base_queryset = self.get_queryset()
+            filtered_queryset = self.filter_queryset(base_queryset)
+
+            counts = base_queryset.aggregate(
+                active=Count('id', filter=Q(status=TruckStatus.ACTIVE)),
+                in_service=Count('id', filter=Q(status=TruckStatus.IN_SERVICE)),
+                maintenance=Count('id', filter=Q(status=TruckStatus.MAINTENANCE)),
+                out_of_service=Count('id', filter=Q(status=TruckStatus.OUT_OF_SERVICE)),
+                decommissioned=Count('id', filter=Q(status=TruckStatus.DECOMMISSIONED)),
+            )
+
+            page = self.paginate_queryset(filtered_queryset)
+
+            if page is not None:
+                items = page
+                meta = {
+                    "count": self.paginator.page.paginator.count,
+                    "next": self.paginator.get_next_link(),
+                    "previous": self.paginator.get_previous_link(),
+                }
+            else:
+                items = filtered_queryset
+                meta = {}
+
+            serializer = self.get_serializer(items, many=True)
+
+            response = {
+                **meta,  
+                "results": serializer.data,
+                "counts": counts,
+            }
+
+            return Response(response, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logging.error(f"[truck_viewset - list] Error al listar camiones: {str(e)}")
             return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
     @action(detail=False, methods=["post"], url_path=r"assign-driver/(?P<worker_id>\d+)")

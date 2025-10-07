@@ -12,6 +12,8 @@ configure_logging()
 class TruckSerializer(serializers.ModelSerializer):
     driver_id = serializers.IntegerField(source="driver.id", read_only=True)
     driver_name = serializers.SerializerMethodField()
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    fuel_display = serializers.CharField(source="get_fuel_display", read_only=True)
 
     class Meta:
         model = Truck

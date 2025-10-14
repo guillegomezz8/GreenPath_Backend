@@ -171,9 +171,9 @@ Módulo analítico para visualizar métricas y evolución del negocio.
 | Fase | Módulos | Estado | Fecha Estimada |
 |------|----------|--------|----------------|
 | 1 | **Clientes**, **Trabajadores**, **Camiones** | ✅ Completados | Octubre 2025 |
-| 2 | **Dashboard** | ⚙️ En desarrollo | Noviembre 2025 |
-| 3 | **Zonas de Recogida**, **Rutas** | 🕓 Pendientes | Diciembre 2025 |
-| 4 | **Recogidas**, **Estadísticas** | 🕓 Pendientes | Enero 2026 |
+| 2 | **Zonas de Recogida**, **Rutas** | ⚙️ En desarrollo | Noviembre 2025 |
+| 3 | **Recogidas**, **Estadísticas** | 🕓 Pendientes | Diciembre 2025 |
+| 4 | **Dashboard** | 🕓 Pendientes | Enero 2026 |
 | 5 | **Aplicación para trabajadores y clientes** | ⏳ Fase futura | 2026 |
 
 ---
@@ -192,6 +192,6 @@ Módulo analítico para visualizar métricas y evolución del negocio.
 
 ---
 
-✍️ **Autor:** Guillermo [Tu Apellido]  
+✍️ **Autor:** Guillermo Gómez Romero
 🎓 **Trabajo Fin de Grado – Ingeniería Informática**  
 🏫 **Universidad de Sevilla**

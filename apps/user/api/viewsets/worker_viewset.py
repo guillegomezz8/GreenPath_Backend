@@ -13,7 +13,7 @@ from datetime import datetime
 import logging
 
 from apps.base.logger import configure_logging
-from apps.base.utils import gen_password, send_access_email
+from apps.base.utils import gen_password, send_access_email, send_access_email_google_api
 from apps.user.models.user import User
 from apps.user.models.worker import Worker
 from apps.base.permissions import IsOwnerUser
@@ -107,7 +107,7 @@ class WorkerViewSet(viewsets.ModelViewSet):
                 if get_access:
                     temp_password = gen_password()
                     user.set_password(temp_password)
-                    send_access_email(user, temp_password, subject="Acceso a GreenPath como Trabajador")
+                    transaction.on_commit(lambda: send_access_email_google_api(user, temp_password, subject="Acceso a GreenPath como Trabajador"))
                 else:
                     user.set_unusable_password()
 
@@ -133,7 +133,7 @@ class WorkerViewSet(viewsets.ModelViewSet):
             logging.info(f"[worker_viewset - perform_destroy] Trabajador deshabilitado con éxito: {instance.id}")
         except Exception as e:
             logging.error(f"[worker_viewset - perform_destroy] Error eliminando trabajador: {str(e)}")
-            return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
     def list(self, request):
         try:
@@ -172,7 +172,7 @@ class WorkerViewSet(viewsets.ModelViewSet):
 
         except Exception as e:
             logging.error(f"[client_viewset - list] Error al listar clientes: {str(e)}")
-            return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
     @action(detail=True, methods=['put'])
     def activate(self, request, pk=None):
@@ -182,7 +182,7 @@ class WorkerViewSet(viewsets.ModelViewSet):
             worker = self.get_object()
             
             if not worker.disabled:
-                return Response({DETAILS: ALREADY_ACTIVE_WORKER}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({DETAILS: ALREADY_ACTIVE_WORKER}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
             worker.disabled = False
             worker.save(update_fields=['disabled'])
@@ -194,4 +194,4 @@ class WorkerViewSet(viewsets.ModelViewSet):
             
         except Exception as e:
             logging.error(f"[worker_viewset - activate] Error habilitando trabajador: {str(e)}")
-            return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

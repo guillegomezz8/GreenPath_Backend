@@ -84,7 +84,7 @@ class RouteViewSet(viewsets.ModelViewSet):
             logging.error(f"Error creando ruta: {str(e)}")
             raise Exception(f"{ERROR}: {ERROR_CREATING_ROUTE} - {str(e)}")
 
-    @action(detail=True, methods=['post'], url_path='generate-range-routes')
+    @action(detail=True, methods=["post"], url_path="generate-range-routes")
     def generate_range_routes(self, request, pk=None):
         """
         POST /routes/{id}/generate-range-routes/

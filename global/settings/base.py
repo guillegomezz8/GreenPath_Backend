@@ -176,7 +176,6 @@ SPECTACULAR_SETTINGS = {
     ],
 }
 
-
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
@@ -193,20 +192,21 @@ STATICFILES_DIRS = [BASE_DIR / "global" / "static"]
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-EMAIL_HOST=os.environ.get("SMTP_SERVER", "")
-EMAIL_PORT=os.environ.get("SMTP_PORT", 587)
-EMAIL_HOST_USER=os.environ.get("EMAIL_USER", "greenpath@soporte.com")
-EMAIL_HOST_PASSWORD=os.environ.get("EMAIL_PASSWORD", "XXXX")
-EMAIL_USE_TLS = True 
+EMAIL_HOST=os.getenv("SMTP_SERVER", "")
+EMAIL_PORT=os.getenv("SMTP_PORT", 587)
+EMAIL_HOST_USER=os.getenv("EMAIL_USER", "xxx@xxx.com")
+EMAIL_HOST_PASSWORD=os.getenv("EMAIL_PASSWORD", "XXXX")
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True") == "True"
+EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "False") == "True"
 
 DATABASES = {
     "default": {
-        "ENGINE": os.environ.get("DB_ENGINE", ""), 
-        "NAME": os.environ.get("DB_NAME",""),
-        "USER": os.environ.get("DB_USER", ""),
-        "PASSWORD": os.environ.get("DB_PASSWORD", ""),
-        "HOST": os.environ.get("DB_HOST", ""),
-        "PORT": os.environ.get("DB_PORT", ""),
+        "ENGINE": os.getenv("DB_ENGINE", ""),
+        "NAME": os.getenv("DB_NAME", ""),
+        "USER": os.getenv("DB_USER", ""),
+        "PASSWORD": os.getenv("DB_PASSWORD", ""),
+        "HOST": os.getenv("DB_HOST", ""),
+        "PORT": os.getenv("DB_PORT", ""),
     }
 }
 
@@ -214,3 +214,5 @@ STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
 }
+
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")

@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from apps.truck.models import Truck
 from apps.company.models import Company
-from apps.user.models.user import User
+from apps.user.models.worker import Worker
 from apps.base.enums import TruckStatus, Fuel
 import logging
 from apps.base.logger import configure_logging
@@ -10,9 +10,24 @@ configure_logging()
 
 
 class TruckSerializer(serializers.ModelSerializer):
+    driver_id = serializers.IntegerField(source="driver.id", read_only=True)
+    driver_name = serializers.SerializerMethodField()
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    fuel_display = serializers.CharField(source="get_fuel_display", read_only=True)
+
     class Meta:
         model = Truck
         exclude = ("modified_date", "deleted_date", "created_date")
+
+    def get_driver_id(self, obj):
+        if obj.driver:
+            return obj.driver.id
+        return None
+
+    def get_driver_name(self, obj):
+        if obj.driver:
+            return obj.driver.name + " " + obj.driver.surname
+        return "-"
 
 
 class CreateTruckSerializer(serializers.ModelSerializer):
@@ -23,7 +38,7 @@ class CreateTruckSerializer(serializers.ModelSerializer):
     capacity = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, allow_null=True)
     status = serializers.ChoiceField(choices=TruckStatus.choices, required=False)
     fuel = serializers.ChoiceField(choices=Fuel.choices, required=False, allow_null=True)
-    driver = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False, allow_null=True)
+    driver = serializers.PrimaryKeyRelatedField(queryset=Worker.objects.all(), required=False, allow_null=True)
     company = serializers.PrimaryKeyRelatedField(queryset=Company.objects.all(), required=False, allow_null=True)
 
     class Meta:
@@ -39,7 +54,7 @@ class UpdateTruckSerializer(serializers.ModelSerializer):
     capacity = serializers.DecimalField(max_digits=10, decimal_places=2, required=True, allow_null=True)
     status = serializers.ChoiceField(choices=TruckStatus.choices, required=True)
     fuel = serializers.ChoiceField(choices=Fuel.choices, required=True, allow_null=True)
-    driver = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=True, allow_null=True)
+    driver = serializers.PrimaryKeyRelatedField(queryset=Worker.objects.all(), required=False, allow_null=True)
     company = serializers.PrimaryKeyRelatedField(queryset=Company.objects.all(), required=True, allow_null=True)
 
     class Meta:
@@ -65,7 +80,7 @@ class PartialUpdateTruckSerializer(serializers.ModelSerializer):
     capacity = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, allow_null=True)
     status = serializers.ChoiceField(choices=TruckStatus.choices, required=False)
     fuel = serializers.ChoiceField(choices=Fuel.choices, required=False, allow_null=True)
-    driver = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False, allow_null=True)
+    driver = serializers.PrimaryKeyRelatedField(queryset=Worker.objects.all(), required=False, allow_null=True)
     company = serializers.PrimaryKeyRelatedField(queryset=Company.objects.all(), required=False, allow_null=True)
 
     class Meta:
@@ -81,3 +96,16 @@ class PartialUpdateTruckSerializer(serializers.ModelSerializer):
         except Exception as e:
             logging.error(f"Error updating truck with id {instance.id}: {str(e)}")
             raise serializers.ValidationError(f"Error updating truck: {str(e)}")
+        
+
+class AssignDriverSerializer(serializers.Serializer):
+    truck_id = serializers.IntegerField()
+    force = serializers.BooleanField(required=False, default=False)
+
+    def validate(self, attrs):
+        truck_id = attrs.get("truck_id")
+        truck = Truck.objects.filter(id=truck_id).select_related("company", "driver").first()
+        if not truck:
+            raise serializers.ValidationError({f"No existe un camión con ese id {truck_id}."})
+        attrs["truck"] = truck
+        return attrs

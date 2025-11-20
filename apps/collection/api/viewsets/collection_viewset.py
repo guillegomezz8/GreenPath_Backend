@@ -68,10 +68,10 @@ class CollectionViewSet(viewsets.ModelViewSet):
             if self.request.user.role_type == 'owner' or self.request.user.role_type == 'worker':
                 serializer.save()
             else:
-                logging.error("Solo los dueños y trabajadores pueden registrar recogidas")
+                logging.error("[collection_viewset - perform_create] Solo los dueños y trabajadores pueden registrar recogidas")
                 raise ValueError(ONLY_OWNERS_AND_WORKERS_CAN_REGISTER_COLLECTIONS)
         except Exception as e:
-            logging.error(f"Error creando recogida: {str(e)}")
+            logging.error(f"[collection_viewset - perform_create] Error creando recogida: {str(e)}")
             raise Exception(f"{ERROR}: {ERROR_CREATING_COLLECTION} - {str(e)}")
         
     def list(self, request):

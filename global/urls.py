@@ -3,6 +3,7 @@ from django.urls import path,include,re_path
 from django.conf import settings
 from django.views.static import serve
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from apps.auth.views import GoogleLoginAPIView
 
 from rest_framework_simplejwt.views import (
     TokenRefreshView,
@@ -19,6 +20,7 @@ urlpatterns = [
 
     path('logout/', Logout.as_view(), name = 'logout'),
     path('login/',Login.as_view(), name = 'login'),
+    path("authenticate/login", GoogleLoginAPIView.as_view(), name="google-login"),
 
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     

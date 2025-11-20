@@ -12,7 +12,7 @@ from django_filters.rest_framework import FilterSet, CharFilter, DjangoFilterBac
 import logging
 
 from apps.base.logger import configure_logging
-from apps.base.utils import gen_password, send_access_email
+from apps.base.utils import gen_password, send_access_email, send_access_email_google_api
 from apps.user.models.client import Client
 from apps.user.models.user import User
 from apps.collection.models import Collection
@@ -101,7 +101,7 @@ class ClientViewSet(viewsets.ModelViewSet):
                 if get_access:
                     temp_password = gen_password()
                     user.set_password(temp_password)
-                    send_access_email(user, temp_password, subject="Acceso a GreenPath como Cliente")
+                    transaction.on_commit(lambda: send_access_email_google_api(user, temp_password, subject="Acceso a GreenPath como Cliente"))
                 else:
                     user.set_unusable_password()
 
@@ -120,7 +120,7 @@ class ClientViewSet(viewsets.ModelViewSet):
             logging.info(f"[client_viewset - perform_create] Cliente creado con éxito: {client.id}")
         except Exception as e:
             logging.error(f"[client_viewset - perform_create] Error creando cliente: {str(e)}")
-            raise Exception(f"{ERROR}: {ERROR_CREATING_CLIENT} - {str(e)}")
+            return Response({DETAILS: {ERROR_CREATING_CLIENT: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
     def perform_destroy(self, instance):
         try:
@@ -130,7 +130,7 @@ class ClientViewSet(viewsets.ModelViewSet):
             logging.info(f"[client_viewset - perform_destroy] Cliente deshabilitado con éxito: {instance.id}")
         except Exception as e:
             logging.error(f"[client_viewset - perform_destroy] Error eliminando cliente: {str(e)}")
-            return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def list(self, request):
         try:
@@ -170,7 +170,7 @@ class ClientViewSet(viewsets.ModelViewSet):
 
         except Exception as e:
             logging.error(f"[client_viewset - list] Error al listar clientes: {str(e)}")
-            return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=False, methods=['get'], url_path=r'historial/(?P<client_id>\d+)')
     def collection_historial(self, request, client_id=None):
@@ -199,4 +199,4 @@ class ClientViewSet(viewsets.ModelViewSet):
         
         except Exception as e:
             logging.error(f"[client_viewset - collection_historial] Error al obtener historial: {str(e)}")
-            return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

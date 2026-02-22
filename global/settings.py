@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Cargar el archivo .env
 dotenv_path = os.path.join(BASE_DIR, '.env')
@@ -50,6 +50,7 @@ BASE_APPS = [
 
 LOCAL_APPS = [
     'apps.base',
+    'apps.base.celery',
     'apps.user',
     'apps.company',
     'apps.route',
@@ -68,6 +69,9 @@ THIRD_APPS = [
     'drf_spectacular',
     'django_extensions',
     'django_filters',
+    'django_celery_beat',
+    'django_celery_results',
+    'django_cleanup.apps.CleanupConfig',
 ]
 
 INSTALLED_APPS = BASE_APPS + LOCAL_APPS + THIRD_APPS
@@ -216,3 +220,11 @@ STORAGES = {
 }
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:8004/0")
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:8004/0")
+
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+
+STATICFILES_DIRS = (BASE_DIR, 'static')

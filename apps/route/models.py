@@ -1,12 +1,14 @@
 from django.db import models
+from django.utils.html import format_html
+from django.urls import reverse
+from django.utils.formats import date_format
+
 from apps.company.models import Company
-from apps.base.enums import Weekday
+from apps.base.enums import Weekday, RouteDayStatus
 from apps.zone.models import Zone
 from apps.user.models.worker import Worker
 from apps.base.models import BaseModel
 from apps.user.models.client import Client
-from django.utils.html import format_html
-from django.urls import reverse
 
 
 class Route(BaseModel):
@@ -53,26 +55,60 @@ class RouteDay(models.Model):
     route = models.ForeignKey(
         Route,
         on_delete=models.CASCADE,
-        related_name='route_days',
-        verbose_name='Ruta'
+        related_name="route_days",
+        verbose_name="Ruta",
     )
-    date = models.DateField('Fecha de la Ruta')
-    name = models.CharField('Nombre Ruta Diaria', max_length=255, blank=True)
-    date_generated = models.DateField('Fecha de Generación', auto_now_add=True)
+
+    date = models.DateField("Fecha de la Ruta")
+
+    status = models.CharField(
+        "Estado",
+        max_length=20,
+        choices=RouteDayStatus.choices,
+        default=RouteDayStatus.PLANNED,
+    )
+    
+    daily_capacity_liters = models.DecimalField(
+        "Capacidad Diaria (litros)",
+        max_digits=10,
+        decimal_places=2, 
+        null=True, 
+        blank=True
+    )
+
+    started_at = models.DateTimeField(
+        "Inicio",
+        null=True,
+        blank=True,
+    )
+
+    finished_at = models.DateTimeField(
+        "Fin",
+        null=True,
+        blank=True,
+    )
 
     class Meta:
-        unique_together = ('route', 'date')
-        ordering = ['date']
-        verbose_name = 'Ruta Diaria'
-        verbose_name_plural = 'Rutas Diarias'
+        unique_together = ("route", "date")
+        ordering = ["date"]
+        verbose_name = "Ruta Diaria"
+        verbose_name_plural = "Rutas Diarias"
+
+    @property
+    def weekday(self) -> int:
+        return self.date.weekday()
+
+    @property
+    def display_name(self) -> str:
+        return f"{self.route.name} - {date_format(self.date, 'd/m/Y')}"
 
     def __str__(self):
-        return f"{self.name} ({self.date.strftime('%A %d/%m')})"
-    
+        return self.display_name
+
     def admin_link(self):
         url = reverse("admin:route_routeday_change", args=[self.id])
         return format_html('<a href="{}">Editar</a>', url)
-
+    
     admin_link.short_description = "Editar Día"
 
 
@@ -80,24 +116,28 @@ class RouteDayClient(models.Model):
     route_day = models.ForeignKey(
         RouteDay,
         on_delete=models.CASCADE,
-        related_name='ordered_clients',
-        verbose_name='Ruta Diaria'
+        related_name="ordered_clients",
+        verbose_name="Ruta Diaria",
     )
     client = models.ForeignKey(
         Client,
         on_delete=models.CASCADE,
-        verbose_name='Cliente'
+        verbose_name="Cliente",
     )
-    order = models.PositiveIntegerField('Orden de Recogida')
+    order = models.PositiveIntegerField("Orden de Recogida")
 
     class Meta:
-        unique_together = ('route_day', 'order')
-        ordering = ['order']
-        verbose_name = 'Cliente en Ruta Diaria'
-        verbose_name_plural = 'Clientes en Ruta Diaria'
+        ordering = ["order"]
+        verbose_name = "Cliente en Ruta Diaria"
+        verbose_name_plural = "Clientes en Ruta Diaria"
+        constraints = [
+            models.UniqueConstraint(fields=["route_day", "order"], name="uniq_route_day_order"),
+            models.UniqueConstraint(fields=["route_day", "client"], name="uniq_route_day_client"),
+        ]
 
     def __str__(self):
-        return f'{self.client.name} - Orden {self.order}'
+        return f"{self.client.name} - Orden {self.order}"
+
 
 class RouteZoneDay(models.Model):
     route = models.ForeignKey(
@@ -123,5 +163,6 @@ class RouteZoneDay(models.Model):
 
     def __str__(self):
         day_name = Weekday(self.weekday).label
-        zones_str = ', '.join(self.zones)
-        return f'{self.route.name} - {day_name}: {zones_str}'
+        zones_qs = self.zones.all()
+        zones_str = ", ".join([z.name for z in zones_qs]) if zones_qs.exists() else "Sin zonas"
+        return f"{self.route.name} - {day_name}: {zones_str}"

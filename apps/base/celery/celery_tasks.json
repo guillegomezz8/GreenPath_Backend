@@ -1,0 +1,29 @@
+{
+    "tareas": [
+        {
+            "name": "Ejemplo de contrab",
+            "task": "apps.xxx.tasks.ejemplo_contrab",
+            "description": "Ejemplo de tarea programada con crontab para ejecutarse diariamente a las 00:30.",
+            "schedule": {
+                "type": "crontab",
+                "minute": 30,
+                "hour": 0,
+                "day_of_week": "*",
+                "day_of_month": "*",
+                "month_of_year": "*"
+            },
+            "args": []
+        },
+        {
+            "name": "Ejemplo de interval",
+            "task": "apps.xxx.tasks.ejemplo_interval",
+            "description": "Ejemplo de tarea programada con intervalo para ejecutarse cada 30 minutos.",
+            "schedule": {
+                "type": "interval",
+                "every": 30,
+                "period": "minutes"
+            },
+            "args": []
+        }
+    ]
+}

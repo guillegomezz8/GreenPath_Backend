@@ -53,3 +53,37 @@ class Fuel(models.TextChoices):
     PETROL = "PETROL", "Gasolina"
     ELECTRIC = "ELECTRIC", "Eléctrico"
     HYBRID = "HYBRID", "Híbrido"
+
+
+class RouteDayStatus(models.TextChoices):
+    PLANNED = "PLANNED", "Planificada"
+    IN_PROGRESS = "IN_PROGRESS", "En progreso"
+    COMPLETED = "COMPLETED", "Completada"
+    PARTIAL = "PARTIAL", "Parcial"
+    CANCELED = "CANCELED", "Cancelada"
+
+
+class CollectionStatus(models.TextChoices):
+    PENDING_MEASUREMENT = "PENDING_MEASUREMENT", "Pendiente de medición"
+    CONFIRMED = "CONFIRMED", "Confirmada"
+    CANCELED = "CANCELED", "Cancelada"
+
+
+class DeductionReason(models.TextChoices):
+    WATER = "WATER", "Agua"
+    RESIDUE = "RESIDUE", "Residuos/posos"
+    MIXED = "MIXED", "Mezcla/impurezas"
+    OTHER = "OTHER", "Otros"
+
+
+class CollectionRequestStatus(models.TextChoices):
+    PENDING = "PENDING", "Pendiente"
+    ANSWERED = "ANSWERED", "Respondida"
+    AUTO_ESTIMATED = "AUTO_ESTIMATED", "Autoestimada"
+    MANUAL = "MANUAL", "Manual"
+
+
+class PlannedSource(models.TextChoices):
+    CLIENT = "CLIENT", "Cliente"
+    AUTO = "AUTO", "Automático"
+    MANUAL = "MANUAL", "Manual"

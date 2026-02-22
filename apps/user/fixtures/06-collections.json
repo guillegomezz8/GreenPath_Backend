@@ -4,15 +4,19 @@
     "pk": 1,
     "fields": {
       "client": 8,
-      "route": 2,
+      "route_day_client": null,
       "worker": 2,
       "collection_date": "2025-01-03",
       "container_type": "BIDONES",
       "container_number": 3,
-      "price_per_liter": "1.16",
-      "liters_collected": "180",
+      "estimated_liters": "180.00",
+      "measured_liters": null,
+      "deduction_liters": "0.00",
+      "net_liters": "180.00",
+      "price_per_liter": "1.160",
       "total_price": "208.80",
-      "status": "CANCELED"
+      "status": "CANCELED",
+      "notes": ""
     }
   },
   {
@@ -20,15 +24,19 @@
     "pk": 2,
     "fields": {
       "client": 6,
-      "route": 1,
+      "route_day_client": null,
       "worker": 2,
       "collection_date": "2025-01-06",
       "container_type": "IBC",
       "container_number": 2,
-      "price_per_liter": "1.10",
-      "liters_collected": "2000",
+      "estimated_liters": "2000.00",
+      "measured_liters": null,
+      "deduction_liters": "0.00",
+      "net_liters": "2000.00",
+      "price_per_liter": "1.100",
       "total_price": "2200.00",
-      "status": "CANCELED"
+      "status": "CANCELED",
+      "notes": ""
     }
   },
   {
@@ -36,15 +44,19 @@
     "pk": 3,
     "fields": {
       "client": 7,
-      "route": 1,
+      "route_day_client": null,
       "worker": 2,
       "collection_date": "2025-02-01",
       "container_type": "IBC",
       "container_number": 4,
-      "price_per_liter": "1.25",
-      "liters_collected": "4000",
+      "estimated_liters": "4000.00",
+      "measured_liters": null,
+      "deduction_liters": "0.00",
+      "net_liters": "4000.00",
+      "price_per_liter": "1.250",
       "total_price": "5000.00",
-      "status": "PENDING"
+      "status": "PENDING_MEASUREMENT",
+      "notes": ""
     }
   },
   {
@@ -52,15 +64,19 @@
     "pk": 4,
     "fields": {
       "client": 4,
-      "route": 1,
+      "route_day_client": null,
       "worker": 2,
       "collection_date": "2025-02-07",
       "container_type": "IBC",
       "container_number": 4,
-      "price_per_liter": "1.28",
-      "liters_collected": "4000",
+      "estimated_liters": "4000.00",
+      "measured_liters": null,
+      "deduction_liters": "0.00",
+      "net_liters": "4000.00",
+      "price_per_liter": "1.280",
       "total_price": "5120.00",
-      "status": "CANCELED"
+      "status": "CANCELED",
+      "notes": ""
     }
   },
   {
@@ -68,15 +84,19 @@
     "pk": 5,
     "fields": {
       "client": 7,
-      "route": 2,
+      "route_day_client": null,
       "worker": 2,
       "collection_date": "2025-03-02",
       "container_type": "BIDONES",
       "container_number": 1,
-      "price_per_liter": "1.41",
-      "liters_collected": "60",
+      "estimated_liters": "60.00",
+      "measured_liters": null,
+      "deduction_liters": "0.00",
+      "net_liters": "60.00",
+      "price_per_liter": "1.410",
       "total_price": "84.60",
-      "status": "PENDING"
+      "status": "PENDING_MEASUREMENT",
+      "notes": ""
     }
   },
   {
@@ -84,15 +104,19 @@
     "pk": 6,
     "fields": {
       "client": 8,
-      "route": 1,
+      "route_day_client": null,
       "worker": 2,
       "collection_date": "2025-03-10",
       "container_type": "IBC",
       "container_number": 2,
-      "price_per_liter": "1.46",
-      "liters_collected": "2000",
+      "estimated_liters": "2000.00",
+      "measured_liters": null,
+      "deduction_liters": "0.00",
+      "net_liters": "2000.00",
+      "price_per_liter": "1.460",
       "total_price": "2920.00",
-      "status": "PENDING"
+      "status": "PENDING_MEASUREMENT",
+      "notes": ""
     }
   },
   {
@@ -100,15 +124,19 @@
     "pk": 7,
     "fields": {
       "client": 5,
-      "route": 2,
+      "route_day_client": null,
       "worker": 2,
       "collection_date": "2025-04-08",
       "container_type": "BIDONES",
       "container_number": 4,
-      "price_per_liter": "1.54",
-      "liters_collected": "240",
+      "estimated_liters": "240.00",
+      "measured_liters": null,
+      "deduction_liters": "0.00",
+      "net_liters": "240.00",
+      "price_per_liter": "1.540",
       "total_price": "369.60",
-      "status": "CANCELED"
+      "status": "CANCELED",
+      "notes": ""
     }
   },
   {
@@ -116,15 +144,19 @@
     "pk": 8,
     "fields": {
       "client": 4,
-      "route": 2,
+      "route_day_client": null,
       "worker": 2,
       "collection_date": "2025-04-09",
       "container_type": "IBC",
       "container_number": 2,
-      "price_per_liter": "1.60",
-      "liters_collected": "2000",
+      "estimated_liters": "2000.00",
+      "measured_liters": null,
+      "deduction_liters": "0.00",
+      "net_liters": "2000.00",
+      "price_per_liter": "1.600",
       "total_price": "3200.00",
-      "status": "CANCELED"
+      "status": "CANCELED",
+      "notes": ""
     }
   },
   {
@@ -132,15 +164,19 @@
     "pk": 9,
     "fields": {
       "client": 7,
-      "route": 2,
+      "route_day_client": null,
       "worker": 2,
       "collection_date": "2025-05-16",
       "container_type": "BIDONES",
       "container_number": 2,
-      "price_per_liter": "1.54",
-      "liters_collected": "120",
+      "estimated_liters": "120.00",
+      "measured_liters": "120.00",
+      "deduction_liters": "0.00",
+      "net_liters": "120.00",
+      "price_per_liter": "1.540",
       "total_price": "184.80",
-      "status": "COMPLETED"
+      "status": "CONFIRMED",
+      "notes": ""
     }
   },
   {
@@ -148,15 +184,19 @@
     "pk": 10,
     "fields": {
       "client": 6,
-      "route": 1,
+      "route_day_client": null,
       "worker": 2,
       "collection_date": "2025-05-06",
       "container_type": "BIDONES",
       "container_number": 3,
-      "price_per_liter": "1.11",
-      "liters_collected": "180",
+      "estimated_liters": "180.00",
+      "measured_liters": "180.00",
+      "deduction_liters": "0.00",
+      "net_liters": "180.00",
+      "price_per_liter": "1.110",
       "total_price": "199.80",
-      "status": "COMPLETED"
+      "status": "CONFIRMED",
+      "notes": ""
     }
   },
   {
@@ -164,15 +204,19 @@
     "pk": 11,
     "fields": {
       "client": 7,
-      "route": 2,
+      "route_day_client": null,
       "worker": 2,
       "collection_date": "2025-06-25",
       "container_type": "BIDONES",
       "container_number": 1,
-      "price_per_liter": "1.39",
-      "liters_collected": "60",
+      "estimated_liters": "60.00",
+      "measured_liters": null,
+      "deduction_liters": "0.00",
+      "net_liters": "60.00",
+      "price_per_liter": "1.390",
       "total_price": "83.40",
-      "status": "CANCELED"
+      "status": "CANCELED",
+      "notes": ""
     }
   },
   {
@@ -180,703 +224,19 @@
     "pk": 12,
     "fields": {
       "client": 8,
-      "route": 2,
+      "route_day_client": null,
       "worker": 2,
       "collection_date": "2025-06-23",
       "container_type": "IBC",
       "container_number": 1,
-      "price_per_liter": "1.17",
-      "liters_collected": "1000",
+      "estimated_liters": "1000.00",
+      "measured_liters": "1000.00",
+      "deduction_liters": "0.00",
+      "net_liters": "1000.00",
+      "price_per_liter": "1.170",
       "total_price": "1170.00",
-      "status": "COMPLETED"
-    }
-  },
-  {
-    "model": "collection.collection",
-    "pk": 13,
-    "fields": {
-      "client": 5,
-      "route": 1,
-      "worker": 2,
-      "collection_date": "2025-07-27",
-      "container_type": "BIDONES",
-      "container_number": 1,
-      "price_per_liter": "1.41",
-      "liters_collected": "60",
-      "total_price": "84.60",
-      "status": "PENDING"
-    }
-  },
-  {
-    "model": "collection.collection",
-    "pk": 14,
-    "fields": {
-      "client": 8,
-      "route": 2,
-      "worker": 2,
-      "collection_date": "2025-07-10",
-      "container_type": "BIDONES",
-      "container_number": 3,
-      "price_per_liter": "1.28",
-      "liters_collected": "180",
-      "total_price": "230.40",
-      "status": "CANCELED"
-    }
-  },
-  {
-    "model": "collection.collection",
-    "pk": 15,
-    "fields": {
-      "client": 4,
-      "route": 2,
-      "worker": 2,
-      "collection_date": "2025-08-09",
-      "container_type": "IBC",
-      "container_number": 2,
-      "price_per_liter": "1.01",
-      "liters_collected": "2000",
-      "total_price": "2020.00",
-      "status": "CANCELED"
-    }
-  },
-  {
-    "model": "collection.collection",
-    "pk": 16,
-    "fields": {
-      "client": 8,
-      "route": 2,
-      "worker": 2,
-      "collection_date": "2025-08-14",
-      "container_type": "BIDONES",
-      "container_number": 2,
-      "price_per_liter": "1.42",
-      "liters_collected": "120",
-      "total_price": "170.40",
-      "status": "COMPLETED"
-    }
-  },
-  {
-    "model": "collection.collection",
-    "pk": 17,
-    "fields": {
-      "client": 7,
-      "route": 2,
-      "worker": 2,
-      "collection_date": "2025-09-12",
-      "container_type": "BIDONES",
-      "container_number": 3,
-      "price_per_liter": "1.35",
-      "liters_collected": "180",
-      "total_price": "243.00",
-      "status": "PENDING"
-    }
-  },
-  {
-    "model": "collection.collection",
-    "pk": 18,
-    "fields": {
-      "client": 5,
-      "route": 1,
-      "worker": 2,
-      "collection_date": "2025-09-12",
-      "container_type": "BIDONES",
-      "container_number": 2,
-      "price_per_liter": "1.58",
-      "liters_collected": "120",
-      "total_price": "189.60",
-      "status": "COMPLETED"
-    }
-  },
-  {
-    "model": "collection.collection",
-    "pk": 19,
-    "fields": {
-      "client": 7,
-      "route": 1,
-      "worker": 2,
-      "collection_date": "2025-10-06",
-      "container_type": "IBC",
-      "container_number": 2,
-      "price_per_liter": "1.39",
-      "liters_collected": "2000",
-      "total_price": "2780.00",
-      "status": "PENDING"
-    }
-  },
-  {
-    "model": "collection.collection",
-    "pk": 20,
-    "fields": {
-      "client": 8,
-      "route": 2,
-      "worker": 2,
-      "collection_date": "2025-10-05",
-      "container_type": "BIDONES",
-      "container_number": 4,
-      "price_per_liter": "1.12",
-      "liters_collected": "240",
-      "total_price": "268.80",
-      "status": "COMPLETED"
-    }
-  },
-  {
-    "model": "collection.collection",
-    "pk": 21,
-    "fields": {
-      "client": 6,
-      "route": 2,
-      "worker": 2,
-      "collection_date": "2025-11-27",
-      "container_type": "IBC",
-      "container_number": 1,
-      "price_per_liter": "1.57",
-      "liters_collected": "1000",
-      "total_price": "1570.00",
-      "status": "PENDING"
-    }
-  },
-  {
-    "model": "collection.collection",
-    "pk": 22,
-    "fields": {
-      "client": 6,
-      "route": 2,
-      "worker": 2,
-      "collection_date": "2025-11-11",
-      "container_type": "BIDONES",
-      "container_number": 1,
-      "price_per_liter": "1.43",
-      "liters_collected": "60",
-      "total_price": "85.80",
-      "status": "PENDING"
-    }
-  },
-  {
-    "model": "collection.collection",
-    "pk": 23,
-    "fields": {
-      "client": 5,
-      "route": 1,
-      "worker": 2,
-      "collection_date": "2025-12-02",
-      "container_type": "IBC",
-      "container_number": 2,
-      "price_per_liter": "1.29",
-      "liters_collected": "2000",
-      "total_price": "2580.00",
-      "status": "PENDING"
-    }
-  },
-  {
-    "model": "collection.collection",
-    "pk": 24,
-    "fields": {
-      "client": 6,
-      "route": 1,
-      "worker": 2,
-      "collection_date": "2025-12-18",
-      "container_type": "BIDONES",
-      "container_number": 1,
-      "price_per_liter": "1.33",
-      "liters_collected": "60",
-      "total_price": "79.80",
-      "status": "CANCELED"
-    }
-  },
-  {
-    "model":"collection.collection",
-    "pk":25,
-    "fields":{
-        "client":1,
-        "route":1,
-        "worker":1,
-        "collection_date":"2025-02-12",
-        "container_type":"BIDONES",
-        "container_number":2,
-        "price_per_liter":"1.32",
-        "liters_collected":"120",
-        "total_price":"158.40",
-        "status":"COMPLETED"
-    }
-  },
-  {
-    "model":"collection.collection",
-    "pk":26,
-    "fields":{
-        "client":2,
-        "route":2,
-        "worker":1,
-        "collection_date":"2025-03-05",
-        "container_type":"IBC",
-        "container_number":1,
-        "price_per_liter":"1.18",
-        "liters_collected":"1000",
-        "total_price":"1180.00",
-        "status":"COMPLETED"
-    }
-  },
-  {
-    "model":"collection.collection",
-    "pk":27,
-    "fields":{
-        "client":3,
-        "route":1,
-        "worker":1,
-        "collection_date":"2025-01-29",
-        "container_type":"BIDONES",
-        "container_number":3,
-        "price_per_liter":"1.27",
-        "liters_collected":"180",
-        "total_price":"228.60",
-        "status":"COMPLETED"
-    }
-  },
-  {
-    "model":"collection.collection",
-    "pk":28,
-    "fields":{
-        "client":9,
-        "route":2,
-        "worker":1,
-        "collection_date":"2025-04-18",
-        "container_type":"BIDONES",
-        "container_number":2,
-        "price_per_liter":"1.22",
-        "liters_collected":"120",
-        "total_price":"146.40",
-        "status":"COMPLETED"
-    }
-  },
-  {
-    "model":"collection.collection",
-    "pk":29,
-    "fields":{
-        "client":10,
-        "route":1,
-        "worker":1,
-        "collection_date":"2025-05-20",
-        "container_type":"BIDONES",
-        "container_number":2,
-        "price_per_liter":"1.15",
-        "liters_collected":"120",
-        "total_price":"138.00",
-        "status":"COMPLETED"
-    }
-  },
-  {
-    "model":"collection.collection",
-    "pk":30,
-    "fields":{
-        "client":11,
-        "route":1,
-        "worker":1,
-        "collection_date":"2025-02-22",
-        "container_type":"BIDONES",
-        "container_number":1,
-        "price_per_liter":"1.30",
-        "liters_collected":"60",
-        "total_price":"78.00",
-        "status":"COMPLETED"
-    }
-  },
-  {
-    "model":"collection.collection",
-    "pk":31,
-    "fields":{
-        "client":12,
-        "route":2,
-        "worker":1,
-        "collection_date":"2025-06-02",
-        "container_type":"BIDONES",
-        "container_number":2,
-        "price_per_liter":"1.25",
-        "liters_collected":"120",
-        "total_price":"150.00",
-        "status":"COMPLETED"
-    }
-  },
-  {
-    "model":"collection.collection",
-    "pk":32,
-    "fields":{
-        "client":13,
-        "route":1,
-        "worker":1,
-        "collection_date":"2025-07-03",
-        "container_type":"BIDONES",
-        "container_number":2,
-        "price_per_liter":"1.40",
-        "liters_collected":"120",
-        "total_price":"168.00",
-        "status":"COMPLETED"
-    }
-  },
-  {
-    "model":"collection.collection",
-    "pk":33,
-    "fields":{
-        "client":14,
-        "route":1,
-        "worker":1,
-        "collection_date":"2025-03-14",
-        "container_type":"BIDONES",
-        "container_number":3,
-        "price_per_liter":"1.33",
-        "liters_collected":"180",
-        "total_price":"239.40",
-        "status":"COMPLETED"
-    }
-  },
-  {
-    "model":"collection.collection",
-    "pk":34,
-    "fields":{
-        "client":15,
-        "route":2,
-        "worker":1,
-        "collection_date":"2025-04-09",
-        "container_type":"BIDONES",
-        "container_number":4,
-        "price_per_liter":"1.36",
-        "liters_collected":"240",
-        "total_price":"326.40",
-        "status":"COMPLETED"
-    }
-  },
-  {
-    "model":"collection.collection",
-    "pk":35,
-    "fields":{
-        "client":16,
-        "route":1,
-        "worker":1,
-        "collection_date":"2025-01-18",
-        "container_type":"IBC",
-        "container_number":1,
-        "price_per_liter":"1.12",
-        "liters_collected":"1000",
-        "total_price":"1120.00",
-        "status":"COMPLETED"
-    }
-  },
-  {
-    "model":"collection.collection",
-    "pk":36,
-    "fields":{
-        "client":17,
-        "route":2,
-        "worker":1,
-        "collection_date":"2025-02-28",
-        "container_type":"BIDONES",
-        "container_number":3,
-        "price_per_liter":"1.38",
-        "liters_collected":"180",
-        "total_price":"248.40",
-        "status":"COMPLETED"
-    }
-  },
-  {
-    "model":"collection.collection",
-    "pk":37,
-    "fields":{
-        "client":18,
-        "route":1,
-        "worker":1,
-        "collection_date":"2025-03-08",
-        "container_type":"IBC",
-        "container_number":2,
-        "price_per_liter":"1.20",
-        "liters_collected":"2000",
-        "total_price":"2400.00",
-        "status":"COMPLETED"
-    }
-  },
-  {
-    "model":"collection.collection",
-    "pk":38,
-    "fields":{
-        "client":19,
-        "route":2,
-        "worker":1,
-        "collection_date":"2025-05-11",
-        "container_type":"BIDONES",
-        "container_number":2,
-        "price_per_liter":"1.35",
-        "liters_collected":"120",
-        "total_price":"162.00",
-        "status":"COMPLETED"
-    }
-  },
-  {
-    "model":"collection.collection",
-    "pk":39,
-    "fields":{
-        "client":20,
-        "route":1,
-        "worker":1,
-        "collection_date":"2025-06-15",
-        "container_type":"BIDONES",
-        "container_number":3,
-        "price_per_liter":"1.29",
-        "liters_collected":"180",
-        "total_price":"232.20",
-        "status":"COMPLETED"
-    }
-  },
-  {
-    "model":"collection.collection",
-    "pk":40,
-    "fields":{
-        "client":21,
-        "route":2,
-        "worker":1,
-        "collection_date":"2025-07-19",
-        "container_type":"BIDONES",
-        "container_number":4,
-        "price_per_liter":"1.31",
-        "liters_collected":"240",
-        "total_price":"314.40",
-        "status":"COMPLETED"
-    }
-  },
-  {
-    "model":"collection.collection",
-    "pk":41,
-    "fields":{
-        "client":22,
-        "route":1,
-        "worker":1,
-        "collection_date":"2025-08-22",
-        "container_type":"IBC",
-        "container_number":1,
-        "price_per_liter":"1.26",
-        "liters_collected":"1000",
-        "total_price":"1260.00",
-        "status":"COMPLETED"
-    }
-  },
-  {
-    "model":"collection.collection",
-    "pk":42,
-    "fields":{
-        "client":23,
-        "route":2,
-        "worker":1,
-        "collection_date":"2025-09-03",
-        "container_type":"BIDONES",
-        "container_number":2,
-        "price_per_liter":"1.45",
-        "liters_collected":"120",
-        "total_price":"174.00",
-        "status":"COMPLETED"
-    }
-  },
-  {
-    "model":"collection.collection",
-    "pk":43,
-    "fields":{
-        "client":24,
-        "route":1,
-        "worker":1,
-        "collection_date":"2025-02-07",
-        "container_type":"BIDONES",
-        "container_number":2,
-        "price_per_liter":"1.21",
-        "liters_collected":"120",
-        "total_price":"145.20",
-        "status":"COMPLETED"
-    }
-  },
-  {
-    "model":"collection.collection",
-    "pk":44,
-    "fields":{
-        "client":25,
-        "route":1,
-        "worker":1,
-        "collection_date":"2025-03-19",
-        "container_type":"BIDONES",
-        "container_number":1,
-        "price_per_liter":"1.50",
-        "liters_collected":"60",
-        "total_price":"90.00",
-        "status":"COMPLETED"
-    }
-  },
-  {
-    "model":"collection.collection",
-    "pk":45,
-    "fields":{
-        "client":26,
-        "route":2,
-        "worker":1,
-        "collection_date":"2025-04-27",
-        "container_type":"IBC",
-        "container_number":1,
-        "price_per_liter":"1.19",
-        "liters_collected":"1000",
-        "total_price":"1190.00",
-        "status":"COMPLETED"
-    }
-  },
-  {
-    "model":"collection.collection",
-    "pk":46,
-    "fields":{
-        "client":27,
-        "route":1,
-        "worker":1,
-        "collection_date":"2025-05-30",
-        "container_type":"BIDONES",
-        "container_number":3,
-        "price_per_liter":"1.23",
-        "liters_collected":"180",
-        "total_price":"221.40",
-        "status":"COMPLETED"
-    }
-  },
-  {
-    "model":"collection.collection",
-    "pk":47,
-    "fields":{
-        "client":28,
-        "route":2,
-        "worker":1,
-        "collection_date":"2025-06-12",
-        "container_type":"BIDONES",
-        "container_number":2,
-        "price_per_liter":"1.34",
-        "liters_collected":"120",
-        "total_price":"160.80",
-        "status":"COMPLETED"
-    }
-  },
-  {
-    "model":"collection.collection",
-    "pk":48,
-    "fields":{
-        "client":29,
-        "route":1,
-        "worker":1,
-        "collection_date":"2025-07-07",
-        "container_type":"BIDONES",
-        "container_number":2,
-        "price_per_liter":"1.28",
-        "liters_collected":"120",
-        "total_price":"153.60",
-        "status":"COMPLETED"
-    }
-  },
-  {
-    "model":"collection.collection",
-    "pk":49,
-    "fields":{
-        "client":30,
-        "route":2,
-        "worker":1,
-        "collection_date":"2025-08-01",
-        "container_type":"BIDONES",
-        "container_number":3,
-        "price_per_liter":"1.37",
-        "liters_collected":"180",
-        "total_price":"246.60",
-        "status":"COMPLETED"
-    }
-  },
-  {
-    "model":"collection.collection",
-    "pk":50,
-    "fields":{
-        "client":31,
-        "route":1,
-        "worker":1,
-        "collection_date":"2025-09-09",
-        "container_type":"IBC",
-        "container_number":1,
-        "price_per_liter":"1.32",
-        "liters_collected":"1000",
-        "total_price":"1320.00",
-        "status":"COMPLETED"
-    }
-  },
-  {
-    "model":"collection.collection",
-    "pk":51,
-    "fields":{
-        "client":32,
-        "route":2,
-        "worker":1,
-        "collection_date":"2025-01-15",
-        "container_type":"BIDONES",
-        "container_number":2,
-        "price_per_liter":"1.18",
-        "liters_collected":"120",
-        "total_price":"141.60",
-        "status":"COMPLETED"
-    }
-  },
-  {
-    "model":"collection.collection",
-    "pk":52,
-    "fields":{
-        "client":33,
-        "route":1,
-        "worker":1,
-        "collection_date":"2025-02-10",
-        "container_type":"BIDONES",
-        "container_number":3,
-        "price_per_liter":"1.24",
-        "liters_collected":"180",
-        "total_price":"223.20",
-        "status":"COMPLETED"
-    }
-  },
-  {
-    "model":"collection.collection",
-    "pk":53,
-    "fields":{
-        "client":34,
-        "route":2,
-        "worker":1,
-        "collection_date":"2025-03-21",
-        "container_type":"BIDONES",
-        "container_number":2,
-        "price_per_liter":"1.27",
-        "liters_collected":"120",
-        "total_price":"152.40",
-        "status":"COMPLETED"
-    }
-  },
-  {
-    "model":"collection.collection",
-    "pk":54,
-    "fields":{
-        "client":35,
-        "route":1,
-        "worker":1,
-        "collection_date":"2025-04-15",
-        "container_type":"BIDONES",
-        "container_number":4,
-        "price_per_liter":"1.29",
-        "liters_collected":"240",
-        "total_price":"309.60",
-        "status":"COMPLETED"
-    }
-  },
-  {
-    "model":"collection.collection",
-    "pk":55,
-    "fields":{
-        "client":1,
-        "route":2,
-        "worker":1,
-        "collection_date":"2025-06-19",
-        "container_type":"BIDONES",
-        "container_number":1,
-        "price_per_liter":"1.20",
-        "liters_collected":"60",
-        "total_price":"72.00",
-        "status":"PENDING"
+      "status": "CONFIRMED",
+      "notes": ""
     }
   }
 ]

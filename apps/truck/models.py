@@ -9,7 +9,7 @@ class Truck(BaseModel):
     brand = models.CharField('Marca', max_length=64, blank=True, null=True)
     model = models.CharField('Modelo', max_length=255, blank=True, null=True)
     year = models.IntegerField('Año', blank=True, null=True)
-    capacity = models.DecimalField('Capacidad', max_digits=10, decimal_places=2, blank=True, null=True)
+    capacity_liters = models.DecimalField('Capacidad (litros)', max_digits=10, decimal_places=2, blank=True, null=True)
     status = models.CharField('Estado', max_length=20, choices=TruckStatus.choices, default=TruckStatus.ACTIVE)
     fuel = models.CharField('Combustible', max_length=20, choices=Fuel.choices, blank=True, null=True)
 

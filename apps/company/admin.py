@@ -1,28 +1,52 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from apps.company.models import Company
+from django.urls import reverse
+from django.contrib.gis.admin import GISModelAdmin
+
+from apps.company.models import Company, CompanyHub
+
+
+class CompanyHubInline(admin.StackedInline):
+    model = CompanyHub
+    extra = 0
+    max_num = 1
+    can_delete = False
+    fields = ("name", "address", "location")
+
 
 @admin.register(Company)
 class CompanyAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'cif', 'owner', 'email')
-    search_fields = ('name', 'cif', 'owner__username', 'owner__email')
-    list_filter = ('owner',)
-    readonly_fields = ('id', 'logo_preview')
+    list_display = ("id", "name", "owner", "email", "phone", "has_hub", "hub_link")
+    search_fields = ("name", "cif", "email", "phone", "owner__email", "owner__username")
+    list_filter = ()
+    autocomplete_fields = ("owner",)
+    inlines = (CompanyHubInline,)
+    ordering = ("name",)
 
-    fieldsets = (
-        ('Información General', {
-            'fields': ('id', 'name', 'cif', 'owner')
-        }),
-        ('Detalles de Contacto', {
-            'fields': ('address', 'phone', 'email')
-        }),
-        ('Logo', {
-            'fields': ('logo', 'logo_preview'),
-        }),
-    )
+    @admin.display(description="Hub")
+    def has_hub(self, obj):
+        return hasattr(obj, "hub") and obj.hub is not None
 
-    @admin.display(description="Previsualización del Logo")
-    def logo_preview(self, obj):
-        if obj.logo:
-            return format_html('<img src="{}" width="200" height="200" style="object-fit: contain;"/>', obj.logo.url)
-        return "No hay logo"
+    @admin.display(description="Editar hub")
+    def hub_link(self, obj):
+        if not hasattr(obj, "hub") or not obj.hub:
+            return "-"
+        url = reverse("admin:company_companyhub_change", args=[obj.hub.id])
+        return format_html('<a href="{}">Abrir</a>', url)
+
+
+@admin.register(CompanyHub)
+class CompanyHubAdmin(GISModelAdmin):
+    list_display = ("id", "company", "name", "has_location", "edit_company_link")
+    search_fields = ("name", "company__name")
+    autocomplete_fields = ("company",)
+    ordering = ("company__name",)
+
+    @admin.display(description="Ubicación")
+    def has_location(self, obj):
+        return bool(obj.location)
+
+    @admin.display(description="Empresa")
+    def edit_company_link(self, obj):
+        url = reverse("admin:company_company_change", args=[obj.company.id])
+        return format_html('<a href="{}">Editar empresa</a>', url)

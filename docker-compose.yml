@@ -2,6 +2,8 @@ services:
   web:
     container_name: greenpath_backend
     build: .
+    environment:
+      - SERVICE_NAME=greenpath_backend
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - .:/src
@@ -21,6 +23,56 @@ services:
       POSTGRES_DB: postgres
     ports:
       - "5432:5432"
+
+  redis:
+    image: redis:6.2-alpine
+    container_name: greenpath_redis
+    ports:
+      - "6379:6379"
+
+  celery:
+    container_name: greenpath_celery
+    environment:
+      - SERVICE_NAME=celery
+    build: .
+    command: celery -A global worker --loglevel=info --hostname=greenpath_worker@%h
+    volumes:
+      - .:/src
+    depends_on:
+      - web
+      - my-postgres
+      - redis
+    stdin_open: true
+    tty: true
+
+  celery_beat:
+    container_name: greenpath_celery_beat
+    environment:
+      - SERVICE_NAME=celery
+    build: .
+    command:  celery -A global beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - .:/src
+    depends_on:
+      - web
+      - my-postgres
+      - redis
+    stdin_open: true
+    tty: true
+
+  flower:
+    container_name: greenpath_flower
+    build: .
+    command: celery -A global flower --port=5555 --basic_auth=admin:adminpassword
+    volumes:
+      - .:/src
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+      - celery
+    stdin_open: true
+    tty: true
 
 volumes:
   postgres_data:

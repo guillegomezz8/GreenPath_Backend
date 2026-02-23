@@ -29,10 +29,10 @@ class WorkerSerializer(serializers.ModelSerializer):
         exclude = ("modified_date", "deleted_date", "created_date")
 
     def get_email(self, obj):
-        return getattr(obj.user, "email", None)
+        return obj.user.email if obj.user else None
 
     def get_username(self, obj):
-        return getattr(obj.user, "username", None)
+        return obj.user.username if obj.user else None
 
     def get_assigned_trucks(self, obj):
         if hasattr(obj, "truck") and obj.truck:
@@ -42,7 +42,7 @@ class WorkerSerializer(serializers.ModelSerializer):
         return "Sin asignar"
 
     def get_total_liters_collected(self, obj):
-        agg = obj.collections.aggregate(total=Sum("liters_collected"))
+        agg = obj.collections.aggregate(total=Sum("net_liters"))
         return agg["total"] or 0
 
     def get_total_incomes(self, obj):
@@ -124,14 +124,14 @@ class UpdateWorkerSerializer(serializers.ModelSerializer):
                 setattr(instance, attr, value)
             instance.save()
 
-            if email and getattr(instance, "user", None):
+            if email and hasattr(instance, "user") and instance.user:
                 instance.user.email = email
                 instance.user.full_clean(validate_unique=False)
                 instance.user.save(update_fields=["email"])
 
             return instance
         except Exception as e:
-            logging.error(f"Error updating worker with id {instance.id}: {str(e)}")
+            logging.error(f"[worker_serializers - update] Error updating worker with id {instance.id}: {str(e)}")
             raise serializers.ValidationError(f"Error actualizando trabajador: {str(e)}")
 
 
@@ -170,14 +170,14 @@ class PartialUpdateWorkerSerializer(serializers.ModelSerializer):
                 setattr(instance, attr, value)
             instance.save()
 
-            if email and getattr(instance, "user", None):
+            if email and hasattr(instance, "user") and instance.user:
                 instance.user.email = email
                 instance.user.full_clean(validate_unique=False)
                 instance.user.save(update_fields=["email"])
 
             return instance
         except Exception as e:
-            logging.error(f"Error updating worker with id {instance.id}: {str(e)}")
+            logging.error(f"[worker_serializers - update] Error updating worker with id {instance.id}: {str(e)}")
             raise serializers.ValidationError(f"Error actualizando trabajador: {str(e)}")
    
         

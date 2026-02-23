@@ -21,8 +21,6 @@ from apps.base.permissions import IsOwnerUser
 from apps.collection.api.serializers.collection_serializers import CollectionSerializer
 from apps.user.api.serializers.client_serializers import ClientSerializer,CreateClientSerializer,UpdateClientSerializer,PartialUpdateClientSerializer
 from apps.base.literals import (
-    ERROR,
-    ERROR_CREATING_CLIENT,
     DETAILS,
     INTERNAL_ERROR
 )
@@ -88,7 +86,7 @@ class ClientViewSet(viewsets.ModelViewSet):
             get_access = client_data.pop("get_access", False)
             companies = client_data.pop("companies", None)
 
-            company = getattr(getattr(self.request.user, "worker_profile", None), "company", None)
+            company = self.request.user.worker_profile.company if hasattr(self.request.user, "worker_profile") else None
 
             with transaction.atomic():
                 user = User.objects.create_user(
@@ -120,7 +118,7 @@ class ClientViewSet(viewsets.ModelViewSet):
             logging.info(f"[client_viewset - perform_create] Cliente creado con éxito: {client.id}")
         except Exception as e:
             logging.error(f"[client_viewset - perform_create] Error creando cliente: {str(e)}")
-            return Response({DETAILS: {ERROR_CREATING_CLIENT: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
     def perform_destroy(self, instance):
         try:
@@ -180,8 +178,8 @@ class ClientViewSet(viewsets.ModelViewSet):
 
             historial = Collection.objects.filter(client=client, worker__company=request.user.worker_profile.company).order_by('-collection_date')
             aggregates = historial.aggregate(
-                total_liters=Sum('liters_collected'),
-                avg_liters=Avg('liters_collected')
+                total_liters=Sum('net_liters'),
+                avg_liters=Avg('net_liters')
             )
 
             serializer = CollectionSerializer(historial, many=True)

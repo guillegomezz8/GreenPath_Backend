@@ -45,7 +45,7 @@ class UpdateCompanySerializer(serializers.ModelSerializer):
             instance.save()
             return instance
         except Exception as e:
-            logging.error(f"Error updating company with id {instance.id}: {str(e)}")
+            logging.error(f"[company_serializers - update] Error updating company with id {instance.id}: {str(e)}")
             raise serializers.ValidationError(f"Error updating company: {str(e)}")
 
 
@@ -68,5 +68,5 @@ class PartialUpdateCompanySerializer(serializers.ModelSerializer):
             instance.save()
             return instance
         except Exception as e:
-            logging.error(f"Error updating company with id {instance.id}: {str(e)}")
+            logging.error(f"[company_serializers - update] Error updating company with id {instance.id}: {str(e)}")
             raise serializers.ValidationError(f"Error updating company: {str(e)}")

@@ -94,7 +94,7 @@ class WorkerViewSet(viewsets.ModelViewSet):
             user_data = worker_data.pop("user")
             get_access = worker_data.pop("get_access", False)
 
-            company = getattr(getattr(self.request.user, "worker_profile", None), "company", None)
+            company = self.request.user.worker_profile.company if hasattr(self.request.user, "worker_profile") else None
 
             with transaction.atomic():
                 user = User.objects.create_user(
@@ -171,7 +171,7 @@ class WorkerViewSet(viewsets.ModelViewSet):
             return Response(response, status=status.HTTP_200_OK)
 
         except Exception as e:
-            logging.error(f"[client_viewset - list] Error al listar clientes: {str(e)}")
+            logging.error(f"[worker_viewset - list] Error al listar clientes: {str(e)}")
             return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
     @action(detail=True, methods=['put'])

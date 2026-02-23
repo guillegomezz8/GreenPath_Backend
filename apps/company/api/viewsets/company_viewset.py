@@ -4,6 +4,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from django_filters.rest_framework import (
     FilterSet, CharFilter,DjangoFilterBackend 
 )
+from django.db.models import Q
 from apps.base.logger import configure_logging
 from apps.company.models import Company
 from apps.base.permissions import IsOwnerUser
@@ -29,10 +30,20 @@ class CompanyFilter(FilterSet):
     phone = CharFilter(field_name='phone', lookup_expr='icontains')
     email = CharFilter(field_name='email', lookup_expr='icontains')
     cif = CharFilter(field_name='cif', lookup_expr='icontains')
+    search = CharFilter(method='filter_search')
 
     class Meta:
         model = Company
-        fields = ['name','address', 'phone', 'email', 'cif', ]
+        fields = ['name', 'address', 'phone', 'email', 'cif', 'search']
+
+    def filter_search(self, queryset, name, value):
+        return queryset.filter(
+            Q(name__icontains=value) |
+            Q(address__icontains=value) |
+            Q(email__icontains=value) |
+            Q(cif__icontains=value) |
+            Q(phone__icontains=value)
+        )
 
 
 class CompanyViewSet(viewsets.ModelViewSet):
@@ -68,9 +79,9 @@ class CompanyViewSet(viewsets.ModelViewSet):
             if self.request.user.role_type == 'owner':
                 serializer.save(owner=self.request.user)
             else:
-                logging.error("Solo los dueños pueden crear empresas")
+                logging.error("[company_viewset - perform_create] Solo los dueños pueden crear empresas")
                 raise ValueError(ONLY_OWNERS_CAN_CREATE_COMPANIES)
         except Exception as e:
-            logging.error(f"Error creando empresa: {str(e)}")
+            logging.error(f"[company_viewset - perform_create] Error creando empresa: {str(e)}")
             raise Exception(f"{ERROR}: {ERROR_CREATING_COMPANY} - {str(e)}")
 

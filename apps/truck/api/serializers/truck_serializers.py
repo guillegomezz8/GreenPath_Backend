@@ -68,7 +68,7 @@ class UpdateTruckSerializer(serializers.ModelSerializer):
             instance.save()
             return instance
         except Exception as e:
-            logging.error(f"Error updating truck with id {instance.id}: {str(e)}")
+            logging.error(f"[truck_serializers - update] Error updating truck with id {instance.id}: {str(e)}")
             raise serializers.ValidationError(f"Error updating truck: {str(e)}")
 
 
@@ -94,7 +94,7 @@ class PartialUpdateTruckSerializer(serializers.ModelSerializer):
             instance.save()
             return instance
         except Exception as e:
-            logging.error(f"Error updating truck with id {instance.id}: {str(e)}")
+            logging.error(f"[truck_serializers - update] Error updating truck with id {instance.id}: {str(e)}")
             raise serializers.ValidationError(f"Error updating truck: {str(e)}")
         
 

@@ -1,7 +1,6 @@
 # apps/auth/api/views_google.py
 import logging
 from django.conf import settings
-from django.contrib.auth import get_user_model
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -12,7 +11,15 @@ from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 
 from apps.user.models.user import User
-from apps.base.literals import ERROR, USER_NOT_FOUND, INVALID_EMAIL_RECEIVED, INVALID_GOOGLE_ID_TOKEN, INTERNAL_ERROR
+from apps.base.literals import (
+    CREDENTIAL_OR_TOKEN_REQUIRED,
+    DETAILS,
+    ERROR,
+    INTERNAL_ERROR,
+    INVALID_EMAIL_RECEIVED,
+    INVALID_GOOGLE_ID_TOKEN,
+    USER_NOT_FOUND,
+)
 
 class GoogleLoginAPIView(APIView):
     permission_classes = [AllowAny]
@@ -23,10 +30,10 @@ class GoogleLoginAPIView(APIView):
             credential = request.data.get("credential") or request.data.get("token")
             
             if not credential:
-                return Response({ERROR: "credential o token requerido"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({ERROR: CREDENTIAL_OR_TOKEN_REQUIRED}, status=status.HTTP_400_BAD_REQUEST)
 
             idinfo = None
-            client_ids = getattr(settings, "GOOGLE_CLIENT_ID", "").split(",")
+            client_ids = settings.GOOGLE_CLIENT_ID.split(",") if hasattr(settings, "GOOGLE_CLIENT_ID") else []
             errors = []
             
             for aud in [c.strip() for c in client_ids if c.strip()]:
@@ -39,7 +46,7 @@ class GoogleLoginAPIView(APIView):
                     errors.append(str(e))
                     
             if not idinfo:
-                logging.error(f"Google ID token inválido: {errors}")
+                logging.error(f"[auth_views - post] Google ID token inválido: {errors}")
                 return Response({ERROR: INVALID_GOOGLE_ID_TOKEN}, status=status.HTTP_401_UNAUTHORIZED)
 
             email = idinfo.get("email")
@@ -77,5 +84,5 @@ class GoogleLoginAPIView(APIView):
             return Response(data, status=status.HTTP_200_OK)
 
         except Exception as e:
-            logging.exception("Error en Google login: %s", e)
-            return Response({ERROR: INTERNAL_ERROR}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logging.error(f"[auth_views - post] Error en Google login: {str(e)}")
+            return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

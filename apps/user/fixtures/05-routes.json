@@ -1,29 +1,28 @@
 [
-    {
-        "model": "route.route",
-        "pk": 1,
-        "fields": {
-            "name": "Ruta Prueba",
-            "company": 1,
-            "workers": [1,2],
-            "start_date": "2023-01-01",
-            "end_date": "2023-12-31",
-            "week_start": 0,
-            "week_end": 6
-        }
-    },
-    {
-        "model": "route.route",
-        "pk": 2,
-        "fields": {
-            "name": "Ruta Prueba 2",
-            "company": 1,
-            "workers": [1],
-            "start_date": "2023-01-01",
-            "end_date": "2023-12-31",
-            "week_start": 0,
-            "week_end": 6
-        }
+  {
+    "model": "route.route",
+    "pk": 1,
+    "fields": {
+      "name": "Ruta Sevilla Laboral",
+      "company": 1,
+      "workers": [1, 2],
+      "start_date": "2026-01-01",
+      "end_date": "2026-12-31",
+      "week_start": 0,
+      "week_end": 4
     }
-
+  },
+  {
+    "model": "route.route",
+    "pk": 2,
+    "fields": {
+      "name": "Ruta Sevilla Fin de Semana",
+      "company": 1,
+      "workers": [1],
+      "start_date": "2026-01-01",
+      "end_date": "2026-12-31",
+      "week_start": 5,
+      "week_end": 6
+    }
+  }
 ]

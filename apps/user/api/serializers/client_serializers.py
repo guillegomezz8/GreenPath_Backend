@@ -40,7 +40,7 @@ class ClientSerializer(serializers.ModelSerializer):
 
     def get_last_completed_pick_up(self, obj):
         dt = (
-            Collection.objects.filter(client=obj, status=CollectionStatus.COMPLETED)
+            Collection.objects.filter(client=obj, status=CollectionStatus.CONFIRMED)
             .aggregate(dt=Max("collection_date"))
             .get("dt")
         )
@@ -119,14 +119,14 @@ class UpdateClientSerializer(serializers.ModelSerializer):
                 setattr(instance, attr, value)
             instance.save()
 
-            if email and getattr(instance, "user", None):
+            if email and hasattr(instance, "user") and instance.user:
                 instance.user.email = email
                 instance.user.full_clean(validate_unique=False)
                 instance.user.save(update_fields=["email"])
 
             return instance
         except Exception as e:
-            logging.error(f"Error updating client with id {instance.id}: {str(e)}")
+            logging.error(f"[client_serializers - update] Error updating client with id {instance.id}: {str(e)}")
             raise serializers.ValidationError(f"Error actualizando cliente: {str(e)}")
 
 
@@ -164,12 +164,12 @@ class PartialUpdateClientSerializer(serializers.ModelSerializer):
                 setattr(instance, attr, value)
             instance.save()
 
-            if email and getattr(instance, "user", None):
+            if email and hasattr(instance, "user") and instance.user:
                 instance.user.email = email
                 instance.user.full_clean(validate_unique=False)
                 instance.user.save(update_fields=["email"])
 
             return instance
         except Exception as e:
-            logging.error(f"Error updating client with id {instance.id}: {str(e)}")
+            logging.error(f"[client_serializers - update] Error updating client with id {instance.id}: {str(e)}")
             raise serializers.ValidationError(f"Error actualizando cliente: {str(e)}")

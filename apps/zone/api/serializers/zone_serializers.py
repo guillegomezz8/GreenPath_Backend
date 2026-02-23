@@ -91,7 +91,7 @@ class CreateZoneSerializer(serializers.Serializer):
             return coords
             
         except Exception as e:
-            logger.error(f"Error parsing WKT string: {str(e)}")
+            logger.error(f"[zone_serializers - _parse_wkt_string] Error parsing WKT string: {str(e)}")
             raise serializers.ValidationError({"polygon": f"Error al parsear coordenadas WKT: {str(e)}"})
 
     def _parse_coordinates_array(self, coords_array):
@@ -114,7 +114,7 @@ class CreateZoneSerializer(serializers.Serializer):
         try:
             return Zone.objects.create(**validated_data)
         except Exception as e:
-            logger.error(f"[CreateZoneSerializer] Error al crear zona: {str(e)}")
+            logger.error(f"[zone_serializers - create] Error al crear zona: {str(e)}")
             raise serializers.ValidationError(f"Error al crear zona: {str(e)}")
 
 
@@ -197,7 +197,7 @@ class UpdateZoneSerializer(serializers.Serializer):
             return coords
             
         except Exception as e:
-            logger.error(f"Error parsing WKT string: {str(e)}")
+            logger.error(f"[zone_serializers - _parse_wkt_string] Error parsing WKT string: {str(e)}")
             raise serializers.ValidationError({"polygon": f"Error al parsear coordenadas WKT: {str(e)}"})
 
     def _parse_coordinates_array(self, coords_array):
@@ -223,5 +223,5 @@ class UpdateZoneSerializer(serializers.Serializer):
             instance.save()
             return instance
         except Exception as e:
-            logger.error(f"[UpdateZoneSerializer] Error al actualizar zona {instance.id}: {str(e)}")
+            logger.error(f"[zone_serializers - update] Error al actualizar zona {instance.id}: {str(e)}")
             raise serializers.ValidationError(f"Error al actualizar zona: {str(e)}")

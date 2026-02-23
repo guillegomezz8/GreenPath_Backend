@@ -37,9 +37,9 @@ class Company(BaseModel):
         return self.name
 
     def clean(self):
-        logging.info("Validando que el dueño es un owner")
+        logging.info("[company_model - CompanyModel] Validando que el dueño es un owner")
         if self.owner and self.owner.role_type and self.owner.role_type != Role.OWNER:
-            logging.error("El dueño no tiene el rol de owners")
+            logging.error("[company_model - CompanyModel] El dueño no tiene el rol de owners")
             raise ValidationError({'owner': 'El dueño debe tener el rol de "owner".'})
 
     def save(self, *args, **kwargs):

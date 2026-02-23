@@ -23,7 +23,6 @@ from apps.truck.api.serializers.truck_serializers import (
     AssignDriverSerializer
 )
 from apps.base.literals import (
-    ERROR_CREATING_TRUCK,
     DETAILS,
     INTERNAL_ERROR,
     ONLY_OWNERS_CAN_CREATE_TRUCKS,
@@ -63,7 +62,9 @@ class TruckFilter(FilterSet):
 
 
 def _user_company_id(user):
-    return getattr(getattr(user, "worker_profile", None), "company_id", None)
+    if not hasattr(user, "worker_profile"):
+        return None
+    return user.worker_profile.company_id
 
 
 class TruckViewSet(viewsets.ModelViewSet):
@@ -126,12 +127,12 @@ class TruckViewSet(viewsets.ModelViewSet):
                 return Response({DETAILS: NEED_COMPANY_FOR_TRUCK_CREATION}, status=status.HTTP_400_BAD_REQUEST)
 
             user = self.request.user
-            if getattr(user, "role_type", None) != "owner" or _user_company_id(user) != company.id:
+            if user.role_type != "owner" or _user_company_id(user) != company.id:
                 logging.error("[truck_viewset - perform_create] Solo los dueños pueden crear camiones para su propia empresa.")
                 return Response({DETAILS: ONLY_OWNERS_CAN_CREATE_TRUCKS}, status=status.HTTP_400_BAD_REQUEST)
 
             if driver and hasattr(driver, "truck"):
-                old_truck = getattr(driver, "truck", None)
+                old_truck = driver.truck if hasattr(driver, "truck") else None
                 if old_truck:
                     logging.info(f"[truck_viewset - perform_create] Liberando camión previo {old_truck.id} del conductor {driver.id}")
                     old_truck.driver = None
@@ -144,7 +145,7 @@ class TruckViewSet(viewsets.ModelViewSet):
 
         except Exception as e:
             logging.error(f"[truck_viewset - perform_create] Error creando camión: {str(e)}")
-            return Response({DETAILS: {ERROR_CREATING_TRUCK: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def perform_update(self, serializer):
         try:
@@ -152,7 +153,7 @@ class TruckViewSet(viewsets.ModelViewSet):
             new_company = serializer.validated_data.get("company") or instance.company
             user = self.request.user
             if not (user.is_staff or user.is_superuser):
-                if getattr(user, "role_type", None) != "owner" or _user_company_id(user) != new_company.id:
+                if user.role_type != "owner" or _user_company_id(user) != new_company.id:
                     logging.error("[truck_viewset - perform_update] Solo puedes actualizar camiones de tu empresa.")
                     return Response({DETAILS: ONLY_UPDATE_TRUCKS_SAME_COMPANY}, status=status.HTTP_400_BAD_REQUEST)
 

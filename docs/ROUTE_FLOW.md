@@ -17,6 +17,24 @@ Si falla Google, no hay API key o no hay hub, se mantiene el orden actual y el f
 - View: `apps/route/api/viewsets/route_viewset.py` -> `generate_week`
 - Serializer de entrada: `GenerateWeekSerializer`
 
+## Ejecucion operativa de ruta diaria
+
+Endpoints nuevos para operar una `RouteDay` ya generada:
+
+- `POST /routes/{id}/route-days/{route_day_id}/start/`
+- `POST /routes/{id}/route-days/{route_day_id}/finish/`
+- `POST /routes/{id}/route-days/{route_day_id}/stops/{route_day_client_id}/complete/`
+- `GET /routes/{id}/route-days/{route_day_id}/google-navigation/`
+
+Reglas:
+
+- `start`: solo desde `PLANNED` o `PARTIAL` (pasa a `IN_PROGRESS`, set `started_at`).
+- `complete`: solo con ruta diaria `IN_PROGRESS`.
+- `complete`: bloquea salto de orden por defecto; se puede forzar con `force=true`.
+- `complete`: crea `Collection` ligada a `route_day_client` y actualiza `CollectionRequest` a `MANUAL`.
+- `finish`: solo desde `IN_PROGRESS` y calcula estado final (`COMPLETED`, `PARTIAL` o `CANCELED`).
+- `google-navigation`: devuelve URL de Google Maps con origen hub + waypoints ordenados.
+
 Validaciones de entrada:
 - `week_start_date` obligatorio
 - `daily_capacity_liters` global **o** `days[]` por fecha

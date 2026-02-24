@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+from decimal import Decimal
 import logging
 
 from rest_framework import serializers
@@ -19,7 +20,7 @@ from apps.base.logger import configure_logging
 from apps.route.models import Route, RouteDay, RouteDayClient
 from apps.user.api.serializers.client_serializers import ClientSerializer
 from apps.zone.models import Zone
-from apps.base.enums import Weekday
+from apps.base.enums import Weekday, ContainerType
 
 configure_logging()
 
@@ -170,13 +171,14 @@ class GenerateDailyZoneRouteInputSerializer(serializers.Serializer):
 
 class GenerateWeekDayCapacitySerializer(serializers.Serializer):
     date = serializers.DateField()
-    daily_capacity_liters = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0)
+    daily_capacity_liters = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=Decimal('0.00'))
 
 
 class GenerateWeekSerializer(serializers.Serializer):
     week_start_date = serializers.DateField()
     regenerate = serializers.BooleanField(default=False, required=False)
-    daily_capacity_liters = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0, required=False, allow_null=True)
+    auto_estimate_without_contact = serializers.BooleanField(default=False, required=False)
+    daily_capacity_liters = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=Decimal('0.00'), required=False, allow_null=True)
     days = GenerateWeekDayCapacitySerializer(many=True, required=False, allow_empty=False)
 
     def validate(self, attrs):
@@ -222,3 +224,20 @@ class RouteZoneConfigSerializer(serializers.Serializer):
             if weekday not in Weekday.values:
                 raise serializers.ValidationError(ROUTE_ZONE_WEEKDAY_INVALID)
         return value
+
+
+class CompleteRouteDayClientSerializer(serializers.Serializer):
+    container_type = serializers.ChoiceField(choices=ContainerType.choices, required=False, default=ContainerType.BIDONES)
+    container_number = serializers.IntegerField(min_value=1, required=False, default=1)
+    notes = serializers.CharField(required=False, allow_blank=True, default='')
+    mark_as_canceled = serializers.BooleanField(required=False, default=False)
+    force = serializers.BooleanField(required=False, default=False)
+    worker_id = serializers.IntegerField(required=False, allow_null=True)
+
+
+class FinishRouteDaySerializer(serializers.Serializer):
+    close_action = serializers.ChoiceField(
+        choices=[("PARTIAL", "Parcial"), ("CANCELED", "Cancelada")],
+        required=False,
+        allow_null=True,
+    )

@@ -10,6 +10,7 @@ configure_logging()
 
 
 class TruckSerializer(serializers.ModelSerializer):
+    capacity = serializers.DecimalField(source="capacity_liters", max_digits=10, decimal_places=2, read_only=True, allow_null=True)
     driver_id = serializers.IntegerField(source="driver.id", read_only=True)
     driver_name = serializers.SerializerMethodField()
     status_display = serializers.CharField(source="get_status_display", read_only=True)
@@ -17,7 +18,22 @@ class TruckSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Truck
-        exclude = ("modified_date", "deleted_date", "created_date")
+        fields = (
+            "id",
+            "registration_number",
+            "brand",
+            "model",
+            "year",
+            "capacity",
+            "status",
+            "status_display",
+            "fuel",
+            "fuel_display",
+            "driver",
+            "driver_id",
+            "driver_name",
+            "company",
+        )
 
     def get_driver_id(self, obj):
         if obj.driver:
@@ -35,7 +51,7 @@ class CreateTruckSerializer(serializers.ModelSerializer):
     brand = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     model = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     year = serializers.IntegerField(required=False, allow_null=True)
-    capacity = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, allow_null=True)
+    capacity = serializers.DecimalField(source="capacity_liters", max_digits=10, decimal_places=2, required=False, allow_null=True)
     status = serializers.ChoiceField(choices=TruckStatus.choices, required=False)
     fuel = serializers.ChoiceField(choices=Fuel.choices, required=False, allow_null=True)
     driver = serializers.PrimaryKeyRelatedField(queryset=Worker.objects.all(), required=False, allow_null=True)
@@ -51,7 +67,7 @@ class UpdateTruckSerializer(serializers.ModelSerializer):
     brand = serializers.CharField(required=True, allow_blank=True)
     model = serializers.CharField(required=True, allow_blank=True)
     year = serializers.IntegerField(required=True, allow_null=True)
-    capacity = serializers.DecimalField(max_digits=10, decimal_places=2, required=True, allow_null=True)
+    capacity = serializers.DecimalField(source="capacity_liters", max_digits=10, decimal_places=2, required=True, allow_null=True)
     status = serializers.ChoiceField(choices=TruckStatus.choices, required=True)
     fuel = serializers.ChoiceField(choices=Fuel.choices, required=True, allow_null=True)
     driver = serializers.PrimaryKeyRelatedField(queryset=Worker.objects.all(), required=False, allow_null=True)
@@ -77,7 +93,7 @@ class PartialUpdateTruckSerializer(serializers.ModelSerializer):
     brand = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     model = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     year = serializers.IntegerField(required=False, allow_null=True)
-    capacity = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, allow_null=True)
+    capacity = serializers.DecimalField(source="capacity_liters", max_digits=10, decimal_places=2, required=False, allow_null=True)
     status = serializers.ChoiceField(choices=TruckStatus.choices, required=False)
     fuel = serializers.ChoiceField(choices=Fuel.choices, required=False, allow_null=True)
     driver = serializers.PrimaryKeyRelatedField(queryset=Worker.objects.all(), required=False, allow_null=True)

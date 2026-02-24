@@ -1,20 +1,31 @@
 from datetime import timedelta, datetime, time
+from decimal import Decimal
 from functools import reduce
 import logging
+from urllib.parse import urlencode
 
 import requests
 from celery import current_app
 from django.conf import settings
 from django.core.cache import cache
 from django.db import IntegrityError, transaction
-from django.db.models import Q, Max
+from django.db.models import Q, Max, Avg
 from django.utils import timezone
 
-from apps.base.enums import PickupFrequency, CollectionRequestStatus, CollectionStatus
+from apps.base.enums import PickupFrequency, CollectionRequestStatus, CollectionStatus, RouteDayStatus, PlannedSource, ContainerType
 from apps.base.literals import (
     ROUTE_GOOGLE_NO_VALID_ROUTE,
     ROUTE_WEEK_GENERATION_IN_PROGRESS,
     ROUTE_WEEK_OUTSIDE_ROUTE_RANGE,
+    ROUTE_DAY_START_INVALID_STATUS,
+    ROUTE_DAY_FINISH_INVALID_STATUS,
+    ROUTE_DAY_STOP_ROUTE_NOT_STARTED,
+    ROUTE_DAY_STOP_ALREADY_COMPLETED,
+    ROUTE_DAY_STOP_OUT_OF_ORDER,
+    ROUTE_DAY_GOOGLE_NAVIGATION_EMPTY,
+    ROUTE_DAY_GOOGLE_HUB_REQUIRED,
+    ROUTE_DAY_FINISH_DECISION_REQUIRED,
+    ROUTE_DAY_FINISH_CLOSE_ACTION_INVALID,
 )
 from apps.collection.models import Collection, CollectionRequest
 from apps.collection.tasks import auto_estimate_collection_request_liters, notify_collection_request_created
@@ -155,7 +166,53 @@ def _enqueue_collection_request_notification(collection_request):
     logger.info(f"[route_utils - _enqueue_collection_request_notification] Notificacion encolada para solicitud {collection_request.id}")
 
 
-def _schedule_collection_request(route_day_client, route_day_start):
+def _compute_auto_estimated_liters(collection_request):
+    client_id = collection_request.route_day_client.client_id
+    historical_avg = (
+        Collection.objects
+        .filter(client_id=client_id)
+        .exclude(status=CollectionStatus.CANCELED)
+        .aggregate(avg_liters=Avg("net_liters"))
+        .get("avg_liters")
+    )
+
+    if historical_avg is not None:
+        return Decimal(historical_avg).quantize(Decimal("0.01"))
+    if collection_request.container_number:
+        computed = collection_request.compute_client_liters()
+        if computed is not None:
+            return Decimal(computed).quantize(Decimal("0.01"))
+    return Decimal("60.00")
+
+
+def _apply_auto_estimate_without_contact(collection_request):
+    estimated = _compute_auto_estimated_liters(collection_request)
+    collection_request.estimated_liters = estimated
+
+    if collection_request.final_liters is None or collection_request.status == CollectionRequestStatus.AUTO_ESTIMATED:
+        collection_request.final_liters = estimated
+
+    if not collection_request.final_source or collection_request.final_source == PlannedSource.AUTO:
+        collection_request.final_source = PlannedSource.AUTO
+
+    collection_request.status = CollectionRequestStatus.AUTO_ESTIMATED
+    collection_request.auto_estimate_task_id = None
+    collection_request.auto_estimate_scheduled_at = timezone.now()
+    collection_request.save(
+        update_fields=[
+            "estimated_liters",
+            "final_liters",
+            "final_source",
+            "status",
+            "auto_estimate_task_id",
+            "auto_estimate_scheduled_at",
+            "modified_date",
+        ]
+    )
+    logger.info(f"[route_utils - _apply_auto_estimate_without_contact] Solicitud {collection_request.id} autoestimada sin contacto con {estimated} litros")
+
+
+def _schedule_collection_request(route_day_client, route_day_start, auto_estimate_without_contact=False):
     expires_at = route_day_start - timedelta(hours=36)
     created = False
 
@@ -174,6 +231,24 @@ def _schedule_collection_request(route_day_client, route_day_start):
         if collection_request.expires_at != expires_at:
             collection_request.expires_at = expires_at
             updated_expiration = True
+
+        if auto_estimate_without_contact:
+            if old_task_id:
+                try:
+                    current_app.control.revoke(old_task_id, terminate=False)
+                    logger.info(f"[route_utils - _schedule_collection_request] Task anterior {old_task_id} revocada para solicitud {collection_request.id}")
+                except Exception as e:
+                    logger.warning(f"[route_utils - _schedule_collection_request] No se pudo revocar task anterior {old_task_id} para solicitud {collection_request.id}: {str(e)}")
+
+            if updated_expiration:
+                collection_request.save(update_fields=["expires_at", "modified_date"])
+
+            if collection_request.status in [CollectionRequestStatus.ANSWERED, CollectionRequestStatus.MANUAL]:
+                logger.info(f"[route_utils - _schedule_collection_request] Solicitud {collection_request.id} conservada en estado {collection_request.status} sin notificacion")
+                return
+
+            _apply_auto_estimate_without_contact(collection_request)
+            return
 
         if collection_request.status == CollectionRequestStatus.PENDING:
             task_id = _build_auto_estimate_task_id(collection_request.id, collection_request.expires_at)
@@ -260,7 +335,7 @@ def optimize_route_day_with_google(route_day):
     return optimized
 
 
-def generate_route_day_clients(route_day, regenerate=False, reserved_client_ids=None):
+def generate_route_day_clients(route_day, regenerate=False, reserved_client_ids=None, auto_estimate_without_contact=False):
     try:
         reserved_client_ids = reserved_client_ids or set()
 
@@ -324,12 +399,210 @@ def generate_route_day_clients(route_day, regenerate=False, reserved_client_ids=
         route_day_start = _route_day_start_datetime(route_day)
 
         for row in optimized_rows:
-            _schedule_collection_request(row, route_day_start)
+            _schedule_collection_request(row, route_day_start, auto_estimate_without_contact=auto_estimate_without_contact)
+
+        if route_day.status == RouteDayStatus.CANCELED and route_day.ordered_clients.exists():
+            route_day.status = RouteDayStatus.PLANNED
+            route_day.started_at = None
+            route_day.finished_at = None
+            route_day.save(update_fields=["status", "started_at", "finished_at"])
 
         return optimized_rows
     except Exception as e:
         logger.error(f"[route_utils - generate_route_day_clients] Error generando paradas para route_day {route_day.id}: {str(e)}")
         raise
+
+
+@transaction.atomic
+def start_route_day(route_day):
+    if route_day.status not in [RouteDayStatus.PLANNED, RouteDayStatus.PARTIAL]:
+        raise ValueError(ROUTE_DAY_START_INVALID_STATUS)
+
+    now = timezone.now()
+    route_day.status = RouteDayStatus.IN_PROGRESS
+    if not route_day.started_at:
+        route_day.started_at = now
+    route_day.finished_at = None
+    route_day.save(update_fields=["status", "started_at", "finished_at"])
+
+    return route_day
+
+
+@transaction.atomic
+def finish_route_day(route_day, close_action=None):
+    if route_day.status != RouteDayStatus.IN_PROGRESS:
+        raise ValueError(ROUTE_DAY_FINISH_INVALID_STATUS)
+
+    total_stops = route_day.ordered_clients.count()
+    completed_stops = RouteDayClient.objects.filter(route_day=route_day, collections__isnull=False).distinct().count()
+    canceled_stops = RouteDayClient.objects.filter(route_day=route_day, collections__status=CollectionStatus.CANCELED).distinct().count()
+
+    normalized_action = close_action or None
+    if normalized_action and normalized_action not in [RouteDayStatus.PARTIAL, RouteDayStatus.CANCELED]:
+        raise ValueError(ROUTE_DAY_FINISH_CLOSE_ACTION_INVALID)
+
+    pending_stops = max(total_stops - completed_stops, 0)
+
+    if total_stops == 0:
+        route_day.status = RouteDayStatus.CANCELED if not normalized_action else normalized_action
+    elif pending_stops > 0:
+        if not normalized_action:
+            raise ValueError(ROUTE_DAY_FINISH_DECISION_REQUIRED)
+        route_day.status = normalized_action
+    elif canceled_stops > 0:
+        route_day.status = RouteDayStatus.PARTIAL
+    else:
+        route_day.status = RouteDayStatus.COMPLETED
+
+    now = timezone.now()
+    if not route_day.started_at:
+        route_day.started_at = now
+    route_day.finished_at = now
+    route_day.save(update_fields=["status", "started_at", "finished_at"])
+
+    return route_day
+
+
+def _resolve_worker_for_route_day(route_day, user, worker_id=None):
+    if user.role_type == "worker" and hasattr(user, "worker_profile"):
+        return user.worker_profile
+
+    if worker_id:
+        worker = route_day.route.workers.filter(id=worker_id).first()
+        if worker and worker.company_id == route_day.route.company_id:
+            return worker
+
+    return route_day.route.workers.filter(company_id=route_day.route.company_id).order_by("id").first()
+
+
+@transaction.atomic
+def complete_route_day_client(route_day, route_day_client, user, payload):
+    if route_day.status != RouteDayStatus.IN_PROGRESS:
+        raise ValueError(ROUTE_DAY_STOP_ROUTE_NOT_STARTED)
+
+    active_collection = Collection.objects.filter(route_day_client=route_day_client).exclude(status=CollectionStatus.CANCELED).first()
+    if active_collection:
+        raise ValueError(ROUTE_DAY_STOP_ALREADY_COMPLETED)
+
+    force = payload.get("force", False)
+    if not force:
+        previous_pending_exists = (
+            RouteDayClient.objects
+            .filter(route_day=route_day, order__lt=route_day_client.order)
+            .filter(collections__isnull=True)
+            .exists()
+        )
+        if previous_pending_exists:
+            raise ValueError(ROUTE_DAY_STOP_OUT_OF_ORDER)
+
+    collection_request = CollectionRequest.objects.filter(route_day_client=route_day_client).first()
+    worker = _resolve_worker_for_route_day(route_day, user, worker_id=payload.get("worker_id"))
+    mark_as_canceled = payload.get("mark_as_canceled", False)
+
+    notes = payload.get("notes") or ""
+
+    container_type = payload.get("container_type") or ContainerType.BIDONES
+    container_number = payload.get("container_number") or 1
+    if collection_request:
+        if "container_type" not in payload:
+            container_type = collection_request.container_type or ContainerType.BIDONES
+        if "container_number" not in payload:
+            container_number = collection_request.container_number or 1
+
+    measured_liters = None
+    deduction_liters = Decimal("0.00")
+    price_per_liter = Decimal("0.00")
+    status_value = CollectionStatus.CANCELED if mark_as_canceled else CollectionStatus.PENDING_MEASUREMENT
+
+    collection = Collection.objects.create(
+        client=route_day_client.client,
+        route_day_client=route_day_client,
+        worker=worker,
+        collection_date=route_day.date,
+        container_type=container_type,
+        container_number=container_number,
+        measured_liters=measured_liters,
+        deduction_liters=deduction_liters,
+        price_per_liter=price_per_liter,
+        status=status_value,
+        notes=notes,
+    )
+
+    if collection_request:
+        collection_request.container_type = container_type
+        collection_request.container_number = container_number
+        collection_request.final_source = PlannedSource.MANUAL
+        collection_request.status = CollectionRequestStatus.MANUAL
+        collection_request.manual_by = user
+        collection_request.manual_at = timezone.now()
+        if mark_as_canceled:
+            collection_request.final_liters = Decimal("0.00")
+            if collection_request.estimated_liters is None:
+                collection_request.estimated_liters = Decimal("0.00")
+        elif measured_liters is not None:
+            collection_request.final_liters = measured_liters
+            if collection_request.estimated_liters is None:
+                collection_request.estimated_liters = measured_liters
+        collection_request.save(update_fields=["container_type", "container_number", "final_source", "status", "manual_by", "manual_at", "final_liters", "estimated_liters", "modified_date"])
+
+    return collection
+
+
+def _planned_stop_liters(row):
+    if hasattr(row, "collection_request") and row.collection_request:
+        request_obj = row.collection_request
+        if request_obj.final_liters is not None:
+            return Decimal(request_obj.final_liters)
+        if request_obj.estimated_liters is not None:
+            return Decimal(request_obj.estimated_liters)
+        computed = request_obj.compute_client_liters()
+        if computed is not None:
+            return Decimal(computed)
+    return Decimal("0.00")
+
+
+def get_route_day_google_navigation_url(route_day):
+    route_day_clients = list(
+        route_day.ordered_clients
+        .select_related("client", "collection_request")
+        .filter(client__location__isnull=False)
+        .order_by("order")
+    )
+    if not route_day_clients:
+        raise ValueError(ROUTE_DAY_GOOGLE_NAVIGATION_EMPTY)
+
+    hub = CompanyHub.objects.filter(company=route_day.route.company, location__isnull=False).first()
+    if not hub:
+        raise ValueError(ROUTE_DAY_GOOGLE_HUB_REQUIRED)
+
+    origin = f"{hub.location.y},{hub.location.x}"
+    destination = origin
+
+    capacity_limit = Decimal(route_day.daily_capacity_liters or 0)
+    current_load = Decimal("0.00")
+    waypoint_points = []
+
+    for row in route_day_clients:
+        stop_liters = _planned_stop_liters(row)
+        if capacity_limit > 0 and current_load > 0 and current_load + stop_liters > capacity_limit:
+            waypoint_points.append(origin)
+            current_load = Decimal("0.00")
+
+        waypoint_points.append(f"{row.client.location.y},{row.client.location.x}")
+        current_load += stop_liters
+
+    waypoints = "|".join(waypoint_points)
+
+    params = {
+        "api": "1",
+        "origin": origin,
+        "destination": destination,
+        "travelmode": "driving",
+    }
+    if waypoints:
+        params["waypoints"] = waypoints
+
+    return f"https://www.google.com/maps/dir/?{urlencode(params, safe='|,')}"
 
 
 def _is_weekday_enabled(route, weekday):
@@ -346,8 +619,34 @@ def _is_route_date_in_range(route, target_date):
     return True
 
 
+def get_operational_week_start(route, reference_date):
+    delta_days = (reference_date.weekday() - route.week_start) % 7
+    return reference_date - timedelta(days=delta_days)
+
+
 @transaction.atomic
-def generate_week_for_route(route, week_start_date, regenerate=False, daily_capacity_liters=None, days=None):
+def ensure_route_day_for_date(route, target_date):
+    try:
+        locked_route = Route.objects.select_for_update().get(id=route.id)
+        if not _is_route_date_in_range(locked_route, target_date):
+            return None
+        if not _is_weekday_enabled(locked_route, target_date.weekday()):
+            return None
+
+        route_day, created = RouteDay.objects.get_or_create(route=locked_route, date=target_date)
+
+        if created or not route_day.ordered_clients.exists():
+            generate_route_day_clients(route_day, regenerate=False)
+            logger.info(f"[route_utils - ensure_route_day_for_date] RouteDay {route_day.id} asegurado para fecha {target_date}")
+
+        return route_day
+    except Exception as e:
+        logger.error(f"[route_utils - ensure_route_day_for_date] Error asegurando route_day para ruta {route.id} y fecha {target_date}: {str(e)}")
+        raise
+
+
+@transaction.atomic
+def generate_week_for_route(route, week_start_date, regenerate=False, daily_capacity_liters=None, days=None, auto_estimate_without_contact=False):
     lock_key = f"route_week_generation_lock_{route.id}_{week_start_date.isoformat()}"
     if not cache.add(lock_key, "1", timeout=300):
         logger.warning(f"[route_utils - generate_week_for_route] Lock activo para ruta {route.id} y semana {week_start_date}")
@@ -362,8 +661,6 @@ def generate_week_for_route(route, week_start_date, regenerate=False, daily_capa
 
         days = days or []
         capacities_by_date = {item["date"]: item["daily_capacity_liters"] for item in days}
-        week_assigned_client_ids = set()
-
         route_days = []
         for i in range(7):
             target_date = week_start_date + timedelta(days=i)
@@ -384,8 +681,7 @@ def generate_week_for_route(route, week_start_date, regenerate=False, daily_capa
                 route_day.daily_capacity_liters = capacities_by_date[target_date]
                 route_day.save(update_fields=["daily_capacity_liters"])
 
-            generate_route_day_clients(route_day, regenerate=regenerate, reserved_client_ids=week_assigned_client_ids)
-            week_assigned_client_ids.update(route_day.ordered_clients.values_list("client_id", flat=True))
+            generate_route_day_clients(route_day, regenerate=regenerate, auto_estimate_without_contact=auto_estimate_without_contact)
             route_days.append(route_day)
 
         logger.info(f"[route_utils - generate_week_for_route] Semana generada para ruta {locked_route.id} con {len(route_days)} route_days")

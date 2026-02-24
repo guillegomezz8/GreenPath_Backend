@@ -58,6 +58,21 @@ ROUTE_END_DATE_BEFORE_START_DATE = 'La fecha de fin no puede ser anterior a la f
 ROUTE_ZONE_DAYS_DUPLICATED = 'No se puede repetir el mismo dia de la semana en zone_days.'
 ROUTE_ZONE_WEEKDAY_INVALID = 'El weekday indicado no es valido.'
 ROUTE_ZONE_CONFIG_UPDATED = 'Configuracion de zonas actualizada correctamente.'
+ROUTE_DAY_NOT_FOUND = 'Ruta diaria no encontrada para esta ruta.'
+ROUTE_DAY_CLIENT_NOT_FOUND = 'Parada no encontrada para esta ruta diaria.'
+ROUTE_DAY_START_SUCCESS = 'Ruta diaria iniciada correctamente.'
+ROUTE_DAY_FINISH_SUCCESS = 'Ruta diaria finalizada correctamente.'
+ROUTE_DAY_STOP_COMPLETED_SUCCESS = 'Parada registrada correctamente.'
+ROUTE_DAY_GOOGLE_NAVIGATION_READY = 'Enlace de navegacion generado correctamente.'
+ROUTE_DAY_START_INVALID_STATUS = 'Solo se puede iniciar una ruta diaria planificada o parcial.'
+ROUTE_DAY_FINISH_INVALID_STATUS = 'Solo se puede finalizar una ruta diaria en progreso.'
+ROUTE_DAY_STOP_ROUTE_NOT_STARTED = 'Debes iniciar la ruta diaria antes de registrar una parada.'
+ROUTE_DAY_STOP_ALREADY_COMPLETED = 'La parada ya tiene una recogida registrada.'
+ROUTE_DAY_STOP_OUT_OF_ORDER = 'Debes registrar primero las paradas anteriores.'
+ROUTE_DAY_GOOGLE_NAVIGATION_EMPTY = 'No hay paradas con ubicacion para generar navegacion.'
+ROUTE_DAY_GOOGLE_HUB_REQUIRED = 'Debes configurar la nave (hub) para exportar la navegacion.'
+ROUTE_DAY_FINISH_DECISION_REQUIRED = 'Quedan paradas pendientes. Debes elegir cerrar la ruta diaria como parcial o cancelada.'
+ROUTE_DAY_FINISH_CLOSE_ACTION_INVALID = 'La accion de cierre no es valida. Usa PARTIAL o CANCELED.'
 
 #Recogida
 ERROR_CREATING_COLLECTION = 'Error creando recogida'
@@ -76,6 +91,7 @@ COLLECTION_REQUEST_TOO_LATE = 'La fecha de recogida ya ha pasado para esta solic
 COLLECTION_REQUEST_CLIENT_LIST_FORBIDDEN = 'Solo clientes pueden consultar sus solicitudes.'
 COLLECTION_REQUEST_NOTIFY_SUBJECT = 'Nueva solicitud de estimacion de recogida'
 COLLECTION_REQUEST_NOTIFY_BODY = 'Hola, tienes una solicitud de estimacion para la ruta {route_name} del dia {route_date}. Por favor responde antes de {expires_at}.'
+COLLECTION_DEDUCTION_LITERS_INVALID = 'Los litros descontados no pueden ser mayores que los litros medidos.'
 
 #Dashboard
 ERROR_GETTING_DASHBOARD_DATA = 'Error obteniendo datos del dashboard'

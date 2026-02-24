@@ -96,16 +96,17 @@ class UserListSerializer(serializers.ModelSerializer):
 class UserProfileUpdateSerializer(serializers.ModelSerializer):
     name = serializers.CharField(write_only=True, required=False)
     phone = serializers.CharField(write_only=True, required=False)
+    photo = serializers.ImageField(write_only=True, required=False, allow_null=True)
     
     class Meta:
         model = User
-        fields = ['email', 'name', 'phone']
+        fields = ['email', 'name', 'phone', 'photo']
         
     def update(self, instance, validated_data):
         if 'email' in validated_data:
             instance.email = validated_data['email']
             
-        profile_fields = ['name', 'phone']
+        profile_fields = ['name', 'phone', 'photo']
         profile_data = {k: v for k, v in validated_data.items() if k in profile_fields}
         
         if profile_data:
@@ -118,6 +119,8 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
                 
             if profile:
                 for field, value in profile_data.items():
+                    if not hasattr(profile, field):
+                        continue
                     setattr(profile, field, value)
                 profile.save()
         

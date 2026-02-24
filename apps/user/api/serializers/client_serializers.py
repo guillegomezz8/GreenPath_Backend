@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from django.db.models import Sum, Count, Max
+from django.db.models import Sum, Max, Count, Q
 import logging
 
 from apps.base.logger import configure_logging
@@ -24,32 +24,42 @@ class ClientSerializer(serializers.ModelSerializer):
         model = Client
         exclude = ("modified_date", "deleted_date", "created_date")
 
+    def _get_collection_stats(self, obj):
+        if hasattr(obj, "_collection_stats_cache"):
+            return obj._collection_stats_cache
+
+        stats_cache = (
+            Collection.objects.filter(client=obj)
+            .aggregate(
+                total_pick_ups=Count("id", filter=~Q(status=CollectionStatus.CANCELED)),
+                last_pick_up=Max("collection_date", filter=~Q(status=CollectionStatus.CANCELED)),
+                last_completed_pick_up=Max("collection_date", filter=Q(status=CollectionStatus.CONFIRMED)),
+                total_paid=Sum("total_price", filter=Q(status=CollectionStatus.CONFIRMED)),
+            )
+        )
+        setattr(obj, "_collection_stats_cache", stats_cache)
+        return stats_cache
+
     def get_frequency(self, obj):
         return obj.get_frequency_display()
 
     def get_total_pick_ups(self, obj):
-        return Collection.objects.filter(client=obj).count()
+        stats = self._get_collection_stats(obj)
+        return stats.get("total_pick_ups") or 0
 
     def get_last_pick_up(self, obj):
-        dt = (
-            Collection.objects.filter(client=obj)
-            .aggregate(dt=Max("collection_date"))
-            .get("dt")
-        )
+        stats = self._get_collection_stats(obj)
+        dt = stats.get("last_pick_up")
         return dt or "-"
 
     def get_last_completed_pick_up(self, obj):
-        dt = (
-            Collection.objects.filter(client=obj, status=CollectionStatus.CONFIRMED)
-            .aggregate(dt=Max("collection_date"))
-            .get("dt")
-        )
+        stats = self._get_collection_stats(obj)
+        dt = stats.get("last_completed_pick_up")
         return dt or "-"
 
     def get_total_paid(self, obj):
-        total = (
-            Collection.objects.filter(client=obj).aggregate(total=Sum("total_price")).get("total")
-        )
+        stats = self._get_collection_stats(obj)
+        total = stats.get("total_paid")
         return total or 0
 
 

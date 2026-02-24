@@ -54,6 +54,10 @@ ROUTE_ZONE_CONFIG_DAY_INVALID = 'Dia no valido. Debe estar entre 0 (lunes) y 6 (
 ROUTE_ZONE_CONFIG_KEY_INVALID = 'Clave no valida. Debe ser un numero entre 0 y 6.'
 ROUTE_DAY_DATE_PAST_INVALID = 'La fecha no puede ser anterior a hoy'
 ROUTE_GOOGLE_NO_VALID_ROUTE = 'Google Maps no devolvio una ruta valida.'
+ROUTE_END_DATE_BEFORE_START_DATE = 'La fecha de fin no puede ser anterior a la fecha de inicio.'
+ROUTE_ZONE_DAYS_DUPLICATED = 'No se puede repetir el mismo dia de la semana en zone_days.'
+ROUTE_ZONE_WEEKDAY_INVALID = 'El weekday indicado no es valido.'
+ROUTE_ZONE_CONFIG_UPDATED = 'Configuracion de zonas actualizada correctamente.'
 
 #Recogida
 ERROR_CREATING_COLLECTION = 'Error creando recogida'

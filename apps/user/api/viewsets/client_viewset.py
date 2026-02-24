@@ -16,7 +16,7 @@ from apps.base.utils import gen_password, send_access_email, send_access_email_g
 from apps.user.models.client import Client
 from apps.user.models.user import User
 from apps.collection.models import Collection
-from apps.base.enums import PickupFrequency
+from apps.base.enums import PickupFrequency, CollectionStatus
 from apps.base.permissions import IsOwnerUser
 from apps.collection.api.serializers.collection_serializers import CollectionSerializer
 from apps.user.api.serializers.client_serializers import ClientSerializer,CreateClientSerializer,UpdateClientSerializer,PartialUpdateClientSerializer
@@ -176,21 +176,55 @@ class ClientViewSet(viewsets.ModelViewSet):
             logging.info(f"[client_viewset - collection_historial] Obteniendo historial de cliente {client_id} para usuario {request.user.id}")
             client = get_object_or_404(Client, id=client_id)
 
-            historial = Collection.objects.filter(client=client, worker__company=request.user.worker_profile.company).order_by('-collection_date')
+            historial = Collection.objects.filter(client=client)
+
+            if request.user.is_staff or request.user.is_superuser:
+                pass
+            elif request.user.role_type == "client":
+                if not hasattr(request.user, "client_profile") or request.user.client_profile.id != client.id:
+                    return Response({DETAILS: "No tienes permisos para consultar este historial."}, status=status.HTTP_403_FORBIDDEN)
+            elif hasattr(request.user, "worker_profile"):
+                historial = historial.filter(client__companies=request.user.worker_profile.company).distinct()
+            else:
+                return Response({DETAILS: "No tienes permisos para consultar este historial."}, status=status.HTTP_403_FORBIDDEN)
+
+            historial = historial.order_by("-collection_date")
             aggregates = historial.aggregate(
-                total_liters=Sum('net_liters'),
-                avg_liters=Avg('net_liters')
+                total_collections=Count("id"),
+                confirmed_collections=Count("id", filter=Q(status=CollectionStatus.CONFIRMED)),
+                pending_collections=Count("id", filter=Q(status=CollectionStatus.PENDING_MEASUREMENT)),
+                canceled_collections=Count("id", filter=Q(status=CollectionStatus.CANCELED)),
+                total_liters=Sum("net_liters", filter=~Q(status=CollectionStatus.CANCELED)),
+                avg_liters=Avg("net_liters", filter=~Q(status=CollectionStatus.CANCELED)),
+                total_paid=Sum("total_price", filter=Q(status=CollectionStatus.CONFIRMED)),
             )
 
             serializer = CollectionSerializer(historial, many=True)
 
-            total_liters = aggregates.get('total_liters') or 0
-            avg_liters = aggregates.get('avg_liters') or 0
+            total_collections = aggregates.get("total_collections") or 0
+            confirmed_collections = aggregates.get("confirmed_collections") or 0
+            pending_collections = aggregates.get("pending_collections") or 0
+            canceled_collections = aggregates.get("canceled_collections") or 0
+            effective_collections = confirmed_collections + pending_collections
+            total_liters = aggregates.get("total_liters") or 0
+            avg_liters = aggregates.get("avg_liters") or 0
+            total_paid = aggregates.get("total_paid") or 0
 
             response_data = {
                 "historial": serializer.data,
                 "total_liters": total_liters,
                 "media": round(avg_liters, 2),
+                "total_paid": total_paid,
+                "stats": {
+                    "total_collections": total_collections,
+                    "effective_collections": effective_collections,
+                    "confirmed_collections": confirmed_collections,
+                    "pending_collections": pending_collections,
+                    "canceled_collections": canceled_collections,
+                    "total_liters": total_liters,
+                    "avg_liters": round(avg_liters, 2),
+                    "total_paid": total_paid,
+                },
             }
 
             return Response(response_data, status=status.HTTP_200_OK)

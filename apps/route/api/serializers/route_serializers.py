@@ -11,10 +11,15 @@ from apps.base.literals import (
     ROUTE_DAY_DATE_PAST_INVALID,
     ROUTE_ZONE_CONFIG_DAY_INVALID,
     ROUTE_ZONE_CONFIG_KEY_INVALID,
+    ROUTE_END_DATE_BEFORE_START_DATE,
+    ROUTE_ZONE_DAYS_DUPLICATED,
+    ROUTE_ZONE_WEEKDAY_INVALID,
 )
 from apps.base.logger import configure_logging
 from apps.route.models import Route, RouteDay, RouteDayClient
 from apps.user.api.serializers.client_serializers import ClientSerializer
+from apps.zone.models import Zone
+from apps.base.enums import Weekday
 
 configure_logging()
 
@@ -27,15 +32,26 @@ class RouteSerializer(serializers.ModelSerializer):
 
 class CreateRouteSerializer(serializers.ModelSerializer):
     start_date = serializers.DateField(required=True)
-    end_date = serializers.DateField(required=True)
+    end_date = serializers.DateField(required=False, allow_null=True)
 
     class Meta:
         model = Route
-        fields = ('company', 'workers', 'start_date', 'end_date')
+        fields = ('name', 'workers', 'start_date', 'end_date', 'week_start', 'week_end')
+        extra_kwargs = {'workers': {'required': False}}
+
+    def validate(self, attrs):
+        start_date = attrs.get('start_date')
+        end_date = attrs.get('end_date')
+        if end_date and start_date and end_date < start_date:
+            raise serializers.ValidationError(ROUTE_END_DATE_BEFORE_START_DATE)
+        return attrs
 
     def create(self, validated_data):
         try:
+            workers = validated_data.pop('workers', [])
             route = Route.objects.create(**validated_data)
+            if workers:
+                route.workers.set(workers)
             return route
         except Exception as e:
             logging.error(f"[route_serializers - create] Error creating route: {str(e)}")
@@ -44,17 +60,32 @@ class CreateRouteSerializer(serializers.ModelSerializer):
 
 class UpdateRouteSerializer(serializers.ModelSerializer):
     start_date = serializers.DateField(required=True)
-    end_date = serializers.DateField(required=True)
+    end_date = serializers.DateField(required=False, allow_null=True)
 
     class Meta:
         model = Route
-        fields = ('company', 'workers', 'start_date', 'end_date')
+        fields = ('name', 'workers', 'start_date', 'end_date', 'week_start', 'week_end')
+        extra_kwargs = {'workers': {'required': False}}
+
+    def validate(self, attrs):
+        start_date = attrs.get('start_date')
+        if start_date is None and self.instance is not None:
+            start_date = self.instance.start_date
+        end_date = attrs.get('end_date')
+        if end_date is None and self.instance is not None:
+            end_date = self.instance.end_date
+        if end_date and start_date and end_date < start_date:
+            raise serializers.ValidationError(ROUTE_END_DATE_BEFORE_START_DATE)
+        return attrs
 
     def update(self, instance, validated_data):
         try:
+            workers = validated_data.pop('workers', None)
             for attr, value in validated_data.items():
                 setattr(instance, attr, value)
             instance.save()
+            if workers is not None:
+                instance.workers.set(workers)
             return instance
         except Exception as e:
             logging.error(f"[route_serializers - update] Error updating route with id {instance.id}: {str(e)}")
@@ -62,18 +93,33 @@ class UpdateRouteSerializer(serializers.ModelSerializer):
 
 
 class PartialUpdateRouteSerializer(serializers.ModelSerializer):
-    start_date = serializers.DateField(required=True)
-    end_date = serializers.DateField(required=True)
+    start_date = serializers.DateField(required=False)
+    end_date = serializers.DateField(required=False, allow_null=True)
 
     class Meta:
         model = Route
-        fields = ('company', 'workers', 'start_date', 'end_date')
+        fields = ('name', 'workers', 'start_date', 'end_date', 'week_start', 'week_end')
+        extra_kwargs = {'workers': {'required': False}}
+
+    def validate(self, attrs):
+        start_date = attrs.get('start_date')
+        if start_date is None and self.instance is not None:
+            start_date = self.instance.start_date
+        end_date = attrs.get('end_date')
+        if end_date is None and self.instance is not None:
+            end_date = self.instance.end_date
+        if end_date and start_date and end_date < start_date:
+            raise serializers.ValidationError(ROUTE_END_DATE_BEFORE_START_DATE)
+        return attrs
 
     def update(self, instance, validated_data):
         try:
+            workers = validated_data.pop('workers', None)
             for attr, value in validated_data.items():
                 setattr(instance, attr, value)
             instance.save()
+            if workers is not None:
+                instance.workers.set(workers)
             return instance
         except Exception as e:
             logging.error(f"[route_serializers - update] Error updating route with id {instance.id}: {str(e)}")
@@ -156,3 +202,23 @@ class GenerateWeekSerializer(serializers.Serializer):
                     raise serializers.ValidationError(GENERATE_WEEK_DAYS_OUTSIDE_WEEK)
 
         return attrs
+
+
+class RouteZoneDayConfigItemSerializer(serializers.Serializer):
+    weekday = serializers.IntegerField(min_value=0, max_value=6)
+    zones = serializers.PrimaryKeyRelatedField(queryset=Zone.objects.all(), many=True, required=False)
+
+
+class RouteZoneConfigSerializer(serializers.Serializer):
+    zone_days = RouteZoneDayConfigItemSerializer(many=True, required=False)
+
+    def validate_zone_days(self, value):
+        seen = set()
+        for item in value:
+            weekday = item.get('weekday')
+            if weekday in seen:
+                raise serializers.ValidationError(ROUTE_ZONE_DAYS_DUPLICATED)
+            seen.add(weekday)
+            if weekday not in Weekday.values:
+                raise serializers.ValidationError(ROUTE_ZONE_WEEKDAY_INVALID)
+        return value

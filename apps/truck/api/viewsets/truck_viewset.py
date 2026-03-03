@@ -84,9 +84,10 @@ class TruckViewSet(viewsets.ModelViewSet):
         if user.is_staff or user.is_superuser:
             return qs
 
-        company_id = _user_company_id(user)
-        if company_id:
-            return qs.filter(company_id=company_id)
+        if user.role_type == "owner":
+            company_id = _user_company_id(user)
+            if company_id:
+                return qs.filter(company_id=company_id)
         return qs.none()
 
     def get_serializer_class(self):
@@ -102,7 +103,7 @@ class TruckViewSet(viewsets.ModelViewSet):
             return TruckSerializer
 
     def get_permissions(self):
-        if self.action in ["create", "update", "partial_update", "destroy"]:
+        if self.action in ["create", "update", "partial_update", "destroy", "assign_driver", "list", "retrieve"]:
             self.permission_classes = [IsOwnerUser, IsAuthenticated]
         else:
             self.permission_classes = [IsAuthenticated]

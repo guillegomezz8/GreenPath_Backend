@@ -57,8 +57,10 @@ class UserViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action == "create":
             return [IsOwnerUser()]
-        if self.action in ["update", "retrieve", "partial_update", "destroy", "set_password", "list"]:
+        if self.action in ["update", "retrieve", "partial_update", "destroy", "list"]:
             return [IsAuthenticated(), IsOwnerOrStaffOrSuperUser()]
+        if self.action in ["set_password", "profile"]:
+            return [IsAuthenticated()]
         return [IsAuthenticated()]
 
     def get_serializer_class(self):

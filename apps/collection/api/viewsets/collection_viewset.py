@@ -88,13 +88,15 @@ class CollectionViewSet(viewsets.ModelViewSet):
             return base_qs
         if user.role_type == "client" and hasattr(user, "client_profile"):
             return base_qs.filter(client_id=user.client_profile.id)
-        if user.role_type in ["owner", "worker"] and hasattr(user, "worker_profile"):
+        if user.role_type == "owner" and hasattr(user, "worker_profile"):
             company_id = user.worker_profile.company_id
             return base_qs.filter(
                 Q(client__companies__id=company_id) |
                 Q(worker__company_id=company_id) |
                 Q(route_day_client__route_day__route__company_id=company_id)
             ).distinct()
+        if user.role_type == "worker" and hasattr(user, "worker_profile"):
+            return base_qs.filter(worker_id=user.worker_profile.id)
         return base_qs.none()
 
     def get_serializer_class(self):
@@ -111,8 +113,10 @@ class CollectionViewSet(viewsets.ModelViewSet):
         return CollectionSerializer
 
     def get_permissions(self):
-        if self.action in ["create", "update", "partial_update", "destroy"]:
-            self.permission_classes = [IsOwnerUser]
+        if self.action == "create":
+            self.permission_classes = [IsAuthenticated]
+        elif self.action in ["update", "partial_update", "destroy"]:
+            self.permission_classes = [IsAuthenticated, IsOwnerUser]
         elif self.action == "list":
             self.permission_classes = [IsAuthenticated]
         else:
@@ -121,8 +125,10 @@ class CollectionViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         try:
-            if self.request.user.role_type == "owner" or self.request.user.role_type == "worker":
+            if self.request.user.role_type == "owner":
                 serializer.save()
+            elif self.request.user.role_type == "worker" and hasattr(self.request.user, "worker_profile"):
+                serializer.save(worker=self.request.user.worker_profile)
             else:
                 logging.error("[collection_viewset - perform_create] Solo los duenos y trabajadores pueden registrar recogidas")
                 raise ValueError(ONLY_OWNERS_AND_WORKERS_CAN_REGISTER_COLLECTIONS)

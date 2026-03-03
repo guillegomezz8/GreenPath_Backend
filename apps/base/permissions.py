@@ -10,18 +10,41 @@ class IsStaffOrSuperUser(permissions.BasePermission):
 
 class IsOwnerOrStaffOrSuperUser(permissions.BasePermission):
 
+    def has_permission(self, request, view):
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+        return user.is_staff or user.is_superuser or user.role_type == 'owner'
+
     def has_object_permission(self, request, view, obj):
-        return request.user.is_staff or request.user.is_superuser or obj.id == request.user.id
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+        return user.is_staff or user.is_superuser or obj.id == user.id
 
 
 class IsOwnerUser(permissions.BasePermission):
 
+    def has_permission(self, request, view):
+        user = request.user
+        return bool(user and user.is_authenticated and user.role_type == 'owner')
+
     def has_object_permission(self, request, view, obj):
-        return request.user.role_type == 'owner'
+        user = request.user
+        return bool(user and user.is_authenticated and user.role_type == 'owner')
 
 
 class IsRouteCompanyGenerator(permissions.BasePermission):
     message = ROUTE_GENERATION_FORBIDDEN
+
+    def has_permission(self, request, view):
+        user = request.user
+
+        if not user or not user.is_authenticated:
+            return False
+        if user.is_staff or user.is_superuser:
+            return True
+        return user.role_type in ['owner', 'worker'] and hasattr(user, 'worker_profile')
 
     def has_object_permission(self, request, view, obj):
         user = request.user

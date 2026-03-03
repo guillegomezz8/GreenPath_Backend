@@ -45,6 +45,8 @@ from apps.route.utils import (
     get_route_day_google_navigation_url,
     ensure_route_day_for_date,
     get_operational_week_start,
+    resolve_route_day_capacity_liters,
+    resolve_route_default_capacity_liters,
 )
 
 configure_logging()
@@ -82,8 +84,10 @@ class RouteViewSet(viewsets.ModelViewSet):
             return base_qs.none()
         if user.is_staff or user.is_superuser:
             return base_qs
-        if user.role_type in ['owner', 'worker'] and hasattr(user, "worker_profile"):
+        if user.role_type == 'owner' and hasattr(user, "worker_profile"):
             return base_qs.filter(company_id=user.worker_profile.company_id)
+        if user.role_type == 'worker' and hasattr(user, "worker_profile"):
+            return base_qs.filter(company_id=user.worker_profile.company_id, workers__id=user.worker_profile.id).distinct()
         if user.role_type == 'client' and hasattr(user, "client_profile"):
             return base_qs.filter(route_days__ordered_clients__client_id=user.client_profile.id).distinct()
         return base_qs.none()
@@ -110,12 +114,10 @@ class RouteViewSet(viewsets.ModelViewSet):
         return RouteSerializer
 
     def get_permissions(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy', 'zone_config']:
-            self.permission_classes = [IsOwnerUser]
-        elif self.action in ['generate_week', 'generate_range_routes', 'operational_overview', 'start_route_day', 'finish_route_day', 'complete_stop', 'google_navigation']:
+        if self.action in ['create', 'update', 'partial_update', 'destroy', 'zone_config', 'generate_week', 'generate_range_routes']:
+            self.permission_classes = [IsAuthenticated, IsOwnerUser]
+        elif self.action in ['list', 'retrieve', 'operational_overview', 'start_route_day', 'finish_route_day', 'complete_stop', 'google_navigation']:
             self.permission_classes = [IsAuthenticated, IsRouteCompanyGenerator]
-        elif self.action == 'list':
-            self.permission_classes = [IsAuthenticated]
         else:
             self.permission_classes = [IsAuthenticated]
         return super(RouteViewSet, self).get_permissions()
@@ -188,7 +190,7 @@ class RouteViewSet(viewsets.ModelViewSet):
                 days=validated.get('days') or [],
                 auto_estimate_without_contact=validated.get('auto_estimate_without_contact', False),
             )
-            payload = [{'id': route_day.id, 'date': route_day.date, 'daily_capacity_liters': route_day.daily_capacity_liters, 'stops': route_day.ordered_clients.count()} for route_day in route_days]
+            payload = [{'id': route_day.id, 'date': route_day.date, 'daily_capacity_liters': resolve_route_day_capacity_liters(route_day), 'stops': route_day.ordered_clients.count()} for route_day in route_days]
             logging.info(f'[route_viewset - generate_week] Semana operativa generada para ruta {route.id} con {len(payload)} dias')
             return Response({MESSAGE: WEEKLY_OPERATIONAL_ROUTE_GENERATED, 'route_days': payload}, status=status.HTTP_200_OK)
         except ValidationError:
@@ -427,7 +429,7 @@ class RouteViewSet(viewsets.ModelViewSet):
                     'id': route_day.id,
                     'date': route_day.date,
                     'status': route_day.status,
-                    'daily_capacity_liters': route_day.daily_capacity_liters,
+                    'daily_capacity_liters': resolve_route_day_capacity_liters(route_day),
                     'started_at': route_day.started_at,
                     'finished_at': route_day.finished_at,
                     'stops': len(clients_payload),
@@ -444,6 +446,7 @@ class RouteViewSet(viewsets.ModelViewSet):
                     'end_date': route.end_date,
                     'week_start': route.week_start,
                     'week_end': route.week_end,
+                    'default_daily_capacity_liters': resolve_route_default_capacity_liters(route),
                 },
                 'zone_days': zone_days_payload,
                 'route_days': route_days_payload,

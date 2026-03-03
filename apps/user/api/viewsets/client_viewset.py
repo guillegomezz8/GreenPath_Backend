@@ -1,5 +1,5 @@
 from rest_framework import viewsets, status
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.decorators import action
 
@@ -54,9 +54,19 @@ class ClientViewSet(viewsets.ModelViewSet):
     filterset_class = ClientFilter
 
     def get_queryset(self):
-        if self.request.user.is_staff:
+        if self.request.user.is_staff or self.request.user.is_superuser:
             return super().get_queryset()
-        return super().get_queryset().filter(companies=self.request.user.worker_profile.company)
+
+        user = self.request.user
+        base_qs = super().get_queryset()
+
+        if user.role_type == "client" and hasattr(user, "client_profile"):
+            return base_qs.none()
+
+        if hasattr(user, "worker_profile"):
+            return base_qs.filter(companies=user.worker_profile.company)
+
+        return base_qs.none()
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -70,11 +80,11 @@ class ClientViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            self.permission_classes = [IsOwnerUser]
+            self.permission_classes = [IsAuthenticated, IsOwnerUser]
         elif self.action in ['list', 'retrieve', 'collection_historial']:
             self.permission_classes = [IsAuthenticated]
         else:
-            self.permission_classes = [AllowAny]
+            self.permission_classes = [IsAuthenticated]
         return super(ClientViewSet, self).get_permissions()
 
     def perform_create(self, serializer):

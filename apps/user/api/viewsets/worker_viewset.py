@@ -2,7 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework import serializers
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated
 
 import django_filters
 from django_filters.rest_framework import FilterSet, CharFilter, DjangoFilterBackend, BooleanFilter
@@ -68,6 +68,24 @@ class WorkerViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_class = WorkerFilter
 
+    def get_queryset(self):
+        base_qs = super().get_queryset()
+        user = self.request.user
+
+        if not user.is_authenticated:
+            return base_qs.none()
+
+        if user.is_staff or user.is_superuser:
+            return base_qs
+
+        if user.role_type == 'owner' and hasattr(user, "worker_profile"):
+            return base_qs.filter(company_id=user.worker_profile.company_id)
+
+        if user.role_type == 'worker' and hasattr(user, "worker_profile"):
+            return base_qs.filter(id=user.worker_profile.id)
+
+        return base_qs.none()
+
     def get_serializer_class(self):
         if self.action == 'create':
             return CreateWorkerSerializer
@@ -79,12 +97,12 @@ class WorkerViewSet(viewsets.ModelViewSet):
             return WorkerSerializer
 
     def get_permissions(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy', 'get_collections']:
-            self.permission_classes = [IsOwnerUser]
+        if self.action in ['create', 'update', 'partial_update', 'destroy', 'get_collections', 'activate']:
+            self.permission_classes = [IsAuthenticated, IsOwnerUser]
         elif self.action in ['list', 'retrieve']:
             self.permission_classes = [IsAuthenticated]
         else:
-            self.permission_classes = [AllowAny]
+            self.permission_classes = [IsAuthenticated]
         return super(WorkerViewSet, self).get_permissions()
 
     def perform_create(self, serializer):

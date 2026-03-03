@@ -13,7 +13,6 @@ load_dotenv(dotenv_path)
 
 # Variables de entorno cargadas
 SECRET_KEY = os.getenv('SECRET_KEY', 'default_secret_key')
-# DEBUG = os.getenv('DEBUG', 'False').lower() in ['true', '1']
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
@@ -221,6 +220,7 @@ STORAGES = {
 }
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "")
 
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:8004/0")
 CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:8004/0")

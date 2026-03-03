@@ -1,5 +1,5 @@
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
 from django_filters.rest_framework import (
     FilterSet, CharFilter,DjangoFilterBackend 
@@ -53,7 +53,22 @@ class CompanyViewSet(viewsets.ModelViewSet):
     filterset_class = CompanyFilter
     serializer_class = CompanySerializer
 
-    # TODO: get_queryset un user solo puede ver la empresa a la que pertenece
+    def get_queryset(self):
+        base_qs = super().get_queryset()
+        user = self.request.user
+
+        if not user.is_authenticated:
+            return base_qs.none()
+
+        if user.is_staff or user.is_superuser:
+            return base_qs
+
+        if user.role_type == 'owner':
+            if hasattr(user, 'worker_profile') and user.worker_profile.company_id:
+                return base_qs.filter(id=user.worker_profile.company_id)
+            return base_qs.filter(owner=user)
+
+        return base_qs.none()
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -66,10 +81,8 @@ class CompanyViewSet(viewsets.ModelViewSet):
             return CompanySerializer 
 
     def get_permissions(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+        if self.action in ['create', 'update', 'partial_update', 'destroy', 'list', 'retrieve']:
             self.permission_classes = [IsOwnerUser, IsAuthenticated]
-        elif self.action == 'list':
-            self.permission_classes = [AllowAny]
         else:
             self.permission_classes = [IsAuthenticated]
         return super(CompanyViewSet, self).get_permissions()

@@ -283,16 +283,17 @@ def _revoke_route_day_collection_request_tasks(route_day):
 def optimize_route_day_with_google(route_day):
     route_day_clients = list(route_day.ordered_clients.select_related("client").order_by("order"))
     if len(route_day_clients) < 2:
+        logger.info(f"[route_utils - optimize_route_day_with_google] Optimizacion Google no aplicada en route_day {route_day.id}: menos de 2 paradas")
         return route_day_clients
 
     hub = CompanyHub.objects.filter(company=route_day.route.company, location__isnull=False).first()
     if not hub:
-        logger.info(f"[route_utils - optimize_route_day_with_google] No hay hub para company {route_day.route.company_id}, se mantiene orden actual")
+        logger.info(f"[route_utils - optimize_route_day_with_google] Optimizacion Google no aplicada en route_day {route_day.id}: no hay hub para company {route_day.route.company_id}")
         return route_day_clients
 
     api_key = settings.GOOGLE_MAPS_API_KEY if hasattr(settings, "GOOGLE_MAPS_API_KEY") else ""
     if not api_key:
-        logger.warning("[route_utils - optimize_route_day_with_google] GOOGLE_MAPS_API_KEY no configurada, se mantiene orden actual")
+        logger.warning(f"[route_utils - optimize_route_day_with_google] Optimizacion Google no aplicada en route_day {route_day.id}: GOOGLE_MAPS_API_KEY no configurada")
         return route_day_clients
 
     destination_row = max(route_day_clients, key=lambda row: row.client.location.distance(hub.location))
@@ -320,17 +321,27 @@ def optimize_route_day_with_google(route_day):
 
     routes = data.get("routes") or []
     if not routes:
-        logger.warning(f"[route_utils - optimize_route_day_with_google] Google Directions sin rutas validas: {data}")
+        logger.warning(f"[route_utils - optimize_route_day_with_google] Optimizacion Google no aplicada en route_day {route_day.id}: Google Directions sin rutas validas")
         return route_day_clients
 
     waypoint_order = routes[0].get("waypoint_order", [])
     optimized = [waypoints_rows[index] for index in waypoint_order if index < len(waypoints_rows)]
     optimized.append(destination_row)
+    if len(optimized) != len(route_day_clients):
+        logger.warning(f"[route_utils - optimize_route_day_with_google] Optimizacion Google no aplicada en route_day {route_day.id}: respuesta de Google invalida")
+        return route_day_clients
 
+    updated_rows = 0
     for order, row in enumerate(optimized, start=1):
         if row.order != order:
             row.order = order
             row.save(update_fields=["order"])
+            updated_rows += 1
+
+    if updated_rows == 0:
+        logger.info(f"[route_utils - optimize_route_day_with_google] Optimizacion Google sin cambios en route_day {route_day.id}")
+    else:
+        logger.info(f"[route_utils - optimize_route_day_with_google] Optimizacion Google aplicada en route_day {route_day.id}: {updated_rows} paradas reordenadas")
 
     return optimized
 
@@ -624,6 +635,60 @@ def get_operational_week_start(route, reference_date):
     return reference_date - timedelta(days=delta_days)
 
 
+def _resolve_route_default_capacity_liters(route):
+    try:
+        if hasattr(route, "_default_capacity_liters_cache"):
+            return route._default_capacity_liters_cache
+
+        worker = (
+            route.workers
+            .select_related("truck")
+            .filter(truck__capacity_liters__isnull=False)
+            .order_by("id")
+            .first()
+        )
+        if worker and worker.truck and worker.truck.capacity_liters is not None:
+            route._default_capacity_liters_cache = worker.truck.capacity_liters
+            return route._default_capacity_liters_cache
+        route._default_capacity_liters_cache = None
+        return route._default_capacity_liters_cache
+    except Exception as e:
+        logger.warning(f"[route_utils - _resolve_route_default_capacity_liters] No se pudo resolver capacidad por defecto para ruta {route.id}: {str(e)}")
+        return None
+
+
+def resolve_route_day_capacity_liters(route_day):
+    try:
+        if route_day.daily_capacity_liters is not None:
+            return route_day.daily_capacity_liters
+        return _resolve_route_default_capacity_liters(route_day.route)
+    except Exception as e:
+        logger.warning(f"[route_utils - resolve_route_day_capacity_liters] No se pudo resolver capacidad para route_day {route_day.id}: {str(e)}")
+        return route_day.daily_capacity_liters
+
+
+def resolve_route_default_capacity_liters(route):
+    try:
+        return _resolve_route_default_capacity_liters(route)
+    except Exception as e:
+        logger.warning(f"[route_utils - resolve_route_default_capacity_liters] No se pudo resolver capacidad por defecto para ruta {route.id}: {str(e)}")
+        return None
+
+
+def _ensure_route_day_capacity_liters(route_day):
+    if route_day.daily_capacity_liters is not None:
+        return route_day.daily_capacity_liters
+
+    resolved_capacity = _resolve_route_default_capacity_liters(route_day.route)
+    if resolved_capacity is None:
+        return None
+
+    route_day.daily_capacity_liters = resolved_capacity
+    route_day.save(update_fields=["daily_capacity_liters"])
+    logger.info(f"[route_utils - _ensure_route_day_capacity_liters] Capacidad {resolved_capacity} L asignada a route_day {route_day.id}")
+    return route_day.daily_capacity_liters
+
+
 @transaction.atomic
 def ensure_route_day_for_date(route, target_date):
     try:
@@ -634,6 +699,7 @@ def ensure_route_day_for_date(route, target_date):
             return None
 
         route_day, created = RouteDay.objects.get_or_create(route=locked_route, date=target_date)
+        _ensure_route_day_capacity_liters(route_day)
 
         if created or not route_day.ordered_clients.exists():
             generate_route_day_clients(route_day, regenerate=False)
@@ -680,6 +746,8 @@ def generate_week_for_route(route, week_start_date, regenerate=False, daily_capa
             elif target_date in capacities_by_date:
                 route_day.daily_capacity_liters = capacities_by_date[target_date]
                 route_day.save(update_fields=["daily_capacity_liters"])
+            else:
+                _ensure_route_day_capacity_liters(route_day)
 
             generate_route_day_clients(route_day, regenerate=regenerate, auto_estimate_without_contact=auto_estimate_without_contact)
             route_days.append(route_day)
@@ -719,6 +787,7 @@ def generate_routes_for_date_range(route, start_date, end_date, zone_schedule, m
                 optimized_clients = get_optimized_order_from_google(clients)
 
                 route_day, created = RouteDay.objects.get_or_create(route=route, date=current_date)
+                _ensure_route_day_capacity_liters(route_day)
 
                 if not created:
                     route_day.ordered_clients.all().delete()

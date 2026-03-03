@@ -178,6 +178,7 @@ class GenerateWeekSerializer(serializers.Serializer):
     week_start_date = serializers.DateField()
     regenerate = serializers.BooleanField(default=False, required=False)
     auto_estimate_without_contact = serializers.BooleanField(default=False, required=False)
+    max_clients_per_day = serializers.IntegerField(required=False, min_value=1, max_value=100, default=10)
     daily_capacity_liters = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=Decimal('0.00'), required=False, allow_null=True)
     days = GenerateWeekDayCapacitySerializer(many=True, required=False, allow_empty=False)
 

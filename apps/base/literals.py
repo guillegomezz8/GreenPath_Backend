@@ -20,6 +20,7 @@ INVALID_GOOGLE_ID_TOKEN = 'ID token de Google inválido'
 SUCCESSFULL_LOGIN = 'Inicio de sesion correcto.'
 CREDENTIAL_OR_TOKEN_REQUIRED = 'credential o token requerido'
 ACCESS_EMAIL_SUBJECT_USER = 'Acceso a GreenPath como Usuario'
+MAX_CLIENTS_PER_DAY = 15
 
 #Empresas
 ERROR_CREATING_COMPANY = 'Error creando empresa'

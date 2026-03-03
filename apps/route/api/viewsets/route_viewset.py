@@ -43,7 +43,6 @@ from apps.route.utils import (
     finish_route_day as finish_route_day_service,
     complete_route_day_client,
     get_route_day_google_navigation_url,
-    ensure_route_day_for_date,
     get_operational_week_start,
     resolve_route_day_capacity_liters,
     resolve_route_default_capacity_liters,
@@ -189,6 +188,8 @@ class RouteViewSet(viewsets.ModelViewSet):
                 daily_capacity_liters=validated.get('daily_capacity_liters'),
                 days=validated.get('days') or [],
                 auto_estimate_without_contact=validated.get('auto_estimate_without_contact', False),
+                max_clients_per_day=validated.get('max_clients_per_day', 10),
+                optimize_with_google=True,
             )
             payload = [{'id': route_day.id, 'date': route_day.date, 'daily_capacity_liters': resolve_route_day_capacity_liters(route_day), 'stops': route_day.ordered_clients.count()} for route_day in route_days]
             logging.info(f'[route_viewset - generate_week] Semana operativa generada para ruta {route.id} con {len(payload)} dias')
@@ -359,12 +360,6 @@ class RouteViewSet(viewsets.ModelViewSet):
             route = self.get_object()
             week_start_date_raw = request.query_params.get('week_start_date')
             start_date, end_date = self._resolve_week_window(route, week_start_date_raw)
-            today = timezone.localdate()
-
-            if start_date <= today <= end_date:
-                for day_offset in range(7):
-                    target_date = start_date + timedelta(days=day_offset)
-                    ensure_route_day_for_date(route, target_date)
 
             zone_days_qs = RouteZoneDay.objects.filter(route=route).prefetch_related('zones').order_by('weekday')
             zone_days_payload = []

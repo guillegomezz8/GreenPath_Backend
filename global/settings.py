@@ -198,8 +198,8 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 EMAIL_HOST=os.getenv("SMTP_SERVER", "")
 EMAIL_PORT=os.getenv("SMTP_PORT", 587)
-EMAIL_HOST_USER=os.getenv("EMAIL_USER", "xxx@xxx.com")
-EMAIL_HOST_PASSWORD=os.getenv("EMAIL_PASSWORD", "XXXX")
+EMAIL_HOST_USER=os.getenv("EMAIL_USER", "")
+EMAIL_HOST_PASSWORD=os.getenv("EMAIL_PASSWORD", "")
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True") == "True"
 EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "False") == "True"
 

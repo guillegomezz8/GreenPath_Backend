@@ -1,17 +1,31 @@
 from decimal import Decimal
 import logging
+import os
 
 from celery import shared_task
 from django.db.models import Avg
-from django.core.mail import send_mail
-from django.conf import settings
 from django.utils import timezone
 
 from apps.base.literals import COLLECTION_REQUEST_NOTIFY_BODY, COLLECTION_REQUEST_NOTIFY_SUBJECT
 from apps.base.enums import CollectionRequestStatus, PlannedSource, CollectionStatus
+from apps.base.utils import send_email_google_api
 from apps.collection.models import CollectionRequest, Collection
 
 logger = logging.getLogger(__name__)
+
+
+def _gmail_ready_for_notifications():
+    gmail_from = os.environ.get("GMAIL_FROM")
+    gmail_token_json = os.environ.get("GMAIL_TOKEN_JSON")
+    gmail_client_secret_json = os.environ.get("GMAIL_CLIENT_SECRET_JSON")
+
+    if not gmail_from:
+        return False
+    if not gmail_token_json:
+        return False
+    if not gmail_client_secret_json:
+        return False
+    return True
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
@@ -73,9 +87,13 @@ def auto_estimate_collection_request_liters(self, collection_request_id):
         raise self.retry(exc=e)
 
 
-@shared_task(bind=True, max_retries=3, default_retry_delay=60)
-def notify_collection_request_created(self, collection_request_id):
+@shared_task
+def notify_collection_request_created(collection_request_id):
     try:
+        if not _gmail_ready_for_notifications():
+            logger.warning(f"[collection_tasks - notify_collection_request_created] Notificacion omitida por Gmail API no configurada para solicitud {collection_request_id}")
+            return
+
         try:
             collection_request = CollectionRequest.objects.select_related(
                 "route_day_client",
@@ -88,14 +106,9 @@ def notify_collection_request_created(self, collection_request_id):
             logger.warning(f"[collection_tasks - notify_collection_request_created] Solicitud {collection_request_id} no existe, no se notifica")
             return
 
-        client_user = collection_request.route_day_client.client.user if hasattr(collection_request.route_day_client.client, "user") else None
-        email = client_user.email if client_user else None
+        email = collection_request.route_day_client.client.user.email
         if not email:
             logger.warning(f"[collection_tasks - notify_collection_request_created] Cliente sin email para solicitud {collection_request.id}")
-            return
-        email_sender = settings.EMAIL_HOST_USER if hasattr(settings, "EMAIL_HOST_USER") else ""
-        if not email_sender:
-            logger.warning(f"[collection_tasks - notify_collection_request_created] EMAIL_HOST_USER no configurado para solicitud {collection_request.id}")
             return
 
         route_day = collection_request.route_day_client.route_day
@@ -105,12 +118,19 @@ def notify_collection_request_created(self, collection_request_id):
             route_date=route_day.date,
             expires_at=collection_request.expires_at,
         )
-
-        send_mail(subject, message, email_sender, [email], fail_silently=False)
-        logger.info(f"[collection_tasks - notify_collection_request_created] Notificacion enviada a {email} para solicitud {collection_request.id}")
+        sent = send_email_google_api(
+            to_email=email,
+            subject=subject,
+            text_message=message,
+            html_message=None,
+        )
+        if sent:
+            logger.info(f"[collection_tasks - notify_collection_request_created] Notificacion enviada a {email} para solicitud {collection_request.id}")
+        else:
+            logger.warning(f"[collection_tasks - notify_collection_request_created] No se pudo enviar notificacion para solicitud {collection_request.id}")
     except Exception as e:
         logger.error(f"[collection_tasks - notify_collection_request_created] Error enviando notificacion para solicitud {collection_request_id}: {str(e)}")
-        raise self.retry(exc=e)
+        return
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)

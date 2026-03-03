@@ -12,10 +12,8 @@ from apps.base.literals import ACCESS_EMAIL_SUBJECT_USER
 from apps.base.logger import configure_logging
 
 from django.template.loader import render_to_string
-from django.conf import settings
 from django.utils import timezone
 from django.utils.html import strip_tags
-from django.core.mail import send_mail
 
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
@@ -54,6 +52,40 @@ def _gmail_creds_from_env():
     except Exception as e:
         logging.error(f"[base_utils - _gmail_creds_from_env] Error construyendo credenciales Gmail: {str(e)}")
         return None
+
+
+def send_email_google_api(to_email, subject, text_message, html_message=None):
+    try:
+        if not to_email:
+            logging.error("[base_utils - send_email_google_api] Destinatario vacio.")
+            return False
+
+        gmail_from = os.environ.get("GMAIL_FROM")
+        if not gmail_from:
+            logging.error("[base_utils - send_email_google_api] Gmail API: falta GMAIL_FROM.")
+            return False
+
+        creds = _gmail_creds_from_env()
+        if not creds:
+            return False
+
+        msg = MIMEMultipart("alternative")
+        msg["To"] = to_email
+        msg["From"] = gmail_from
+        msg["Subject"] = subject or ACCESS_EMAIL_SUBJECT_USER
+        msg.attach(MIMEText(text_message or "", "plain"))
+
+        if html_message:
+            msg.attach(MIMEText(html_message, "html"))
+
+        raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
+
+        service = build("gmail", "v1", credentials=creds)
+        service.users().messages().send(userId="me", body={"raw": raw}).execute()
+        return True
+    except Exception as e:
+        logging.error(f"[base_utils - send_email_google_api] Error enviando email por Gmail API a {to_email}: {str(e)}")
+        return False
 
 
 def validate_files(request, field, update=False):
@@ -99,7 +131,7 @@ def gen_password():
 
 def send_access_email(user, temp_password, subject=None):
     try:
-        to_email = user.email
+        to_email = user.email if user else None
 
         if not to_email:
             logging.error(f"[base_utils - send_access_email] El usuario {user} no tiene email.")
@@ -115,32 +147,23 @@ def send_access_email(user, temp_password, subject=None):
         html = render_to_string("email/new_user.html", context)
         text = strip_tags(html)
 
-        send_mail(
-            subject,
-            text,                              
-            settings.EMAIL_HOST_USER,
-            [to_email],
+        return send_email_google_api(
+            to_email=to_email,
+            subject=subject,
+            text_message=text,
             html_message=html,
-            fail_silently=False,
         )
-
-        return True
     except Exception as e:
-        email_for_log = user.email if user and hasattr(user, "email") else None
+        email_for_log = user.email if user else None
         logging.error(f"[base_utils - send_access_email] Error enviando email a {email_for_log}: {str(e)}")
         return False
 
 
 def send_access_email_google_api(user, temp_password, subject=None):
     try:
-        to_email = user.email if hasattr(user, "email") else None
+        to_email = user.email if user else None
         if not to_email:
             logging.error(f"[base_utils - send_access_email_google_api] El usuario {user} no tiene email.")
-            return False
-
-        gmail_from = os.environ.get("GMAIL_FROM")
-        if not gmail_from:
-            logging.error("[base_utils - send_access_email_google_api] Gmail API: falta GMAIL_FROM.")
             return False
 
         subject = subject or ACCESS_EMAIL_SUBJECT_USER
@@ -153,24 +176,14 @@ def send_access_email_google_api(user, temp_password, subject=None):
         html = render_to_string("email/new_user.html", ctx)
         text = strip_tags(html)
 
-        msg = MIMEMultipart("alternative")
-        msg["To"] = to_email
-        msg["From"] = gmail_from
-        msg["Subject"] = subject
-        msg.attach(MIMEText(text, "plain"))
-        msg.attach(MIMEText(html, "html"))
-
-        raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
-
-        creds = _gmail_creds_from_env()
-        if not creds:
-            return False
-
-        service = build("gmail", "v1", credentials=creds)
-        service.users().messages().send(userId="me", body={"raw": raw}).execute()
-        return True
+        return send_email_google_api(
+            to_email=to_email,
+            subject=subject,
+            text_message=text,
+            html_message=html,
+        )
 
     except Exception as e:
-        email_for_log = user.email if hasattr(user, "email") else None
+        email_for_log = user.email if user else None
         logging.error(f"[base_utils - send_access_email_google_api] Error enviando email por Gmail API a {email_for_log}: {str(e)}")
         return False

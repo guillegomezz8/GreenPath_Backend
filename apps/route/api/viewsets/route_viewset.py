@@ -64,8 +64,8 @@ class RouteFilter(FilterSet):
         return queryset.filter(
             Q(name__icontains=value) |
             Q(company__name__icontains=value) |
-            Q(workers__name__icontains=value) |
-            Q(workers__surname__icontains=value)
+            Q(worker__name__icontains=value) |
+            Q(worker__surname__icontains=value)
         ).distinct()
 
 
@@ -86,7 +86,7 @@ class RouteViewSet(viewsets.ModelViewSet):
         if user.role_type == 'owner' and hasattr(user, "worker_profile"):
             return base_qs.filter(company_id=user.worker_profile.company_id)
         if user.role_type == 'worker' and hasattr(user, "worker_profile"):
-            return base_qs.filter(company_id=user.worker_profile.company_id, workers__id=user.worker_profile.id).distinct()
+            return base_qs.filter(company_id=user.worker_profile.company_id, worker_id=user.worker_profile.id).distinct()
         if user.role_type == 'client' and hasattr(user, "client_profile"):
             return base_qs.filter(route_days__ordered_clients__client_id=user.client_profile.id).distinct()
         return base_qs.none()
@@ -436,7 +436,7 @@ class RouteViewSet(viewsets.ModelViewSet):
                     'id': route.id,
                     'name': route.name,
                     'company': route.company_id,
-                    'workers': list(route.workers.values_list('id', flat=True)),
+                    'worker': route.worker_id,
                     'start_date': route.start_date,
                     'end_date': route.end_date,
                     'week_start': route.week_start,

@@ -124,6 +124,10 @@ El sistema cubre:
    - si quedan pendientes -> modal de decision:
      - `PARTIAL`
      - `CANCELED`
+6. UX responsive:
+   - en desktop se usa tabla de paradas y acciones por fila.
+   - en movil se usa vista en tarjetas por parada para operar sin scroll horizontal.
+   - acciones criticas (`Google`, `Iniciar`, `Finalizar`, `Recoger parada`) adaptadas a boton ancho completo en pantallas pequenas.
 
 ## 4.4 Cierre de litros
 
@@ -187,10 +191,13 @@ El sistema cubre:
 - Owner/Worker:
   - menu completo de gestion y operacion.
   - dashboard operativo.
-  - detalle de ruta orientado a ejecucion.
+  - detalle de ruta orientado a ejecucion con resumen, filtros por estado y progreso diario.
 - Client:
   - menu reducido: dashboard, solicitudes y recogidas.
   - foco en responder litros y consultar historico.
+- Mobile-first:
+  - prioridad de legibilidad en acciones de ruta.
+  - tablas operativas con alternativa en tarjetas para evitar perdida de usabilidad.
 
 ## 9. Operacion y mantenimiento
 
@@ -206,5 +213,4 @@ El sistema cubre:
 - Confirmar politica final para autoestimacion en lotes masivos.
 - Incorporar bloqueo distribuido estricto para regeneraciones concurrentes extremas.
 - Mejorar panel cliente con timeline de solicitud -> recogida -> confirmacion.
-- Añadir trazabilidad de auditoria exportable en CSV/PDF.
-
+- Anadir trazabilidad de auditoria exportable en CSV/PDF.

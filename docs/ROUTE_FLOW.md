@@ -35,6 +35,16 @@ Reglas:
 - `finish`: solo desde `IN_PROGRESS` y calcula estado final (`COMPLETED`, `PARTIAL` o `CANCELED`).
 - `google-navigation`: devuelve URL de Google Maps con origen hub + waypoints ordenados.
 
+### UX frontend (detalle de ruta)
+
+En `src/pages/routes/RouteDetail.jsx`:
+
+- Resumen operativo superior (dias, previstas, registradas, pendientes).
+- Filtro por estado de `RouteDay`.
+- Accion masiva para expandir/ocultar todos los dias visibles.
+- Barra de progreso por dia (registradas vs pendientes).
+- En movil, la tabla de paradas se reemplaza por tarjetas por parada para evitar scroll horizontal.
+
 Validaciones de entrada:
 - `week_start_date` obligatorio
 - `daily_capacity_liters` global **o** `days[]` por fecha

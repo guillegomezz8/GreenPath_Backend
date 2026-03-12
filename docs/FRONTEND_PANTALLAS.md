@@ -1,6 +1,6 @@
 # Inventario de Pantallas Frontend
 
-Fecha de repaso: 2026-03-02
+Fecha de repaso: 2026-03-04
 
 ## 1. Autenticacion
 
@@ -109,10 +109,14 @@ Fecha de repaso: 2026-03-02
 - Estado: Implementadas
 - Notas:
   - Generacion semanal con flags.
+  - Listado con filtro rapido: todas / con trabajadores / sin trabajadores.
+  - Detalle con resumen operativo (dias, paradas previstas, registradas, pendientes).
+  - Filtros por estado de `RouteDay` y boton expandir/ocultar todos.
   - Ejecucion RouteDay (start/finish).
   - Modal de cierre parcial/cancelado cuando hay pendientes.
   - Dropdown de parada pendiente para registrar recogida.
   - Tabla de paradas plegable (oculta por defecto).
+  - En movil: acciones full-width y vista de paradas en tarjetas (sin depender de tabla horizontal).
 
 ## 9. Recogidas
 
@@ -207,4 +211,3 @@ Fecha de repaso: 2026-03-02
 - Pantalla faltante detectada y completada: `Mis solicitudes`.
 - Navegacion por rol revisada y ajustada.
 - Flujo cliente reforzado para evitar entradas a modulos no aplicables.
-

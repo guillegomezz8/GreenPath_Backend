@@ -13,6 +13,7 @@ from apps.base.literals import (
     ROUTE_ZONE_CONFIG_DAY_INVALID,
     ROUTE_ZONE_CONFIG_KEY_INVALID,
     ROUTE_END_DATE_BEFORE_START_DATE,
+    ROUTE_WORKER_COMPANY_INVALID,
     ROUTE_ZONE_DAYS_DUPLICATED,
     ROUTE_ZONE_WEEKDAY_INVALID,
 )
@@ -37,23 +38,24 @@ class CreateRouteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Route
-        fields = ('name', 'workers', 'start_date', 'end_date', 'week_start', 'week_end')
-        extra_kwargs = {'workers': {'required': False}}
+        fields = ('name', 'worker', 'start_date', 'end_date', 'week_start', 'week_end')
+        extra_kwargs = {'worker': {'required': False}}
 
     def validate(self, attrs):
         start_date = attrs.get('start_date')
         end_date = attrs.get('end_date')
         if end_date and start_date and end_date < start_date:
             raise serializers.ValidationError(ROUTE_END_DATE_BEFORE_START_DATE)
+        request = self.context.get('request')
+        worker = attrs.get('worker')
+        if worker and request and hasattr(request.user, 'worker_profile'):
+            if worker.company_id != request.user.worker_profile.company_id:
+                raise serializers.ValidationError(ROUTE_WORKER_COMPANY_INVALID)
         return attrs
 
     def create(self, validated_data):
         try:
-            workers = validated_data.pop('workers', [])
-            route = Route.objects.create(**validated_data)
-            if workers:
-                route.workers.set(workers)
-            return route
+            return Route.objects.create(**validated_data)
         except Exception as e:
             logging.error(f"[route_serializers - create] Error creating route: {str(e)}")
             raise serializers.ValidationError(f"Error creating route: {str(e)}")
@@ -65,8 +67,8 @@ class UpdateRouteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Route
-        fields = ('name', 'workers', 'start_date', 'end_date', 'week_start', 'week_end')
-        extra_kwargs = {'workers': {'required': False}}
+        fields = ('name', 'worker', 'start_date', 'end_date', 'week_start', 'week_end')
+        extra_kwargs = {'worker': {'required': False}}
 
     def validate(self, attrs):
         start_date = attrs.get('start_date')
@@ -77,16 +79,20 @@ class UpdateRouteSerializer(serializers.ModelSerializer):
             end_date = self.instance.end_date
         if end_date and start_date and end_date < start_date:
             raise serializers.ValidationError(ROUTE_END_DATE_BEFORE_START_DATE)
+        request = self.context.get('request')
+        worker = attrs.get('worker')
+        if worker is None and self.instance is not None:
+            worker = self.instance.worker
+        if worker and request and hasattr(request.user, 'worker_profile'):
+            if worker.company_id != request.user.worker_profile.company_id:
+                raise serializers.ValidationError(ROUTE_WORKER_COMPANY_INVALID)
         return attrs
 
     def update(self, instance, validated_data):
         try:
-            workers = validated_data.pop('workers', None)
             for attr, value in validated_data.items():
                 setattr(instance, attr, value)
             instance.save()
-            if workers is not None:
-                instance.workers.set(workers)
             return instance
         except Exception as e:
             logging.error(f"[route_serializers - update] Error updating route with id {instance.id}: {str(e)}")
@@ -99,8 +105,8 @@ class PartialUpdateRouteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Route
-        fields = ('name', 'workers', 'start_date', 'end_date', 'week_start', 'week_end')
-        extra_kwargs = {'workers': {'required': False}}
+        fields = ('name', 'worker', 'start_date', 'end_date', 'week_start', 'week_end')
+        extra_kwargs = {'worker': {'required': False}}
 
     def validate(self, attrs):
         start_date = attrs.get('start_date')
@@ -111,16 +117,20 @@ class PartialUpdateRouteSerializer(serializers.ModelSerializer):
             end_date = self.instance.end_date
         if end_date and start_date and end_date < start_date:
             raise serializers.ValidationError(ROUTE_END_DATE_BEFORE_START_DATE)
+        request = self.context.get('request')
+        worker = attrs.get('worker')
+        if worker is None and self.instance is not None:
+            worker = self.instance.worker
+        if worker and request and hasattr(request.user, 'worker_profile'):
+            if worker.company_id != request.user.worker_profile.company_id:
+                raise serializers.ValidationError(ROUTE_WORKER_COMPANY_INVALID)
         return attrs
 
     def update(self, instance, validated_data):
         try:
-            workers = validated_data.pop('workers', None)
             for attr, value in validated_data.items():
                 setattr(instance, attr, value)
             instance.save()
-            if workers is not None:
-                instance.workers.set(workers)
             return instance
         except Exception as e:
             logging.error(f"[route_serializers - update] Error updating route with id {instance.id}: {str(e)}")

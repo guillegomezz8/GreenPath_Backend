@@ -7,9 +7,11 @@ import secrets
 import string
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from celery import shared_task
 
 from apps.base.literals import ACCESS_EMAIL_SUBJECT_USER
 from apps.base.logger import configure_logging
+from apps.user.models.user import User
 
 from django.template.loader import render_to_string
 from django.utils import timezone
@@ -158,9 +160,14 @@ def send_access_email(user, temp_password, subject=None):
         logging.error(f"[base_utils - send_access_email] Error enviando email a {email_for_log}: {str(e)}")
         return False
 
-
-def send_access_email_google_api(user, temp_password, subject=None):
+@shared_task
+def send_access_email_google_api(user_id, temp_password, subject=None):
     try:
+        user = User.objects.filter(id=user_id).first()
+        if not user:
+            logging.error(f"[base_utils - send_access_email_google_api] Usuario no encontrado para envio de acceso: {user_id}")
+            return False
+
         to_email = user.email if user else None
         if not to_email:
             logging.error(f"[base_utils - send_access_email_google_api] El usuario {user} no tiene email.")
@@ -184,6 +191,10 @@ def send_access_email_google_api(user, temp_password, subject=None):
         )
 
     except Exception as e:
-        email_for_log = user.email if user else None
+        email_for_log = None
+        if user_id:
+            user_for_log = User.objects.filter(id=user_id).first()
+            if user_for_log:
+                email_for_log = user_for_log.email
         logging.error(f"[base_utils - send_access_email_google_api] Error enviando email por Gmail API a {email_for_log}: {str(e)}")
         return False

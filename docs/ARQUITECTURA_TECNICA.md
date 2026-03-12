@@ -82,6 +82,10 @@ La accion `POST /routes/{route_id}/generate-week/`:
 - Layout comun (`MainLayout`, `Sidebar`, `Topbar`).
 - Navegacion por rol desde sidebar.
 - Utilidades comunes de estado/errores en `components/Utils`.
+- En rutas:
+  - `RouteDetail` prioriza ejecucion operativa y responsive.
+  - `RoutesList` incluye filtros rapidos para operacion y asignacion.
+  - Vista de paradas en tarjetas para movil + tabla en desktop.
 
 ## 10. Observabilidad
 
@@ -110,4 +114,3 @@ Recomendado:
   - generar semana -> ejecutar paradas -> cerrar route day.
 - Auditar todos los `get_queryset` para cubrir rol client sin errores.
 - Añadir dashboard especifico de salud de tareas Celery.
-

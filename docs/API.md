@@ -178,9 +178,18 @@ CRUD base (`GET/POST /routes/`, `GET/PUT/PATCH/DELETE /routes/{id}/`).
 Actions:
 - `POST /routes/{id}/generate-range-routes/`
 - `POST /routes/{id}/generate-week/`
+- `GET /routes/{id}/operational-overview/`
+- `POST /routes/{id}/route-days/{route_day_id}/start/`
+- `POST /routes/{id}/route-days/{route_day_id}/finish/`
+- `POST /routes/{id}/route-days/{route_day_id}/stops/{route_day_client_id}/complete/`
+- `GET /routes/{id}/route-days/{route_day_id}/google-navigation/`
 
 Filtros soportados:
 - `date`, `status`
+- `search`
+
+`GET /routes/{id}/operational-overview/`:
+- query param opcional `week_start_date=YYYY-MM-DD` para cargar una semana concreta.
 
 #### `POST /routes/{id}/generate-week/`
 Genera/actualiza los `RouteDay` de una semana y sus paradas (`RouteDayClient`), optimiza orden con Google Directions y crea/programa `CollectionRequest`.

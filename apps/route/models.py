@@ -21,12 +21,15 @@ class Route(BaseModel):
         Company,
         on_delete=models.CASCADE,
         related_name='routes',
-        verbose_name='Compañía'
+        verbose_name='Compania'
     )
-    workers = models.ManyToManyField(
+    worker = models.ForeignKey(
         Worker,
+        on_delete=models.SET_NULL,
         related_name='routes',
-        verbose_name='Trabajadores'
+        verbose_name='Trabajador',
+        null=True,
+        blank=True,
     )
     start_date = models.DateField('Fecha de Inicio')
     end_date = models.DateField('Fecha de Fin', null=True, blank=True)

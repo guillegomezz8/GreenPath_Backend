@@ -13,6 +13,7 @@ class CollectionSerializer(serializers.ModelSerializer):
     status = serializers.SerializerMethodField()
     client_name = serializers.CharField(source='client.name', read_only=True)
     route_name = serializers.SerializerMethodField()
+    worker_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Collection
@@ -26,6 +27,17 @@ class CollectionSerializer(serializers.ModelSerializer):
         if not route:
             return None
         return route.name
+
+    def get_worker_name(self, obj):
+        worker = obj.worker
+        if not worker:
+            return None
+        full_name = f"{worker.name or ''} {worker.surname or ''}".strip()
+        if full_name:
+            return full_name
+        if hasattr(worker, "user") and worker.user:
+            return worker.user.username
+        return None
 
 
 class CreateCollectionSerializer(serializers.ModelSerializer):

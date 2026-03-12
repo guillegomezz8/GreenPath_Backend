@@ -20,6 +20,7 @@ from apps.base.enums import PickupFrequency, CollectionStatus
 from apps.base.permissions import IsOwnerUser
 from apps.collection.api.serializers.collection_serializers import CollectionSerializer
 from apps.user.api.serializers.client_serializers import ClientSerializer,CreateClientSerializer,UpdateClientSerializer,PartialUpdateClientSerializer
+from apps.user.utils import sync_client_location_from_address
 from apps.base.literals import (
     DETAILS,
     INTERNAL_ERROR
@@ -109,7 +110,7 @@ class ClientViewSet(viewsets.ModelViewSet):
                 if get_access:
                     temp_password = gen_password()
                     user.set_password(temp_password)
-                    transaction.on_commit(lambda: send_access_email_google_api(user, temp_password, subject="Acceso a GreenPath como Cliente"))
+                    transaction.on_commit(lambda: send_access_email_google_api.delay(user.id, temp_password, subject="Acceso a GreenPath como Cliente"))
                 else:
                     user.set_unusable_password()
 
@@ -125,6 +126,7 @@ class ClientViewSet(viewsets.ModelViewSet):
 
                 client.save()
 
+            sync_client_location_from_address(client, clear_on_failure=True)
             logging.info(f"[client_viewset - perform_create] Cliente creado con éxito: {client.id}")
         except Exception as e:
             logging.error(f"[client_viewset - perform_create] Error creando cliente: {str(e)}")

@@ -5,6 +5,7 @@ import logging
 from apps.base.logger import configure_logging
 from apps.user.api.serializers.user_nested_serializers import UserNestedWriteSerializer
 from apps.user.models.client import Client
+from apps.user.utils import sync_client_location_from_address
 from apps.collection.models import Collection
 from apps.base.enums import PickupFrequency, CollectionStatus
 
@@ -123,11 +124,20 @@ class UpdateClientSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         try:
+            address_changed = (
+                "address" in validated_data
+                or "city" in validated_data
+                or "postal_code" in validated_data
+                or "country" in validated_data
+            )
             email = validated_data.pop("email", None)
 
             for attr, value in validated_data.items():
                 setattr(instance, attr, value)
             instance.save()
+
+            if address_changed:
+                sync_client_location_from_address(instance, clear_on_failure=True)
 
             if email and hasattr(instance, "user") and instance.user:
                 instance.user.email = email
@@ -168,11 +178,20 @@ class PartialUpdateClientSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         try:
+            address_changed = (
+                "address" in validated_data
+                or "city" in validated_data
+                or "postal_code" in validated_data
+                or "country" in validated_data
+            )
             email = validated_data.pop("email", None)
 
             for attr, value in validated_data.items():
                 setattr(instance, attr, value)
             instance.save()
+
+            if address_changed:
+                sync_client_location_from_address(instance, clear_on_failure=True)
 
             if email and hasattr(instance, "user") and instance.user:
                 instance.user.email = email

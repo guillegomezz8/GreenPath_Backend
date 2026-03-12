@@ -5,7 +5,7 @@
     "fields": {
       "name": "Ruta Sevilla Laboral",
       "company": 1,
-      "workers": [1, 2],
+      "worker": 1,
       "start_date": "2026-01-01",
       "end_date": "2026-12-31",
       "week_start": 0,
@@ -18,7 +18,7 @@
     "fields": {
       "name": "Ruta Sevilla Fin de Semana",
       "company": 1,
-      "workers": [1],
+      "worker": 1,
       "start_date": "2026-01-01",
       "end_date": "2026-12-31",
       "week_start": 5,

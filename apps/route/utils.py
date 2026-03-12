@@ -602,14 +602,18 @@ def finish_route_day(route_day, close_action=None):
 
 def _resolve_worker_for_route_day(route_day, user, worker_id=None):
     if user.role_type == "worker" and hasattr(user, "worker_profile"):
-        return user.worker_profile
+        if route_day.route.worker_id == user.worker_profile.id:
+            return user.worker_profile
 
     if worker_id:
-        worker = route_day.route.workers.filter(id=worker_id).first()
-        if worker and worker.company_id == route_day.route.company_id:
+        worker = route_day.route.worker
+        if worker and worker.id == worker_id and worker.company_id == route_day.route.company_id:
             return worker
 
-    return route_day.route.workers.filter(company_id=route_day.route.company_id).order_by("id").first()
+    worker = route_day.route.worker
+    if worker and worker.company_id == route_day.route.company_id:
+        return worker
+    return None
 
 
 @transaction.atomic
@@ -766,14 +770,8 @@ def _resolve_route_default_capacity_liters(route):
         if hasattr(route, "_default_capacity_liters_cache"):
             return route._default_capacity_liters_cache
 
-        worker = (
-            route.workers
-            .select_related("truck")
-            .filter(truck__capacity_liters__isnull=False)
-            .order_by("id")
-            .first()
-        )
-        if worker and worker.truck and worker.truck.capacity_liters is not None:
+        worker = route.worker
+        if worker and hasattr(worker, "truck") and worker.truck and worker.truck.capacity_liters is not None:
             route._default_capacity_liters_cache = worker.truck.capacity_liters
             return route._default_capacity_liters_cache
         route._default_capacity_liters_cache = None

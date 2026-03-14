@@ -15,7 +15,7 @@ class TruckAdmin(admin.ModelAdmin):
             "fields": ("id", "registration_number", "brand", "model", "year"),
         }),
         ("Características técnicas", {
-            "fields": ("capacity", "fuel"),
+            "fields": ("capacity_liters", "fuel"),
         }),
         ("Estado operativo", {
             "fields": ("status",),
@@ -25,3 +25,5 @@ class TruckAdmin(admin.ModelAdmin):
             "fields": ("company", "driver"),
         }),
     )
+
+

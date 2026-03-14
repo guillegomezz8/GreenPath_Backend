@@ -96,28 +96,34 @@ class UserListSerializer(serializers.ModelSerializer):
 class UserProfileUpdateSerializer(serializers.ModelSerializer):
     name = serializers.CharField(write_only=True, required=False)
     phone = serializers.CharField(write_only=True, required=False)
+    photo = serializers.ImageField(write_only=True, required=False, allow_null=True)
     
     class Meta:
         model = User
-        fields = ['email', 'name', 'phone']
+        fields = ['email', 'name', 'phone', 'photo']
         
     def update(self, instance, validated_data):
         if 'email' in validated_data:
             instance.email = validated_data['email']
             
-        profile_fields = ['name', 'phone']
+        profile_fields = ['name', 'phone', 'photo']
         profile_data = {k: v for k, v in validated_data.items() if k in profile_fields}
         
         if profile_data:
-            if hasattr(instance, 'client_profile'):
+            profile = None
+            if instance.role_type in ["owner", "worker"] and hasattr(instance, 'worker_profile'):
+                profile = instance.worker_profile
+            elif instance.role_type == "client" and hasattr(instance, 'client_profile'):
                 profile = instance.client_profile
             elif hasattr(instance, 'worker_profile'):
                 profile = instance.worker_profile
-            else:
-                profile = None
+            elif hasattr(instance, 'client_profile'):
+                profile = instance.client_profile
                 
             if profile:
                 for field, value in profile_data.items():
+                    if not hasattr(profile, field):
+                        continue
                     setattr(profile, field, value)
                 profile.save()
         
@@ -132,8 +138,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'is_active', 'is_staff', 'role_type', 'profile']
 
     def get_profile(self, obj):
+        if obj.role_type in ["owner", "worker"] and hasattr(obj, 'worker_profile'):
+            return WorkerSerializer(obj.worker_profile).data
+        if obj.role_type == "client" and hasattr(obj, 'client_profile'):
+            return ClientSerializer(obj.client_profile).data
+        if hasattr(obj, 'worker_profile'):
+            return WorkerSerializer(obj.worker_profile).data
         if hasattr(obj, 'client_profile'):
             return ClientSerializer(obj.client_profile).data
-        elif hasattr(obj, 'worker_profile'):
-            return WorkerSerializer(obj.worker_profile).data
         return None

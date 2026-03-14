@@ -1,8 +1,9 @@
 from rest_framework import serializers
-from django.db.models import Sum, Count
+from django.db.models import Sum, Count, Q
 import logging
 
 from apps.base.logger import configure_logging
+from apps.base.enums import CollectionStatus
 from apps.user.api.serializers.user_nested_serializers import UserNestedWriteSerializer
 from apps.user.models.client import Client
 from apps.user.models.worker import Worker
@@ -16,10 +17,13 @@ class WorkerSerializer(serializers.ModelSerializer):
     username = serializers.SerializerMethodField()
     assigned_trucks = serializers.SerializerMethodField()
     total_liters_collected = serializers.SerializerMethodField()
-    total_routes = serializers.IntegerField(source='routes.count', read_only=True)
-    total_collections = serializers.IntegerField(source='collections.count', read_only=True)
+    total_routes = serializers.IntegerField(source="routes.count", read_only=True)
+    total_collections = serializers.SerializerMethodField()
+    confirmed_collections = serializers.SerializerMethodField()
+    pending_collections = serializers.SerializerMethodField()
+    canceled_collections = serializers.SerializerMethodField()
     total_incomes = serializers.SerializerMethodField()
-    role = serializers.CharField(source='get_role_display', read_only=True)
+    role = serializers.CharField(source="get_role_display", read_only=True)
     photo = serializers.ImageField(required=False, allow_null=True)
 
     disabled = serializers.BooleanField(read_only=True)
@@ -29,10 +33,10 @@ class WorkerSerializer(serializers.ModelSerializer):
         exclude = ("modified_date", "deleted_date", "created_date")
 
     def get_email(self, obj):
-        return getattr(obj.user, "email", None)
+        return obj.user.email if obj.user else None
 
     def get_username(self, obj):
-        return getattr(obj.user, "username", None)
+        return obj.user.username if obj.user else None
 
     def get_assigned_trucks(self, obj):
         if hasattr(obj, "truck") and obj.truck:
@@ -41,13 +45,44 @@ class WorkerSerializer(serializers.ModelSerializer):
             return f"{obj.truck.registration_number} ({brand} {model})".strip()
         return "Sin asignar"
 
+    def _get_collection_stats(self, obj):
+        if hasattr(obj, "_collection_stats_cache"):
+            return obj._collection_stats_cache
+
+        stats_cache = obj.collections.aggregate(
+            total_collections=Count("id", filter=~Q(status=CollectionStatus.CANCELED)),
+            confirmed_collections=Count("id", filter=Q(status=CollectionStatus.CONFIRMED)),
+            pending_collections=Count("id", filter=Q(status=CollectionStatus.PENDING_MEASUREMENT)),
+            canceled_collections=Count("id", filter=Q(status=CollectionStatus.CANCELED)),
+            total_liters_collected=Sum("net_liters", filter=Q(status=CollectionStatus.CONFIRMED)),
+            total_incomes=Sum("total_price", filter=Q(status=CollectionStatus.CONFIRMED)),
+        )
+        obj._collection_stats_cache = stats_cache
+        return stats_cache
+
     def get_total_liters_collected(self, obj):
-        agg = obj.collections.aggregate(total=Sum("liters_collected"))
-        return agg["total"] or 0
+        stats = self._get_collection_stats(obj)
+        return stats.get("total_liters_collected") or 0
 
     def get_total_incomes(self, obj):
-        agg = obj.collections.aggregate(total=Sum("total_price"))
-        return agg["total"] or 0
+        stats = self._get_collection_stats(obj)
+        return stats.get("total_incomes") or 0
+
+    def get_total_collections(self, obj):
+        stats = self._get_collection_stats(obj)
+        return stats.get("total_collections") or 0
+
+    def get_confirmed_collections(self, obj):
+        stats = self._get_collection_stats(obj)
+        return stats.get("confirmed_collections") or 0
+
+    def get_pending_collections(self, obj):
+        stats = self._get_collection_stats(obj)
+        return stats.get("pending_collections") or 0
+
+    def get_canceled_collections(self, obj):
+        stats = self._get_collection_stats(obj)
+        return stats.get("canceled_collections") or 0
 
 
 class CreateWorkerSerializer(serializers.ModelSerializer):
@@ -124,14 +159,14 @@ class UpdateWorkerSerializer(serializers.ModelSerializer):
                 setattr(instance, attr, value)
             instance.save()
 
-            if email and getattr(instance, "user", None):
+            if email and hasattr(instance, "user") and instance.user:
                 instance.user.email = email
                 instance.user.full_clean(validate_unique=False)
                 instance.user.save(update_fields=["email"])
 
             return instance
         except Exception as e:
-            logging.error(f"Error updating worker with id {instance.id}: {str(e)}")
+            logging.error(f"[worker_serializers - update] Error updating worker with id {instance.id}: {str(e)}")
             raise serializers.ValidationError(f"Error actualizando trabajador: {str(e)}")
 
 
@@ -170,14 +205,14 @@ class PartialUpdateWorkerSerializer(serializers.ModelSerializer):
                 setattr(instance, attr, value)
             instance.save()
 
-            if email and getattr(instance, "user", None):
+            if email and hasattr(instance, "user") and instance.user:
                 instance.user.email = email
                 instance.user.full_clean(validate_unique=False)
                 instance.user.save(update_fields=["email"])
 
             return instance
         except Exception as e:
-            logging.error(f"Error updating worker with id {instance.id}: {str(e)}")
+            logging.error(f"[worker_serializers - update] Error updating worker with id {instance.id}: {str(e)}")
             raise serializers.ValidationError(f"Error actualizando trabajador: {str(e)}")
    
         

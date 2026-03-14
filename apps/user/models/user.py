@@ -46,8 +46,8 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     @property
     def role_type(self):
-        if hasattr(self, 'client_profile'):
-            return "client"
         if hasattr(self, 'worker_profile'):
             return "owner" if self.worker_profile.role == Role.OWNER else "worker"
+        if hasattr(self, 'client_profile'):
+            return "client"
         return "desconocido"

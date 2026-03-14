@@ -1,0 +1,65 @@
+[
+  {
+    "model": "route.routezoneday",
+    "pk": 1,
+    "fields": {
+      "route": 1,
+      "weekday": 0,
+      "zones": [1, 2]
+    }
+  },
+  {
+    "model": "route.routezoneday",
+    "pk": 2,
+    "fields": {
+      "route": 1,
+      "weekday": 1,
+      "zones": [1]
+    }
+  },
+  {
+    "model": "route.routezoneday",
+    "pk": 3,
+    "fields": {
+      "route": 1,
+      "weekday": 2,
+      "zones": [1, 2]
+    }
+  },
+  {
+    "model": "route.routezoneday",
+    "pk": 4,
+    "fields": {
+      "route": 1,
+      "weekday": 3,
+      "zones": [2]
+    }
+  },
+  {
+    "model": "route.routezoneday",
+    "pk": 5,
+    "fields": {
+      "route": 1,
+      "weekday": 4,
+      "zones": [1]
+    }
+  },
+  {
+    "model": "route.routezoneday",
+    "pk": 6,
+    "fields": {
+      "route": 2,
+      "weekday": 5,
+      "zones": [6, 7]
+    }
+  },
+  {
+    "model": "route.routezoneday",
+    "pk": 7,
+    "fields": {
+      "route": 2,
+      "weekday": 6,
+      "zones": [8]
+    }
+  }
+]

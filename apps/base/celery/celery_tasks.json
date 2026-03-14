@@ -1,0 +1,15 @@
+{
+  "tareas": [
+    {
+      "name": "CollectionRequests - Procesar expiradas",
+      "task": "apps.collection.tasks.process_expired_collection_requests",
+      "description": "Fail-safe para autoestimar solicitudes expiradas en estado PENDING.",
+      "schedule": {
+        "type": "interval",
+        "every": 10,
+        "period": "minutes"
+      },
+      "args": [200]
+    }
+  ]
+}

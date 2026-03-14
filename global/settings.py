@@ -4,7 +4,8 @@ from dotenv import load_dotenv
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent
+CELERY_DIR = BASE_DIR / 'apps' / 'base' / 'celery'
 
 # Cargar el archivo .env
 dotenv_path = os.path.join(BASE_DIR, '.env')
@@ -12,7 +13,6 @@ load_dotenv(dotenv_path)
 
 # Variables de entorno cargadas
 SECRET_KEY = os.getenv('SECRET_KEY', 'default_secret_key')
-# DEBUG = os.getenv('DEBUG', 'False').lower() in ['true', '1']
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
@@ -50,6 +50,7 @@ BASE_APPS = [
 
 LOCAL_APPS = [
     'apps.base',
+    'apps.base.celery',
     'apps.user',
     'apps.company',
     'apps.route',
@@ -68,6 +69,9 @@ THIRD_APPS = [
     'drf_spectacular',
     'django_extensions',
     'django_filters',
+    'django_celery_beat',
+    'django_celery_results',
+    'django_cleanup.apps.CleanupConfig',
 ]
 
 INSTALLED_APPS = BASE_APPS + LOCAL_APPS + THIRD_APPS
@@ -194,8 +198,8 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 EMAIL_HOST=os.getenv("SMTP_SERVER", "")
 EMAIL_PORT=os.getenv("SMTP_PORT", 587)
-EMAIL_HOST_USER=os.getenv("EMAIL_USER", "xxx@xxx.com")
-EMAIL_HOST_PASSWORD=os.getenv("EMAIL_PASSWORD", "XXXX")
+EMAIL_HOST_USER=os.getenv("EMAIL_USER", "")
+EMAIL_HOST_PASSWORD=os.getenv("EMAIL_PASSWORD", "")
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True") == "True"
 EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "False") == "True"
 
@@ -216,3 +220,12 @@ STORAGES = {
 }
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "")
+
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:8004/0")
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:8004/0")
+
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+
+STATICFILES_DIRS = (BASE_DIR, 'static')

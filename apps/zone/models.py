@@ -1,7 +1,11 @@
 from django.contrib.gis.db import models as geomodels
+from django.db import models
 
-class Zone(geomodels.Model):
-    name = geomodels.CharField(max_length=100, unique=True, verbose_name="Nombre de la zona")
+from apps.base.models import BaseModel
+
+
+class Zone(BaseModel):
+    name = models.CharField(max_length=100, unique=True, verbose_name="Nombre de la zona")
     polygon = geomodels.PolygonField(verbose_name="Polígono geográfico")
 
     class Meta:

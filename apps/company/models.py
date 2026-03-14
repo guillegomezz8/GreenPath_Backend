@@ -1,9 +1,12 @@
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.contrib.gis.db import models as geomodels
+
+import logging
+
 from apps.base.models import BaseModel
 from apps.user.models.user import User
 from apps.base.enums import Role
-import logging
 from apps.base.logger import configure_logging
 
 configure_logging()
@@ -34,11 +37,30 @@ class Company(BaseModel):
         return self.name
 
     def clean(self):
-        logging("Validando que el dueño es un owner")
+        logging.info("[company_model - CompanyModel] Validando que el dueño es un owner")
         if self.owner and self.owner.role_type and self.owner.role_type != Role.OWNER:
-            logging.error("El dueño no tiene el rol de owners")
+            logging.error("[company_model - CompanyModel] El dueño no tiene el rol de owners")
             raise ValidationError({'owner': 'El dueño debe tener el rol de "owner".'})
 
     def save(self, *args, **kwargs):
-        self.clean()
+        self.full_clean()
         super().save(*args, **kwargs)
+
+
+class CompanyHub(BaseModel):
+    company = models.OneToOneField(
+        Company,
+        on_delete=models.CASCADE,
+        related_name="hub",
+        verbose_name="Empresa",
+    )
+
+    name = geomodels.CharField('Nombre del Hub', max_length=255)
+    location = geomodels.PointField('Ubicación', geography=True, blank=True, null=True)
+
+    class Meta:
+        verbose_name = 'Hub de Empresa'
+        verbose_name_plural = 'Hubs de Empresas'
+
+    def __str__(self):
+        return f"{self.name} - {self.company.name}"

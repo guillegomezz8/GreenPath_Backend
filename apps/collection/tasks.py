@@ -10,7 +10,7 @@ from apps.base.literals import COLLECTION_REQUEST_NOTIFY_BODY, COLLECTION_REQUES
 from apps.base.enums import CollectionRequestStatus, PlannedSource, CollectionStatus
 from apps.base.utils import send_email_google_api
 from apps.collection.models import CollectionRequest, Collection
-from apps.base.logging import configure_logging
+from apps.base.logger import configure_logging
 
 configure_logging()
 

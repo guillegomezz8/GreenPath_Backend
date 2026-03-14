@@ -37,8 +37,9 @@ from apps.company.models import CompanyHub
 from apps.route.models import Route, RouteDay, RouteDayClient, RouteZoneDay
 from apps.user.models.client import Client
 from apps.zone.models import Zone
+from apps.base.logger import configure_logging
 
-logger = logging.getLogger(__name__)
+configure_logging()
 
 
 def _gmail_ready_for_notifications():
@@ -76,7 +77,7 @@ def get_clients_for_day(route, date):
     try:
         zone_day = RouteZoneDay.objects.get(route=route, weekday=weekday)
     except RouteZoneDay.DoesNotExist:
-        logger.info(f"[route_utils - get_clients_for_day] No hay configuracion de zonas para ruta {route.id} en weekday {weekday}")
+        logging.info(f"[route_utils - get_clients_for_day] No hay configuracion de zonas para ruta {route.id} en weekday {weekday}")
         return []
 
     zones = zone_day.zones.all()
@@ -112,7 +113,7 @@ def get_optimized_order_from_google(clients):
     data = response.json()
 
     if "routes" not in data or not data["routes"]:
-        logger.error(f"[route_utils - get_optimized_order_from_google] Google Maps API sin rutas validas: {data}")
+        logging.error(f"[route_utils - get_optimized_order_from_google] Google Maps API sin rutas validas: {data}")
         raise ValueError(ROUTE_GOOGLE_NO_VALID_ROUTE)
 
     order = data["routes"][0]["waypoint_order"]
@@ -167,9 +168,9 @@ def _revoke_collection_request_task(collection_request):
     task_id = collection_request.auto_estimate_task_id or _build_auto_estimate_task_id(collection_request.id, collection_request.expires_at)
     try:
         current_app.control.revoke(task_id, terminate=False)
-        logger.info(f"[route_utils - _revoke_collection_request_task] Task {task_id} revocada para solicitud {collection_request.id}")
+        logging.info(f"[route_utils - _revoke_collection_request_task] Task {task_id} revocada para solicitud {collection_request.id}")
     except Exception as exc:
-        logger.warning(f"[route_utils - _revoke_collection_request_task] No se pudo revocar task {task_id} para solicitud {collection_request.id}: {exc}")
+        logging.warning(f"[route_utils - _revoke_collection_request_task] No se pudo revocar task {task_id} para solicitud {collection_request.id}: {exc}")
 
 
 def _enqueue_auto_estimate_task(collection_request, task_id):
@@ -178,27 +179,27 @@ def _enqueue_auto_estimate_task(collection_request, task_id):
             auto_estimate_collection_request_liters.apply_async(args=[collection_request.id], task_id=task_id)
         else:
             auto_estimate_collection_request_liters.apply_async(args=[collection_request.id], eta=collection_request.expires_at, task_id=task_id)
-        logger.info(f"[route_utils - _enqueue_auto_estimate_task] Task programada para solicitud {collection_request.id} con task_id {task_id}")
+        logging.info(f"[route_utils - _enqueue_auto_estimate_task] Task programada para solicitud {collection_request.id} con task_id {task_id}")
 
     transaction.on_commit(_enqueue)
 
 
 def _enqueue_collection_request_notification(collection_request):
     if not _gmail_ready_for_notifications():
-        logger.info(f"[route_utils - _enqueue_collection_request_notification] Notificacion omitida por Gmail API no configurada para solicitud {collection_request.id}")
+        logging.info(f"[route_utils - _enqueue_collection_request_notification] Notificacion omitida por Gmail API no configurada para solicitud {collection_request.id}")
         return
 
     if collection_request.expires_at <= timezone.now():
-        logger.info(f"[route_utils - _enqueue_collection_request_notification] Notificacion omitida para solicitud {collection_request.id}: ya expirada")
+        logging.info(f"[route_utils - _enqueue_collection_request_notification] Notificacion omitida para solicitud {collection_request.id}: ya expirada")
         return
 
     notify_lock_key = f"collection_request_notify_lock_{collection_request.id}"
     if not cache.add(notify_lock_key, "1", timeout=3600):
-        logger.info(f"[route_utils - _enqueue_collection_request_notification] Notificacion ya encolada recientemente para solicitud {collection_request.id}")
+        logging.info(f"[route_utils - _enqueue_collection_request_notification] Notificacion ya encolada recientemente para solicitud {collection_request.id}")
         return
 
     transaction.on_commit(lambda: notify_collection_request_created.delay(collection_request.id))
-    logger.info(f"[route_utils - _enqueue_collection_request_notification] Notificacion encolada para solicitud {collection_request.id}")
+    logging.info(f"[route_utils - _enqueue_collection_request_notification] Notificacion encolada para solicitud {collection_request.id}")
 
 
 def _compute_auto_estimated_liters(collection_request):
@@ -258,7 +259,7 @@ def _apply_auto_estimate_without_contact(collection_request):
             "modified_date",
         ]
     )
-    logger.info(f"[route_utils - _apply_auto_estimate_without_contact] Solicitud {collection_request.id} autoestimada sin contacto con {estimated} litros")
+    logging.info(f"[route_utils - _apply_auto_estimate_without_contact] Solicitud {collection_request.id} autoestimada sin contacto con {estimated} litros")
 
 
 def _schedule_collection_request(route_day_client, route_day_start, auto_estimate_without_contact=False):
@@ -285,15 +286,15 @@ def _schedule_collection_request(route_day_client, route_day_start, auto_estimat
             if old_task_id:
                 try:
                     current_app.control.revoke(old_task_id, terminate=False)
-                    logger.info(f"[route_utils - _schedule_collection_request] Task anterior {old_task_id} revocada para solicitud {collection_request.id}")
+                    logging.info(f"[route_utils - _schedule_collection_request] Task anterior {old_task_id} revocada para solicitud {collection_request.id}")
                 except Exception as e:
-                    logger.warning(f"[route_utils - _schedule_collection_request] No se pudo revocar task anterior {old_task_id} para solicitud {collection_request.id}: {str(e)}")
+                    logging.warning(f"[route_utils - _schedule_collection_request] No se pudo revocar task anterior {old_task_id} para solicitud {collection_request.id}: {str(e)}")
 
             if updated_expiration:
                 collection_request.save(update_fields=["expires_at", "modified_date"])
 
             if collection_request.status in [CollectionRequestStatus.ANSWERED, CollectionRequestStatus.MANUAL]:
-                logger.info(f"[route_utils - _schedule_collection_request] Solicitud {collection_request.id} conservada en estado {collection_request.status} sin notificacion")
+                logging.info(f"[route_utils - _schedule_collection_request] Solicitud {collection_request.id} conservada en estado {collection_request.status} sin notificacion")
                 return
 
             _apply_auto_estimate_without_contact(collection_request)
@@ -310,9 +311,9 @@ def _schedule_collection_request(route_day_client, route_day_start, auto_estimat
                 if old_task_id and old_task_id != task_id:
                     try:
                         current_app.control.revoke(old_task_id, terminate=False)
-                        logger.info(f"[route_utils - _schedule_collection_request] Task anterior {old_task_id} revocada para solicitud {collection_request.id}")
+                        logging.info(f"[route_utils - _schedule_collection_request] Task anterior {old_task_id} revocada para solicitud {collection_request.id}")
                     except Exception as e:
-                        logger.warning(f"[route_utils - _schedule_collection_request] No se pudo revocar task anterior {old_task_id} para solicitud {collection_request.id}: {str(e)}")
+                        logging.warning(f"[route_utils - _schedule_collection_request] No se pudo revocar task anterior {old_task_id} para solicitud {collection_request.id}: {str(e)}")
                 _enqueue_auto_estimate_task(collection_request, task_id)
             elif updated_expiration:
                 collection_request.save(update_fields=["expires_at", "modified_date"])
@@ -332,17 +333,17 @@ def _revoke_route_day_collection_request_tasks(route_day):
 def optimize_route_day_with_google(route_day):
     route_day_clients = list(route_day.ordered_clients.select_related("client").order_by("order"))
     if len(route_day_clients) < 2:
-        logger.info(f"[route_utils - optimize_route_day_with_google] Optimizacion Google no aplicada en route_day {route_day.id}: menos de 2 paradas")
+        logging.info(f"[route_utils - optimize_route_day_with_google] Optimizacion Google no aplicada en route_day {route_day.id}: menos de 2 paradas")
         return route_day_clients
 
     hub = CompanyHub.objects.filter(company=route_day.route.company, location__isnull=False).first()
     if not hub:
-        logger.info(f"[route_utils - optimize_route_day_with_google] Optimizacion Google no aplicada en route_day {route_day.id}: no hay hub para company {route_day.route.company_id}")
+        logging.info(f"[route_utils - optimize_route_day_with_google] Optimizacion Google no aplicada en route_day {route_day.id}: no hay hub para company {route_day.route.company_id}")
         return route_day_clients
 
     api_key = settings.GOOGLE_MAPS_API_KEY if hasattr(settings, "GOOGLE_MAPS_API_KEY") else ""
     if not api_key:
-        logger.warning(f"[route_utils - optimize_route_day_with_google] Optimizacion Google no aplicada en route_day {route_day.id}: GOOGLE_MAPS_API_KEY no configurada")
+        logging.warning(f"[route_utils - optimize_route_day_with_google] Optimizacion Google no aplicada en route_day {route_day.id}: GOOGLE_MAPS_API_KEY no configurada")
         return route_day_clients
 
     destination_row = max(route_day_clients, key=lambda row: row.client.location.distance(hub.location))
@@ -365,7 +366,7 @@ def optimize_route_day_with_google(route_day):
         response.raise_for_status()
         data = response.json()
     except Exception as exc:
-        logger.error(f"[route_utils - optimize_route_day_with_google] Error consultando Google Directions API: {exc}")
+        logging.error(f"[route_utils - optimize_route_day_with_google] Error consultando Google Directions API: {exc}")
         return route_day_clients
 
     routes = data.get("routes") or []
@@ -373,16 +374,16 @@ def optimize_route_day_with_google(route_day):
         google_status = data.get("status")
         google_error = data.get("error_message")
         if google_status or google_error:
-            logger.warning(f"[route_utils - optimize_route_day_with_google] Optimizacion Google no aplicada en route_day {route_day.id}: status={google_status}, error={google_error}")
+            logging.warning(f"[route_utils - optimize_route_day_with_google] Optimizacion Google no aplicada en route_day {route_day.id}: status={google_status}, error={google_error}")
         else:
-            logger.warning(f"[route_utils - optimize_route_day_with_google] Optimizacion Google no aplicada en route_day {route_day.id}: Google Directions sin rutas validas")
+            logging.warning(f"[route_utils - optimize_route_day_with_google] Optimizacion Google no aplicada en route_day {route_day.id}: Google Directions sin rutas validas")
         return route_day_clients
 
     waypoint_order = routes[0].get("waypoint_order", [])
     optimized = [waypoints_rows[index] for index in waypoint_order if index < len(waypoints_rows)]
     optimized.append(destination_row)
     if len(optimized) != len(route_day_clients):
-        logger.warning(f"[route_utils - optimize_route_day_with_google] Optimizacion Google no aplicada en route_day {route_day.id}: respuesta de Google invalida")
+        logging.warning(f"[route_utils - optimize_route_day_with_google] Optimizacion Google no aplicada en route_day {route_day.id}: respuesta de Google invalida")
         return route_day_clients
 
     desired_orders = {row.id: index for index, row in enumerate(optimized, start=1)}
@@ -403,9 +404,9 @@ def optimize_route_day_with_google(route_day):
             RouteDayClient.objects.bulk_update(rows_to_update, ["order"])
 
     if updated_rows == 0:
-        logger.info(f"[route_utils - optimize_route_day_with_google] Optimizacion Google sin cambios en route_day {route_day.id}")
+        logging.info(f"[route_utils - optimize_route_day_with_google] Optimizacion Google sin cambios en route_day {route_day.id}")
     else:
-        logger.info(f"[route_utils - optimize_route_day_with_google] Optimizacion Google aplicada en route_day {route_day.id}: {updated_rows} paradas reordenadas")
+        logging.info(f"[route_utils - optimize_route_day_with_google] Optimizacion Google aplicada en route_day {route_day.id}: {updated_rows} paradas reordenadas")
 
     return optimized
 
@@ -416,9 +417,9 @@ def generate_route_day_clients(route_day, regenerate=False, reserved_client_ids=
 
         if not _is_route_day_generation_mutable(route_day):
             if regenerate:
-                logger.warning(f"[route_utils - generate_route_day_clients] Regeneracion bloqueada para route_day {route_day.id} con estado {route_day.status}")
+                logging.warning(f"[route_utils - generate_route_day_clients] Regeneracion bloqueada para route_day {route_day.id} con estado {route_day.status}")
                 raise ValueError(ROUTE_DAY_GENERATION_LOCKED)
-            logger.info(f"[route_utils - generate_route_day_clients] Generacion omitida para route_day {route_day.id} con estado {route_day.status}")
+            logging.info(f"[route_utils - generate_route_day_clients] Generacion omitida para route_day {route_day.id} con estado {route_day.status}")
             return list(route_day.ordered_clients.select_related("client").order_by("order"))
 
         zone_day = (
@@ -440,20 +441,20 @@ def generate_route_day_clients(route_day, regenerate=False, reserved_client_ids=
                         _revoke_collection_request_task(collection_request)
                 duplicate_row_ids = [row.id for row in duplicate_rows]
                 route_day.ordered_clients.filter(id__in=duplicate_row_ids).delete()
-                logger.warning(f"[route_utils - generate_route_day_clients] Eliminadas {len(duplicate_row_ids)} paradas duplicadas en route_day {route_day.id}")
+                logging.warning(f"[route_utils - generate_route_day_clients] Eliminadas {len(duplicate_row_ids)} paradas duplicadas en route_day {route_day.id}")
 
         if not zone_day:
-            logger.info(f"[route_utils - generate_route_day_clients] Sin paradas en route_day {route_day.id}: no hay RouteZoneDay configurado para weekday {route_day.weekday}")
+            logging.info(f"[route_utils - generate_route_day_clients] Sin paradas en route_day {route_day.id}: no hay RouteZoneDay configurado para weekday {route_day.weekday}")
             return []
 
         zones = list(zone_day.zones.all())
         if not zones:
-            logger.info(f"[route_utils - generate_route_day_clients] Sin paradas en route_day {route_day.id}: RouteZoneDay sin zonas asignadas")
+            logging.info(f"[route_utils - generate_route_day_clients] Sin paradas en route_day {route_day.id}: RouteZoneDay sin zonas asignadas")
             return []
 
         zone_filters = [Q(location__within=zone.polygon) for zone in zones if zone.polygon]
         if not zone_filters:
-            logger.info(f"[route_utils - generate_route_day_clients] Sin paradas en route_day {route_day.id}: zonas sin geometria valida")
+            logging.info(f"[route_utils - generate_route_day_clients] Sin paradas en route_day {route_day.id}: zonas sin geometria valida")
             return []
 
         spatial_q = reduce(lambda acc, item: acc | item, zone_filters)
@@ -495,7 +496,7 @@ def generate_route_day_clients(route_day, regenerate=False, reserved_client_ids=
         ]
         if not due_clients:
             candidate_clients = clients_qs.count()
-            logger.info(f"[route_utils - generate_route_day_clients] Sin paradas en route_day {route_day.id}: 0 clientes por frecuencia en fecha {route_day.date} (candidatos en zona: {candidate_clients})")
+            logging.info(f"[route_utils - generate_route_day_clients] Sin paradas en route_day {route_day.id}: 0 clientes por frecuencia en fecha {route_day.date} (candidatos en zona: {candidate_clients})")
         due_clients = sorted(
             due_clients,
             key=lambda item: (
@@ -545,17 +546,17 @@ def generate_route_day_clients(route_day, regenerate=False, reserved_client_ids=
             current_planned_liters += planned_liters
 
         if max_clients_limit > 0 and len(existing_client_ids) >= max_clients_limit:
-            logger.info(f"[route_utils - generate_route_day_clients] Limite max_clients_per_day alcanzado en route_day {route_day.id}: {max_clients_limit}")
+            logging.info(f"[route_utils - generate_route_day_clients] Limite max_clients_per_day alcanzado en route_day {route_day.id}: {max_clients_limit}")
         if skipped_by_capacity > 0:
-            logger.info(f"[route_utils - generate_route_day_clients] {skipped_by_capacity} clientes omitidos por capacidad en route_day {route_day.id}")
+            logging.info(f"[route_utils - generate_route_day_clients] {skipped_by_capacity} clientes omitidos por capacidad en route_day {route_day.id}")
         if created_rows > 0:
-            logger.info(f"[route_utils - generate_route_day_clients] {created_rows} paradas creadas en route_day {route_day.id}")
+            logging.info(f"[route_utils - generate_route_day_clients] {created_rows} paradas creadas en route_day {route_day.id}")
 
         if optimize_with_google:
             optimized_rows = optimize_route_day_with_google(route_day)
         else:
             optimized_rows = list(route_day.ordered_clients.select_related("client").order_by("order"))
-            logger.info(f"[route_utils - generate_route_day_clients] Optimizacion Google desactivada para route_day {route_day.id}, se conserva orden actual")
+            logging.info(f"[route_utils - generate_route_day_clients] Optimizacion Google desactivada para route_day {route_day.id}, se conserva orden actual")
         route_day_start = _route_day_start_datetime(route_day)
 
         for row in optimized_rows:
@@ -569,7 +570,7 @@ def generate_route_day_clients(route_day, regenerate=False, reserved_client_ids=
 
         return optimized_rows
     except Exception as e:
-        logger.error(f"[route_utils - generate_route_day_clients] Error generando paradas para route_day {route_day.id}: {str(e)}")
+        logging.error(f"[route_utils - generate_route_day_clients] Error generando paradas para route_day {route_day.id}: {str(e)}")
         raise
 
 
@@ -802,7 +803,7 @@ def _ensure_week_regeneration_allowed(route, week_start_date, week_end_date):
     )
     locked_days = [route_day.date for route_day in week_route_days if not _is_route_day_generation_mutable(route_day)]
     if locked_days:
-        logger.warning(f"[route_utils - _ensure_week_regeneration_allowed] Regeneracion bloqueada para ruta {route.id} por route_days no mutables en fechas {locked_days}")
+        logging.warning(f"[route_utils - _ensure_week_regeneration_allowed] Regeneracion bloqueada para ruta {route.id} por route_days no mutables en fechas {locked_days}")
         raise ValueError(ROUTE_WEEK_REGENERATION_LOCKED)
 
 
@@ -823,7 +824,7 @@ def _resolve_route_default_capacity_liters(route):
         route._default_capacity_liters_cache = None
         return route._default_capacity_liters_cache
     except Exception as e:
-        logger.warning(f"[route_utils - _resolve_route_default_capacity_liters] No se pudo resolver capacidad por defecto para ruta {route.id}: {str(e)}")
+        logging.warning(f"[route_utils - _resolve_route_default_capacity_liters] No se pudo resolver capacidad por defecto para ruta {route.id}: {str(e)}")
         return None
 
 
@@ -833,7 +834,7 @@ def resolve_route_day_capacity_liters(route_day):
             return route_day.daily_capacity_liters
         return _resolve_route_default_capacity_liters(route_day.route)
     except Exception as e:
-        logger.warning(f"[route_utils - resolve_route_day_capacity_liters] No se pudo resolver capacidad para route_day {route_day.id}: {str(e)}")
+        logging.warning(f"[route_utils - resolve_route_day_capacity_liters] No se pudo resolver capacidad para route_day {route_day.id}: {str(e)}")
         return route_day.daily_capacity_liters
 
 
@@ -841,7 +842,7 @@ def resolve_route_default_capacity_liters(route):
     try:
         return _resolve_route_default_capacity_liters(route)
     except Exception as e:
-        logger.warning(f"[route_utils - resolve_route_default_capacity_liters] No se pudo resolver capacidad por defecto para ruta {route.id}: {str(e)}")
+        logging.warning(f"[route_utils - resolve_route_default_capacity_liters] No se pudo resolver capacidad por defecto para ruta {route.id}: {str(e)}")
         return None
 
 
@@ -855,7 +856,7 @@ def _ensure_route_day_capacity_liters(route_day):
 
     route_day.daily_capacity_liters = resolved_capacity
     route_day.save(update_fields=["daily_capacity_liters"])
-    logger.info(f"[route_utils - _ensure_route_day_capacity_liters] Capacidad {resolved_capacity} L asignada a route_day {route_day.id}")
+    logging.info(f"[route_utils - _ensure_route_day_capacity_liters] Capacidad {resolved_capacity} L asignada a route_day {route_day.id}")
     return route_day.daily_capacity_liters
 
 
@@ -873,11 +874,11 @@ def ensure_route_day_for_date(route, target_date, optimize_with_google=False):
 
         if created or not route_day.ordered_clients.exists():
             generate_route_day_clients(route_day, regenerate=False, optimize_with_google=optimize_with_google)
-            logger.info(f"[route_utils - ensure_route_day_for_date] RouteDay {route_day.id} asegurado para fecha {target_date}")
+            logging.info(f"[route_utils - ensure_route_day_for_date] RouteDay {route_day.id} asegurado para fecha {target_date}")
 
         return route_day
     except Exception as e:
-        logger.error(f"[route_utils - ensure_route_day_for_date] Error asegurando route_day para ruta {route.id} y fecha {target_date}: {str(e)}")
+        logging.error(f"[route_utils - ensure_route_day_for_date] Error asegurando route_day para ruta {route.id} y fecha {target_date}: {str(e)}")
         raise
 
 
@@ -885,14 +886,14 @@ def ensure_route_day_for_date(route, target_date, optimize_with_google=False):
 def generate_week_for_route(route, week_start_date, regenerate=False, daily_capacity_liters=None, days=None, auto_estimate_without_contact=False, max_clients_per_day=10, optimize_with_google=True):
     lock_key = f"route_week_generation_lock_{route.id}_{week_start_date.isoformat()}"
     if not cache.add(lock_key, "1", timeout=300):
-        logger.warning(f"[route_utils - generate_week_for_route] Lock activo para ruta {route.id} y semana {week_start_date}")
+        logging.warning(f"[route_utils - generate_week_for_route] Lock activo para ruta {route.id} y semana {week_start_date}")
         raise ValueError(ROUTE_WEEK_GENERATION_IN_PROGRESS)
 
     try:
         locked_route = Route.objects.select_for_update().get(id=route.id)
         week_end_date = week_start_date + timedelta(days=6)
         if week_end_date < locked_route.start_date or (locked_route.end_date and week_start_date > locked_route.end_date):
-            logger.warning(f"[route_utils - generate_week_for_route] Semana {week_start_date} fuera de rango para ruta {locked_route.id}")
+            logging.warning(f"[route_utils - generate_week_for_route] Semana {week_start_date} fuera de rango para ruta {locked_route.id}")
             raise ValueError(ROUTE_WEEK_OUTSIDE_ROUTE_RANGE)
         if regenerate:
             _ensure_week_regeneration_allowed(locked_route, week_start_date, week_end_date)
@@ -921,7 +922,7 @@ def generate_week_for_route(route, week_start_date, regenerate=False, daily_capa
             route_day, _ = RouteDay.objects.get_or_create(route=locked_route, date=target_date)
 
             if not _is_route_day_generation_mutable(route_day):
-                logger.info(f"[route_utils - generate_week_for_route] RouteDay {route_day.id} preservado en generacion semanal por estado {route_day.status}")
+                logging.info(f"[route_utils - generate_week_for_route] RouteDay {route_day.id} preservado en generacion semanal por estado {route_day.status}")
                 week_assigned_client_ids.update(route_day.ordered_clients.values_list("client_id", flat=True))
                 route_days.append(route_day)
                 continue
@@ -953,10 +954,10 @@ def generate_week_for_route(route, week_start_date, regenerate=False, daily_capa
             week_assigned_client_ids.update(updated_day_client_ids)
             route_days.append(route_day)
 
-        logger.info(f"[route_utils - generate_week_for_route] Semana generada para ruta {locked_route.id} con {len(route_days)} route_days")
+        logging.info(f"[route_utils - generate_week_for_route] Semana generada para ruta {locked_route.id} con {len(route_days)} route_days")
         return route_days
     except Exception as e:
-        logger.error(f"[route_utils - generate_week_for_route] Error generando semana para ruta {route.id}: {str(e)}")
+        logging.error(f"[route_utils - generate_week_for_route] Error generando semana para ruta {route.id}: {str(e)}")
         raise
     finally:
         cache.delete(lock_key)
@@ -972,7 +973,7 @@ def generate_routes_for_date_range(route, start_date, end_date, zone_schedule, m
 
             if weekday in zone_schedule:
                 zone_names = zone_schedule[weekday]
-                logger.info(f"[route_utils - generate_routes_for_date_range] Generando ruta para {current_date} (dia {weekday}) con zonas {zone_names}")
+                logging.info(f"[route_utils - generate_routes_for_date_range] Generando ruta para {current_date} (dia {weekday}) con zonas {zone_names}")
 
                 zone_objs = Zone.objects.filter(name__in=zone_names)
                 route_zone_day, _ = RouteZoneDay.objects.get_or_create(route=route, weekday=weekday)
@@ -1002,5 +1003,5 @@ def generate_routes_for_date_range(route, start_date, end_date, zone_schedule, m
 
         return route_days
     except Exception as e:
-        logger.error(f"[route_utils - generate_routes_for_date_range] Error generando rutas para rango {start_date} - {end_date}: {str(e)}")
+        logging.error(f"[route_utils - generate_routes_for_date_range] Error generando rutas para rango {start_date} - {end_date}: {str(e)}")
         raise

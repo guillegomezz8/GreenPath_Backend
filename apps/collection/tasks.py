@@ -10,8 +10,9 @@ from apps.base.literals import COLLECTION_REQUEST_NOTIFY_BODY, COLLECTION_REQUES
 from apps.base.enums import CollectionRequestStatus, PlannedSource, CollectionStatus
 from apps.base.utils import send_email_google_api
 from apps.collection.models import CollectionRequest, Collection
+from apps.base.logging import configure_logging
 
-logger = logging.getLogger(__name__)
+configure_logging()
 
 
 def _gmail_ready_for_notifications():
@@ -37,15 +38,15 @@ def auto_estimate_collection_request_liters(self, collection_request_id):
                 "route_day_client__client",
             ).get(id=collection_request_id)
         except CollectionRequest.DoesNotExist:
-            logger.warning(f"[collection_tasks - auto_estimate_collection_request_liters] Solicitud {collection_request_id} no existe, se omite autoestimacion")
+            logging.warning(f"[collection_tasks - auto_estimate_collection_request_liters] Solicitud {collection_request_id} no existe, se omite autoestimacion")
             return
 
         if collection_request.status != CollectionRequestStatus.PENDING:
-            logger.info(f"[collection_tasks - auto_estimate_collection_request_liters] Solicitud {collection_request.id} en estado {collection_request.status}, no se autoestima")
+            logging.info(f"[collection_tasks - auto_estimate_collection_request_liters] Solicitud {collection_request.id} en estado {collection_request.status}, no se autoestima")
             return
 
         if timezone.now() < collection_request.expires_at:
-            logger.info(f"[collection_tasks - auto_estimate_collection_request_liters] Solicitud {collection_request.id} aun no expirada, se omite")
+            logging.info(f"[collection_tasks - auto_estimate_collection_request_liters] Solicitud {collection_request.id} aun no expirada, se omite")
             return
 
         client_id = collection_request.route_day_client.client_id
@@ -81,9 +82,9 @@ def auto_estimate_collection_request_liters(self, collection_request_id):
                 "modified_date",
             ]
         )
-        logger.info(f"[collection_tasks - auto_estimate_collection_request_liters] Solicitud {collection_request.id} autoestimada con {estimated} litros")
+        logging.info(f"[collection_tasks - auto_estimate_collection_request_liters] Solicitud {collection_request.id} autoestimada con {estimated} litros")
     except Exception as e:
-        logger.error(f"[collection_tasks - auto_estimate_collection_request_liters] Error en autoestimacion para solicitud {collection_request_id}: {str(e)}")
+        logging.error(f"[collection_tasks - auto_estimate_collection_request_liters] Error en autoestimacion para solicitud {collection_request_id}: {str(e)}")
         raise self.retry(exc=e)
 
 
@@ -91,7 +92,7 @@ def auto_estimate_collection_request_liters(self, collection_request_id):
 def notify_collection_request_created(collection_request_id):
     try:
         if not _gmail_ready_for_notifications():
-            logger.warning(f"[collection_tasks - notify_collection_request_created] Notificacion omitida por Gmail API no configurada para solicitud {collection_request_id}")
+            logging.warning(f"[collection_tasks - notify_collection_request_created] Notificacion omitida por Gmail API no configurada para solicitud {collection_request_id}")
             return
 
         try:
@@ -103,12 +104,12 @@ def notify_collection_request_created(collection_request_id):
                 "route_day_client__route_day__route",
             ).get(id=collection_request_id)
         except CollectionRequest.DoesNotExist:
-            logger.warning(f"[collection_tasks - notify_collection_request_created] Solicitud {collection_request_id} no existe, no se notifica")
+            logging.warning(f"[collection_tasks - notify_collection_request_created] Solicitud {collection_request_id} no existe, no se notifica")
             return
 
         email = collection_request.route_day_client.client.user.email
         if not email:
-            logger.warning(f"[collection_tasks - notify_collection_request_created] Cliente sin email para solicitud {collection_request.id}")
+            logging.warning(f"[collection_tasks - notify_collection_request_created] Cliente sin email para solicitud {collection_request.id}")
             return
 
         route_day = collection_request.route_day_client.route_day
@@ -125,11 +126,11 @@ def notify_collection_request_created(collection_request_id):
             html_message=None,
         )
         if sent:
-            logger.info(f"[collection_tasks - notify_collection_request_created] Notificacion enviada a {email} para solicitud {collection_request.id}")
+            logging.info(f"[collection_tasks - notify_collection_request_created] Notificacion enviada a {email} para solicitud {collection_request.id}")
         else:
-            logger.warning(f"[collection_tasks - notify_collection_request_created] No se pudo enviar notificacion para solicitud {collection_request.id}")
+            logging.warning(f"[collection_tasks - notify_collection_request_created] No se pudo enviar notificacion para solicitud {collection_request.id}")
     except Exception as e:
-        logger.error(f"[collection_tasks - notify_collection_request_created] Error enviando notificacion para solicitud {collection_request_id}: {str(e)}")
+        logging.error(f"[collection_tasks - notify_collection_request_created] Error enviando notificacion para solicitud {collection_request_id}: {str(e)}")
         return
 
 
@@ -144,13 +145,13 @@ def process_expired_collection_requests(self, batch_size=200):
         )
 
         if not pending_requests:
-            logger.info("[collection_tasks - process_expired_collection_requests] No hay solicitudes pendientes expiradas para procesar")
+            logging.info("[collection_tasks - process_expired_collection_requests] No hay solicitudes pendientes expiradas para procesar")
             return
 
         for collection_request in pending_requests:
             auto_estimate_collection_request_liters.delay(collection_request.id)
 
-        logger.info(f"[collection_tasks - process_expired_collection_requests] Encoladas {len(pending_requests)} solicitudes expiradas para autoestimacion")
+        logging.info(f"[collection_tasks - process_expired_collection_requests] Encoladas {len(pending_requests)} solicitudes expiradas para autoestimacion")
     except Exception as e:
-        logger.error(f"[collection_tasks - process_expired_collection_requests] Error procesando solicitudes expiradas: {str(e)}")
+        logging.error(f"[collection_tasks - process_expired_collection_requests] Error procesando solicitudes expiradas: {str(e)}")
         raise self.retry(exc=e)

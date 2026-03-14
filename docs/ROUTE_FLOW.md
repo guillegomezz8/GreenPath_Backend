@@ -43,6 +43,7 @@ Reglas:
 - Filtro por estado de `RouteDay`.
 - Tabla/listado de paradas por dia en modo lectura.
 - Acciones principales reducidas a consulta, edicion, generacion y acceso a `Realizar ruta`.
+- Modal de `Generar semana` compartido entre listado y detalle, con layout responsive para movil/tablet.
 
 `Realizar ruta`:
 - Pantalla separada para operativa diaria (`/routes/:id/execute`).
@@ -50,6 +51,7 @@ Reglas:
 - Acciones de inicio, cierre y registro de paradas integradas en el panel lateral del mapa.
 - Seleccion de parada activa sin listado largo duplicado debajo.
 - Layout responsive: el panel operativo se apila bajo el mapa hasta resoluciones muy anchas.
+- Modales operativos (`finalizar`, `registrar parada`) con scroll interno y botones full-width en movil.
 
 `Dashboard`:
 - Bloque `Rutas Operativas` con acceso directo a `Realizar ruta` y `Ver detalle`.
@@ -179,7 +181,7 @@ Trazabilidad guardada:
 `RouteFilter` actual:
 - `date` -> `route_days__date` (exact)
 - `status` -> `route_days__status` (icontains)
-- `search` -> `name`, `company__name`, `workers__name`, `workers__surname`
+- `search` -> `name`, `company__name`, `worker__name`, `worker__surname`
 
 ## Resumen rapido
 

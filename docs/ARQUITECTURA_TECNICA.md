@@ -86,9 +86,10 @@ La accion `POST /routes/{route_id}/generate-week/`:
 - Navegacion por rol desde sidebar.
 - Utilidades comunes de estado/errores en `components/Utils`.
 - En rutas:
-  - `RouteDetail` prioriza ejecucion operativa y responsive.
+  - `RouteDetail` prioriza planificacion y consulta semanal.
+  - `RouteExecution` concentra la operativa diaria con mapa, acciones y modales responsive.
   - `RoutesList` incluye filtros rapidos para operacion y asignacion.
-  - Vista de paradas en tarjetas para movil + tabla en desktop.
+  - `GenerateWeekDialog` se comparte entre listado y detalle para mantener consistencia visual y responsive.
 
 ## 10. Observabilidad
 

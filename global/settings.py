@@ -31,7 +31,8 @@ CORS_ALLOW_HEADERS = [
     'X-Requested-With',
     'Accept',
     'Origin',
-    'skipauthorization'
+    'skipauthorization',
+    'ngrok-skip-browser-warning',
 ]
 
 CORS_EXPOSE_HEADERS = ['Content-Disposition']
@@ -158,11 +159,6 @@ USE_L10N = True
 USE_TZ = True
 
 AUTH_USER_MODEL = 'user.User'
-
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',
-    'https://example.com',
-]
 
 SPECTACULAR_SETTINGS = {
     'TITLE': 'GreenPath API',

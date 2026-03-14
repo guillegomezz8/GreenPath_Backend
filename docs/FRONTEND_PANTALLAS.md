@@ -1,6 +1,6 @@
 # Inventario de Pantallas Frontend
 
-Fecha de repaso: 2026-03-04
+Fecha de repaso: 2026-03-14
 
 ## 1. Autenticacion
 
@@ -108,15 +108,16 @@ Fecha de repaso: 2026-03-04
   - `src/pages/routes/RouteForm.jsx`
 - Estado: Implementadas
 - Notas:
-  - Generacion semanal con flags.
+  - Generacion semanal con modal compartido y responsive desde listado y detalle.
   - Listado con filtro rapido: todas / con trabajadores / sin trabajadores.
   - Detalle con resumen operativo (dias, paradas previstas, registradas, pendientes).
   - Filtros por estado de `RouteDay` y boton expandir/ocultar todos.
-  - Ejecucion RouteDay (start/finish).
+  - Pantalla separada `Realizar ruta` (`/routes/:id/execute`) para concentrar la operativa diaria.
+  - Ejecucion de `RouteDay` (start/finish) desde la vista operativa.
   - Modal de cierre parcial/cancelado cuando hay pendientes.
   - Dropdown de parada pendiente para registrar recogida.
   - Tabla de paradas plegable (oculta por defecto).
-  - En movil: acciones full-width y vista de paradas en tarjetas (sin depender de tabla horizontal).
+  - En movil: acciones full-width, modal de generacion adaptado y operativa basada en mapa + panel apilado.
 
 ## 9. Recogidas
 
@@ -202,6 +203,7 @@ Fecha de repaso: 2026-03-04
   - pantalla separada `Realizar ruta` (`/routes/:id/execute`) para concentrar la operativa diaria y dejar `Detalle` mas limpio
   - acceso rapido desde dashboard en bloque `Rutas Operativas`
   - jerarquia visual de acciones unificada con boton principal para `Realizar ruta`, secundarios para consulta/edicion y acento para `Generar semana`
+  - modal compartido `GenerateWeekDialog` para mantener consistencia entre listado y detalle
 - Recogidas:
   - CRUD `collections`
   - `GET /collections/requests/me/`

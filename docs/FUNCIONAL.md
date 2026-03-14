@@ -104,7 +104,7 @@ El sistema cubre:
 
 ## 4.2 Generacion semanal
 
-1. Usuario owner/worker abre detalle de ruta.
+1. Usuario owner abre listado o detalle de ruta.
 2. Ejecuta `Generar semana` con fecha de inicio y capacidad.
 3. Backend crea/actualiza `RouteDay`.
 4. Backend calcula clientes por zona y frecuencia.
@@ -112,22 +112,25 @@ El sistema cubre:
 6. Se optimiza orden con Google Directions.
 7. Se crea `CollectionRequest` por parada.
 8. Se agenda autoestimacion y notificacion.
+9. El modal de generacion se presenta con layout responsive y comportamiento consistente en listado y detalle.
 
 ## 4.3 Ejecucion diaria de ruta
 
-1. Iniciar `RouteDay`.
-2. Seleccionar parada pendiente en dropdown.
-3. Registrar parada con tipo y numero de envase.
-4. Repetir hasta fin del dia.
-5. Finalizar `RouteDay`:
+1. Usuario owner/worker entra en `Realizar ruta`.
+2. Iniciar `RouteDay`.
+3. Seleccionar parada pendiente en dropdown.
+4. Registrar parada con tipo y numero de envase.
+5. Repetir hasta fin del dia.
+6. Finalizar `RouteDay`:
    - si no quedan pendientes -> cierre normal (`COMPLETED` o `PARTIAL` segun canceladas).
    - si quedan pendientes -> modal de decision:
      - `PARTIAL`
      - `CANCELED`
-6. UX responsive:
-   - en desktop se usa tabla de paradas y acciones por fila.
-   - en movil se usa vista en tarjetas por parada para operar sin scroll horizontal.
-   - acciones criticas (`Google`, `Iniciar`, `Finalizar`, `Recoger parada`) adaptadas a boton ancho completo en pantallas pequenas.
+7. UX responsive:
+   - `Detalle de ruta` queda como pantalla de planificacion y consulta.
+   - `Realizar ruta` concentra mapa, jornada activa y parada pendiente en una sola vista.
+   - en movil, el panel operativo se apila bajo el mapa y las acciones criticas pasan a boton ancho completo.
+   - los modales de cierre y registro de parada usan scroll interno y CTA apiladas en pantallas pequenas.
 
 ## 4.4 Cierre de litros
 
@@ -194,7 +197,8 @@ El sistema cubre:
 - Owner/Worker:
   - menu completo de gestion y operacion.
   - dashboard operativo.
-  - detalle de ruta orientado a ejecucion con resumen, filtros por estado y progreso diario.
+  - detalle de ruta orientado a planificacion y seguimiento semanal.
+  - pantalla `Realizar ruta` orientada a ejecucion diaria con mapa y control de parada activa.
 - Client:
   - menu reducido: dashboard, solicitudes y recogidas.
   - foco en responder litros y consultar historico.

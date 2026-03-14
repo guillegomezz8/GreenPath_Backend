@@ -111,6 +111,7 @@ El flujo de rutas ya no es solo de planificacion. Tambien cubre:
 - autoestimacion si el cliente no responde
 - separacion frontend entre `Detalle de ruta` y `Realizar ruta`
 - acceso rapido desde dashboard a rutas operativas
+- modal responsive compartido para `Generar semana` en listado y detalle
 
 ## Pendiente o mejorable
 

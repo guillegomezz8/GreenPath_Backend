@@ -198,6 +198,10 @@ Fecha de repaso: 2026-03-04
   - `finish_route_day`
   - `complete_stop`
   - `google-navigation`
+  - detalle operativo con mapa reactivo por `RouteDay` usando `route.hub` y `client_location`
+  - pantalla separada `Realizar ruta` (`/routes/:id/execute`) para concentrar la operativa diaria y dejar `Detalle` mas limpio
+  - acceso rapido desde dashboard en bloque `Rutas Operativas`
+  - jerarquia visual de acciones unificada con boton principal para `Realizar ruta`, secundarios para consulta/edicion y acento para `Generar semana`
 - Recogidas:
   - CRUD `collections`
   - `GET /collections/requests/me/`

@@ -147,6 +147,9 @@ El sistema cubre:
 
 - La generacion semanal es idempotente.
 - `regenerate` solo tiene sentido cuando ya existen paradas en la semana.
+- `regenerate=true` queda bloqueado si la semana contiene dias que ya no son editables.
+- Los dias ya operados se preservan cuando se vuelve a generar la semana sin `regenerate`.
+- La capacidad diaria se aplica de forma estricta desde la primera parada.
 - `expires_at` se fija en `inicio_route_day - 36h`.
 - La solicitud expirada no admite respuesta del cliente.
 - Owner/Worker pueden resolver manualmente solicitudes.

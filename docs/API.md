@@ -190,6 +190,8 @@ Filtros soportados:
 
 `GET /routes/{id}/operational-overview/`:
 - query param opcional `week_start_date=YYYY-MM-DD` para cargar una semana concreta.
+- devuelve `route.hub` con `id`, `name` y `location {lat, lng}` si la empresa tiene hub geolocalizado.
+- devuelve `client_location {lat, lng}` en cada parada para pintar el mapa operativo del frontend.
 
 #### `POST /routes/{id}/generate-week/`
 Genera/actualiza los `RouteDay` de una semana y sus paradas (`RouteDayClient`), optimiza orden con Google Directions y crea/programa `CollectionRequest`.
@@ -199,7 +201,10 @@ Reglas:
 - Dos modos de capacidad:
   - Global: `daily_capacity_liters`
   - Por dia: `days[]` con `date` + `daily_capacity_liters`
-- `regenerate=true` limpia paradas previas de esos dias y regenera.
+- `regenerate=true` solo se permite si todos los `RouteDay` de la semana siguen siendo editables, sin ejecucion previa ni recogidas asociadas.
+- Si la semana contiene dias no editables o con trazabilidad operativa previa, devuelve `400`.
+- Si `regenerate=false`, los `RouteDay` ya operados se preservan y no se modifican.
+- La capacidad diaria se respeta de forma estricta: no se crea una parada si hace que el total planificado supere `daily_capacity_liters`.
 - Si ya existe una generacion en curso para misma ruta+semana, devuelve `409`.
 
 Request modo A:
@@ -238,6 +243,8 @@ Validaciones comunes:
 - No pueden venir ambos a la vez.
 - En `days`, fechas duplicadas no permitidas.
 - En `days`, todas las fechas deben estar dentro de la semana (`week_start_date` a `+6 dias`).
+- La semana debe estar dentro del rango de la ruta.
+- No se puede regenerar una semana con dias ya iniciados, parciales o completados.
 
 #### `POST /routes/{id}/generate-range-routes/`
 Endpoint legacy para generar rutas en rango de fechas por configuracion de zonas.
@@ -324,15 +331,17 @@ Efectos:
 ## 6. Flujo de planificacion semanal (operativo)
 
 1. `generate-week` crea/actualiza `RouteDay` para los dias habilitados de la ruta.
-2. Para cada dia, busca `RouteZoneDay` por `weekday`.
-3. Selecciona clientes por geofiltro (`location__within` de los poligonos de zona) y por frecuencia/vencimiento de recogida.
-4. Inserta `RouteDayClient` con orden secuencial inicial.
-5. Optimiza orden con Google Directions:
+2. Si `regenerate=false`, preserva cualquier `RouteDay` que ya no sea editable.
+3. Si `regenerate=true`, valida antes que toda la semana sea editable y aborta completa si no lo es.
+4. Para cada dia editable, busca `RouteZoneDay` por `weekday`.
+5. Selecciona clientes por geofiltro (`location__within` de los poligonos de zona) y por frecuencia/vencimiento de recogida.
+6. Inserta `RouteDayClient` con orden secuencial inicial sin sobrepasar `max_clients_per_day` ni `daily_capacity_liters`.
+7. Optimiza orden con Google Directions:
 - origen: `CompanyHub.location`
 - waypoints: clientes
 - sin retornos al hub en esta fase
-6. Reescribe `order` en `RouteDayClient`.
-7. Crea/actualiza `CollectionRequest` por parada:
+8. Reescribe `order` en `RouteDayClient`.
+9. Crea/actualiza `CollectionRequest` por parada:
 - `expires_at = inicio_route_day - 36 horas`
 - programa tarea Celery `auto_estimate_collection_request_liters` con `eta=expires_at`
 - si `expires_at <= now`, se encola inmediata

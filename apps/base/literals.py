@@ -75,6 +75,8 @@ ROUTE_DAY_GOOGLE_NAVIGATION_EMPTY = 'No hay paradas con ubicacion para generar n
 ROUTE_DAY_GOOGLE_HUB_REQUIRED = 'Debes configurar la nave (hub) para exportar la navegacion.'
 ROUTE_DAY_FINISH_DECISION_REQUIRED = 'Quedan paradas pendientes. Debes elegir cerrar la ruta diaria como parcial o cancelada.'
 ROUTE_DAY_FINISH_CLOSE_ACTION_INVALID = 'La accion de cierre no es valida. Usa PARTIAL o CANCELED.'
+ROUTE_DAY_GENERATION_LOCKED = 'No puedes modificar una ruta diaria ya iniciada, parcial o completada.'
+ROUTE_WEEK_REGENERATION_LOCKED = 'No puedes regenerar una semana que contiene rutas diarias ya iniciadas, parciales o completadas.'
 
 #Recogida
 ERROR_CREATING_COLLECTION = 'Error creando recogida'

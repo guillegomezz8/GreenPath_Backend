@@ -44,10 +44,13 @@
 La accion `POST /routes/{route_id}/generate-week/`:
 
 1. Crea/actualiza `RouteDay`.
-2. Genera `RouteDayClient` por zonas/frecuencia.
-3. Optimiza orden de paradas con Google Directions (`optimize:true`).
-4. Crea/actualiza `CollectionRequest`.
-5. Agenda Celery para autoestimacion en `expires_at`.
+2. Si `regenerate=true`, valida antes que toda la semana siga siendo editable y sin ejecucion previa.
+3. Preserva cualquier `RouteDay` que ya no sea editable.
+4. Genera `RouteDayClient` por zonas/frecuencia.
+5. Respeta `max_clients_per_day` y `daily_capacity_liters` de forma estricta.
+6. Optimiza orden de paradas con Google Directions (`optimize:true`).
+7. Crea/actualiza `CollectionRequest`.
+8. Agenda Celery para autoestimacion en `expires_at`.
 
 ## 6. Ejecucion operativa de ruta
 

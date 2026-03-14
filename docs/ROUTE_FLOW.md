@@ -35,12 +35,27 @@ Reglas:
 - `finish`: solo desde `IN_PROGRESS` y calcula estado final (`COMPLETED`, `PARTIAL` o `CANCELED`).
 - `google-navigation`: devuelve URL de Google Maps con origen hub + waypoints ordenados.
 
-### UX frontend (detalle de ruta)
+### UX frontend
 
-En `src/pages/routes/RouteDetail.jsx`:
-
-- Resumen operativo superior (dias, previstas, registradas, pendientes).
+`Detalle de ruta`:
+- Consulta de planificacion semanal.
+- Resumen operativo superior.
 - Filtro por estado de `RouteDay`.
+- Tabla/listado de paradas por dia en modo lectura.
+- Acciones principales reducidas a consulta, edicion, generacion y acceso a `Realizar ruta`.
+
+`Realizar ruta`:
+- Pantalla separada para operativa diaria (`/routes/:id/execute`).
+- Mapa operativo reactivo por dia con hub, secuencia de paradas y acceso directo a Google Maps.
+- Acciones de inicio, cierre y registro de paradas integradas en el panel lateral del mapa.
+- Seleccion de parada activa sin listado largo duplicado debajo.
+- Layout responsive: el panel operativo se apila bajo el mapa hasta resoluciones muy anchas.
+
+`Dashboard`:
+- Bloque `Rutas Operativas` con acceso directo a `Realizar ruta` y `Ver detalle`.
+- Prioriza visualmente las rutas que encajan con el dia actual.
+
+Notas:
 - Accion masiva para expandir/ocultar todos los dias visibles.
 - Barra de progreso por dia (registradas vs pendientes).
 - En movil, la tabla de paradas se reemplaza por tarjetas por parada para evitar scroll horizontal.
@@ -53,8 +68,8 @@ Validaciones de entrada:
 - fechas de `days` deben estar en la semana (`start + 6`)
 
 Permisos:
-- `IsRouteCompanyGenerator` (owner/worker de la empresa de la ruta, o staff/superuser)
-- aplicado desde `get_permissions` para `generate_week` y `generate_range_routes`
+- `IsOwnerUser` para `generate_week` y `generate_range_routes`
+- `IsRouteCompanyGenerator` para consulta operativa y ejecucion de `RouteDay`
 
 ## Flujo interno principal
 
@@ -65,13 +80,15 @@ Pasos:
 1. Crea lock temporal por ruta+semana (`cache.add`) para evitar doble generacion concurrente.
 2. Bloquea la ruta en DB con `select_for_update`.
 3. Valida rango de fechas contra `route.start_date` y `route.end_date`.
-4. Recorre 7 dias de la semana solicitada.
-5. Omite dias fuera del rango de la ruta y fuera de `week_start/week_end` de la propia ruta.
-6. Crea o recupera `RouteDay` (`get_or_create`).
-7. Asigna `daily_capacity_liters` (global o por dia).
-8. Llama a `generate_route_day_clients(...)` para generar y ordenar paradas.
-9. Devuelve lista de `RouteDay` generados.
-10. Libera lock.
+4. Si `regenerate=true`, valida antes que no exista ningun `RouteDay` de la semana con ejecucion previa o recogidas asociadas.
+5. Recorre 7 dias de la semana solicitada.
+6. Omite dias fuera del rango de la ruta y fuera de `week_start/week_end` de la propia ruta.
+7. Crea o recupera `RouteDay` (`get_or_create`).
+8. Si un `RouteDay` existente ya no es editable, lo preserva y no modifica paradas ni capacidad.
+9. Asigna `daily_capacity_liters` (global o por dia) solo en dias editables.
+10. Llama a `generate_route_day_clients(...)` para generar y ordenar paradas.
+11. Devuelve lista de `RouteDay` generados/preservados.
+12. Libera lock.
 
 ## Generacion de paradas (RouteDayClient)
 
@@ -80,21 +97,25 @@ Funcion:
 
 Pasos:
 1. Busca configuracion de zonas de ese weekday (`RouteZoneDay`).
-2. Si `regenerate=True`:
+2. Si el `RouteDay` ya no es editable, no modifica nada; y si ademas `regenerate=True`, lanza error.
+3. Si `regenerate=True`:
 - revoca tareas de `CollectionRequest` existentes
 - borra paradas anteriores del dia
-3. Si hay `reserved_client_ids` (clientes ya planificados en la semana), elimina duplicados existentes de ese dia.
-4. Construye filtro espacial OR con `location__within` para todas las zonas del dia.
-5. Busca clientes de la empresa con geolocalizacion.
-6. Anota `last_collection_date` por cliente para evitar N+1.
-7. Filtra clientes "due" por frecuencia:
+4. Si hay `reserved_client_ids` (clientes ya planificados en la semana), elimina duplicados existentes de ese dia.
+5. Construye filtro espacial OR con `location__within` para todas las zonas del dia.
+6. Busca clientes de la empresa con geolocalizacion.
+7. Anota `last_collection_date` por cliente para evitar N+1.
+7.1. Esa ultima recogida y la ultima planificacion previa se calculan dentro de la misma empresa de la ruta, para no mezclar historico si un cliente pertenece a varias empresas.
+8. Filtra clientes "due" por frecuencia:
 - WEEKLY -> 7
 - 2_WEEKS -> 14
 - 3_WEEKS -> 21
 - 4_WEEKS -> 28
-8. Inserta `RouteDayClient` secuencialmente (`order` incremental).
-9. Optimiza orden con Google (`optimize_route_day_with_google`).
-10. Crea/actualiza `CollectionRequest` por cada parada.
+9. Inserta `RouteDayClient` secuencialmente (`order` incremental) respetando:
+- `max_clients_per_day`
+- `daily_capacity_liters` de forma estricta desde la primera parada
+10. Optimiza orden con Google (`optimize_route_day_with_google`).
+11. Crea/actualiza `CollectionRequest` por cada parada.
 
 ## Optimizacion Google
 
@@ -163,8 +184,9 @@ Trazabilidad guardada:
 ## Resumen rapido
 
 - La generacion semanal esta separada y limpia (viewset -> serializer -> utils).
-- Hay control de permisos por empresa para generar.
+- `generate-week` solo lo puede ejecutar owner.
 - Hay dedupe semanal de clientes para no duplicar paradas.
+- Los dias ya operados no se tocan en regeneraciones normales y bloquean `regenerate=true`.
 - Se usa Google Directions para optimizar orden.
 - Si Google no esta disponible, el proceso no se rompe.
 - `CollectionRequest` y tareas Celery quedan enlazadas automaticamente tras generar.

@@ -1,197 +1,119 @@
-# 🌿 GreenPath — Plataforma de Gestión de Recogida de Aceites Usados
+# GreenPath Backend
 
-## 📘 Descripción General
+Backend Django para la gestion de recogida de aceite usado.
 
-**GreenPath** es una aplicación web desarrollada como Trabajo Fin de Grado, pensada para ayudar a las empresas dedicadas a la **recogida de aceites usados** a organizar su trabajo diario.  
-Permite gestionar clientes, trabajadores y camiones, así como planificar rutas y analizar el rendimiento de la empresa.
+## Stack
 
-El sistema está diseñado para que **cada empresa disponga de su propio entorno de trabajo**:  
-- El **propietario** puede administrar su empresa, empleados y clientes.  
-- Los **trabajadores** accederán a sus rutas y tareas asignadas (fase futura).  
-- Los **clientes** podrán solicitar recogidas y consultar su histórico (fase futura).
+- Python 3.11
+- Django + Django REST Framework
+- PostgreSQL + PostGIS
+- Celery + Redis
+- Google Directions API para optimizacion de rutas
+- Gmail API para envio de correos operativos
 
-Actualmente, la aplicación está centrada en la **fase de propietarios**, que constituye la base funcional del sistema.
+## Modulos principales
 
----
+- `clients`: clientes, frecuencia de recogida y geolocalizacion.
+- `workers`: trabajadores y empresa asociada.
+- `trucks`: camiones y conductor asignado.
+- `zones`: zonas geograficas de recogida.
+- `routes`: rutas plantilla, dias operativos y paradas planificadas.
+- `collections`: recogidas reales y solicitudes previas de estimacion.
 
-## 🎯 Objetivos de la Fase Actual
+## Estado actual
 
-- Gestionar de forma centralizada la información de clientes, trabajadores y camiones.  
-- Optimizar la planificación de rutas y recogidas.  
-- Registrar litros recogidos, ingresos y rendimiento operativo.  
-- Proporcionar un panel de control intuitivo para el propietario.
+Actualmente estan operativos:
 
----
+- CRUD de clientes, trabajadores, camiones y zonas.
+- Configuracion de rutas y zonas por dia.
+- Generacion semanal de rutas operativas con `generate-week`.
+- Ejecucion de `RouteDay`: iniciar, registrar parada, finalizar y exportar navegacion.
+- `CollectionRequest` con expiracion, trazabilidad y tareas Celery.
+- Estadisticas y panel operativo ya integrados en la API.
 
-## 🧩 Módulos del Sistema
+## Flujo de generacion semanal
 
-### 👥 Clientes ✅ (completo)
-Gestión completa de los clientes de la empresa recolectora.
+Endpoint principal:
 
-**Funcionalidades:**
-- Alta, edición y baja de clientes.  
-- Datos de contacto, dirección, precios, frecuencia de recogida.  
-- Histórico de recogidas asociadas (modelo preparado para futuras integraciones).  
-- Visualización de estadísticas por cliente (litros, ingresos, visitas).  
+- `POST /routes/{id}/generate-week/`
 
-**Implementación técnica:**
-- Backend: modelo `Client`, serializador y `ClientViewSet` con permisos por empresa.  
-- Frontend: vista `/clients` con tabla paginada, búsqueda y modales de creación/edición.  
-- Integración completa con la API REST mediante **Axios**.
+Comportamiento actual:
 
----
+- Crea o reutiliza `RouteDay` dentro de la semana solicitada.
+- Genera `RouteDayClient` desde las zonas configuradas para cada weekday.
+- Filtra clientes por ubicacion y frecuencia real de recogida.
+- Calcula frecuencia e historico previo dentro de la misma empresa de la ruta.
+- Evita duplicidades del mismo cliente en la misma semana.
+- Respeta `max_clients_per_day`.
+- Respeta `daily_capacity_liters` de forma estricta.
+- Optimiza el orden con Google Directions si hay `GOOGLE_MAPS_API_KEY`.
+- Crea o actualiza `CollectionRequest` por parada.
+- Programa autoestimacion con Celery cuando expira la solicitud.
 
-### 👷‍♂️ Trabajadores ✅ (completo)
-Gestión del personal de la empresa y control de su actividad.
+Reglas importantes:
 
-**Funcionalidades:**
-- CRUD completo de trabajadores.  
-- Datos personales y laborales.  
-- Asociación con camiones y rutas.  
-- Visualización de rendimiento (litros recogidos, rutas completadas, eficiencia).  
+- `generate-week` solo lo puede ejecutar un owner.
+- `regenerate=true` solo se permite si toda la semana sigue siendo editable, es decir, sin ejecucion previa ni recogidas asociadas.
+- Los `RouteDay` que ya no son editables se preservan y no se tocan en una generacion normal.
+- Si ya existe una generacion en curso para la misma ruta y semana, se devuelve conflicto.
 
-**Implementación técnica:**
-- Backend: modelo `Worker`, `WorkerViewSet` y serializer extendido.  
-- Frontend: `/workers` con pestañas **Información / Recogidas / Rendimiento**.  
-- Incluye paginación, filtros por estado y métricas derivadas (litros/ruta, €/litro).  
+## Variables de entorno relevantes
 
----
+- `DB_ENGINE`
+- `DB_NAME`
+- `DB_USER`
+- `DB_PASSWORD`
+- `DB_HOST`
+- `DB_PORT`
+- `CELERY_BROKER_URL`
+- `CELERY_RESULT_BACKEND`
+- `GOOGLE_MAPS_API_KEY`
+- `GMAIL_FROM`
+- `GMAIL_CLIENT_SECRET_JSON`
+- `GMAIL_TOKEN_JSON`
 
-### 🚛 Camiones ✅ (completo)
-Gestión de la flota de vehículos de recogida.
+Notas:
 
-**Funcionalidades:**
-- Alta, edición y baja de camiones.  
-- Datos técnicos: matrícula, marca, modelo, capacidad, combustible, año.  
-- Estado (activo/inactivo).  
-- Asignación directa a un conductor (trabajador).  
+- `GMAIL_CLIENT_SECRET_JSON` y `GMAIL_TOKEN_JSON` deben ir en una sola linea dentro de `.env`.
+- `GMAIL_FROM` no debe llevar espacios antes ni despues del email.
 
-**Implementación técnica:**
-- Backend: modelo `Truck` con `OneToOne` hacia `Worker`.  
-- Frontend: `/trucks` con tabla, asignación rápida, filtros y badges de estado.  
-- Integración total con el módulo de trabajadores.
+## Desarrollo local
 
----
+Levantar servicios:
 
-### 🧭 Dashboard ⚙️ (pendiente)
-Será el panel principal del propietario.
+```bash
+docker-compose up --build
+```
 
-**Objetivo:**
-Mostrar una visión general del negocio mediante indicadores clave (KPIs):
-- Litros recogidos totales.  
-- Ingresos generados.  
-- Rutas realizadas y pendientes.  
-- Estado de flota y trabajadores activos.  
+Backend:
 
-**Implementación prevista:**
-- Backend: endpoints `/stats/` con agregaciones sobre `Collection`, `Route`, `Truck`.  
-- Frontend: tarjetas y gráficos con **Recharts** y componentes `Card` (Shadcn UI).
+- API base: `http://localhost:8000/`
+- Swagger: `http://localhost:8000/docs/`
+- Schema: `http://localhost:8000/schema/`
+- Admin: `http://localhost:8000/admin/`
 
----
+## Documentacion adicional
 
-### 📍 Zonas de Recogida 🕓 (pendiente)
-Definición de zonas geográficas para organizar la logística.
+- `docs/API.md`
+- `docs/ROUTE_FLOW.md`
+- `docs/FUNCIONAL.md`
+- `docs/ARQUITECTURA_TECNICA.md`
 
-**Objetivo:**
-Permitir que cada empresa cree sus zonas de recogida mediante polígonos geoespaciales.
+## Estado funcional de rutas
 
-**Implementación prevista:**
-- Backend: modelo `CollectionZone` con campo `PolygonField` (PostGIS).  
-- Frontend: mapa interactivo con **Leaflet** para dibujar zonas.  
-- Asociación de clientes y rutas a zonas específicas.
+El flujo de rutas ya no es solo de planificacion. Tambien cubre:
 
----
+- inicio de ruta diaria
+- registro ordenado de paradas
+- cierre de ruta diaria
+- navegacion Google Maps
+- solicitudes previas al cliente
+- autoestimacion si el cliente no responde
+- separacion frontend entre `Detalle de ruta` y `Realizar ruta`
+- acceso rapido desde dashboard a rutas operativas
 
-### 🗺️ Rutas 🕓 (pendiente)
-Planificación y optimización de las rutas de recogida.
+## Pendiente o mejorable
 
-**Objetivo:**
-Optimizar recorridos diarios en función de los clientes y zonas.
-
-**Funcionalidades previstas:**
-- Creación manual o automática de rutas.  
-- Asignación de conductor, camión y zona.  
-- Estado: pendiente / en curso / completada.  
-- Visualización del recorrido optimizado en mapa.  
-
-**Implementación técnica prevista:**
-- Backend: modelo `Route` vinculado a `Worker`, `Truck`, `CollectionZone`.  
-- Endpoint `/routes/plan/` usando **OSRM** o **Google Directions API**.  
-- Frontend: mapa con clientes y orden de paradas optimizado.
-
----
-
-### 🧾 Recogidas 🕓 (pendiente)
-Registro detallado de cada recogida realizada.
-
-**Funcionalidades previstas:**
-- Alta manual o automática de recogidas.  
-- Datos: cliente, trabajador, litros, fecha y observaciones.  
-- Control de estado: pendiente / realizada / cancelada.  
-
-**Implementación técnica prevista:**
-- Backend: modelo `Collection` vinculado a `Client`, `Worker`, `Route`.  
-- Endpoints `/collections/` y `/collections/worker/:id`.  
-- Frontend: vista con tabla y filtros por cliente, fecha y estado.
-
----
-
-### 📊 Estadísticas 🕓 (pendiente)
-Módulo analítico para visualizar métricas y evolución del negocio.
-
-**Indicadores previstos:**
-- Litros recogidos por periodo, trabajador o cliente.  
-- Ingresos por mes o zona.  
-- Costes y eficiencia de rutas.  
-
-**Implementación técnica prevista:**
-- Backend: agregaciones SQL o ORM.  
-- Frontend: gráficas con **Recharts** y componentes de resumen (KPIs, comparativas).
-
----
-
-## 🛠️ Tecnologías y Arquitectura
-
-**Backend**
-- Python 3 + Django REST Framework  
-- PostgreSQL (con PostGIS para geodatos)  
-- Autenticación JWT  
-- Docker para entorno y despliegue  
-
-**Frontend**
-- React (Vite)  
-- TailwindCSS + Shadcn/UI + Lucide React  
-- Axios + React Router  
-- Componentes reutilizables (`CustomTable`, `StatusBadge`, `Dialog`, etc.)
-
----
-
-## 🚀 Planificación
-
-| Fase | Módulos | Estado | Fecha Estimada |
-|------|----------|--------|----------------|
-| 1 | **Clientes**, **Trabajadores**, **Camiones** | ✅ Completados | Octubre 2025 |
-| 2 | **Zonas de Recogida**, **Rutas** | ⚙️ En desarrollo | Noviembre 2025 |
-| 3 | **Recogidas**, **Estadísticas** | 🕓 Pendientes | Diciembre 2025 |
-| 4 | **Dashboard** | 🕓 Pendientes | Enero 2026 |
-| 5 | **Aplicación para trabajadores y clientes** | ⏳ Fase futura | 2026 |
-
----
-
-## 🧭 Fases Futuras
-
-### 👷 Módulo de Trabajadores (App)
-- Consultar rutas asignadas.  
-- Marcar recogidas como realizadas.  
-- Registrar incidencias o notas.  
-
-### 👥 Módulo de Clientes (Portal)
-- Solicitar nuevas recogidas.  
-- Consultar histórico y litros entregados.  
-- Descargar facturas y ver sus estadísticas.  
-
----
-
-✍️ **Autor:** Guillermo Gómez Romero
-🎓 **Trabajo Fin de Grado – Ingeniería Informática**  
-🏫 **Universidad de Sevilla**
+- tests automatizados especificos de generacion semanal y ejecucion de rutas
+- endurecer concurrencia distribuida si se despliega con multiples workers web
+- ampliar analitica y reporting avanzado

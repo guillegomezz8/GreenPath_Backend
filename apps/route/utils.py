@@ -18,6 +18,7 @@ from apps.base.literals import (
     ROUTE_GOOGLE_NO_VALID_ROUTE,
     ROUTE_WEEK_GENERATION_IN_PROGRESS,
     ROUTE_WEEK_OUTSIDE_ROUTE_RANGE,
+    ROUTE_WEEK_REGENERATION_LOCKED,
     ROUTE_DAY_START_INVALID_STATUS,
     ROUTE_DAY_FINISH_INVALID_STATUS,
     ROUTE_DAY_STOP_ROUTE_NOT_STARTED,
@@ -27,6 +28,7 @@ from apps.base.literals import (
     ROUTE_DAY_GOOGLE_HUB_REQUIRED,
     ROUTE_DAY_FINISH_DECISION_REQUIRED,
     ROUTE_DAY_FINISH_CLOSE_ACTION_INVALID,
+    ROUTE_DAY_GENERATION_LOCKED,
     MAX_CLIENTS_PER_DAY
 )
 from apps.collection.models import Collection, CollectionRequest
@@ -225,6 +227,13 @@ def _default_planned_liters_for_client(client_id, avg_liters_by_client):
     return Decimal("60.00")
 
 
+def _collection_scope_for_company(company):
+    return (
+        Q(collections__route_day_client__route_day__route__company=company)
+        | Q(collections__route_day_client__isnull=True, collections__worker__company=company)
+    )
+
+
 def _apply_auto_estimate_without_contact(collection_request):
     estimated = _compute_auto_estimated_liters(collection_request)
     collection_request.estimated_liters = estimated
@@ -405,6 +414,13 @@ def generate_route_day_clients(route_day, regenerate=False, reserved_client_ids=
     try:
         reserved_client_ids = reserved_client_ids or set()
 
+        if not _is_route_day_generation_mutable(route_day):
+            if regenerate:
+                logger.warning(f"[route_utils - generate_route_day_clients] Regeneracion bloqueada para route_day {route_day.id} con estado {route_day.status}")
+                raise ValueError(ROUTE_DAY_GENERATION_LOCKED)
+            logger.info(f"[route_utils - generate_route_day_clients] Generacion omitida para route_day {route_day.id} con estado {route_day.status}")
+            return list(route_day.ordered_clients.select_related("client").order_by("order"))
+
         zone_day = (
             RouteZoneDay.objects
             .filter(route=route_day.route, weekday=route_day.weekday)
@@ -448,13 +464,21 @@ def generate_route_day_clients(route_day, regenerate=False, reserved_client_ids=
             .annotate(
                 last_collection_date=Max(
                     "collections__collection_date",
-                    filter=Q(collections__collection_date__lt=route_day.date) & ~Q(collections__status=CollectionStatus.CANCELED),
+                    filter=(
+                        Q(collections__collection_date__lt=route_day.date)
+                        & ~Q(collections__status=CollectionStatus.CANCELED)
+                        & _collection_scope_for_company(route_day.route.company)
+                    ),
                 )
             )
             .annotate(
                 last_planned_date=Max(
                     "routedayclient__route_day__date",
-                    filter=Q(routedayclient__route_day__date__lt=route_day.date) & ~Q(routedayclient__route_day__status=RouteDayStatus.CANCELED),
+                    filter=(
+                        Q(routedayclient__route_day__date__lt=route_day.date)
+                        & ~Q(routedayclient__route_day__status=RouteDayStatus.CANCELED)
+                        & Q(routedayclient__route_day__route__company=route_day.route.company)
+                    ),
                 )
             )
             .distinct()
@@ -510,8 +534,7 @@ def generate_route_day_clients(route_day, regenerate=False, reserved_client_ids=
                 break
 
             planned_liters = _default_planned_liters_for_client(client.id, avg_liters_by_client)
-            has_stops_already = len(existing_client_ids) > 0
-            if capacity_limit > 0 and has_stops_already and (current_planned_liters + planned_liters > capacity_limit):
+            if capacity_limit > 0 and (current_planned_liters + planned_liters > capacity_limit):
                 skipped_by_capacity += 1
                 continue
 
@@ -760,6 +783,29 @@ def _is_route_date_in_range(route, target_date):
     return True
 
 
+def _is_route_day_generation_mutable(route_day):
+    has_execution_trace = (
+        bool(route_day.started_at)
+        or bool(route_day.finished_at)
+        or Collection.objects.filter(route_day_client__route_day=route_day).exists()
+    )
+    if has_execution_trace:
+        return False
+    return route_day.status in [RouteDayStatus.PLANNED, RouteDayStatus.CANCELED]
+
+
+def _ensure_week_regeneration_allowed(route, week_start_date, week_end_date):
+    week_route_days = list(
+        RouteDay.objects
+        .filter(route=route, date__gte=week_start_date, date__lte=week_end_date)
+        .order_by("date")
+    )
+    locked_days = [route_day.date for route_day in week_route_days if not _is_route_day_generation_mutable(route_day)]
+    if locked_days:
+        logger.warning(f"[route_utils - _ensure_week_regeneration_allowed] Regeneracion bloqueada para ruta {route.id} por route_days no mutables en fechas {locked_days}")
+        raise ValueError(ROUTE_WEEK_REGENERATION_LOCKED)
+
+
 def get_operational_week_start(route, reference_date):
     delta_days = (reference_date.weekday() - route.week_start) % 7
     return reference_date - timedelta(days=delta_days)
@@ -848,6 +894,8 @@ def generate_week_for_route(route, week_start_date, regenerate=False, daily_capa
         if week_end_date < locked_route.start_date or (locked_route.end_date and week_start_date > locked_route.end_date):
             logger.warning(f"[route_utils - generate_week_for_route] Semana {week_start_date} fuera de rango para ruta {locked_route.id}")
             raise ValueError(ROUTE_WEEK_OUTSIDE_ROUTE_RANGE)
+        if regenerate:
+            _ensure_week_regeneration_allowed(locked_route, week_start_date, week_end_date)
 
         days = days or []
         capacities_by_date = {item["date"]: item["daily_capacity_liters"] for item in days}
@@ -871,6 +919,12 @@ def generate_week_for_route(route, week_start_date, regenerate=False, daily_capa
                 continue
 
             route_day, _ = RouteDay.objects.get_or_create(route=locked_route, date=target_date)
+
+            if not _is_route_day_generation_mutable(route_day):
+                logger.info(f"[route_utils - generate_week_for_route] RouteDay {route_day.id} preservado en generacion semanal por estado {route_day.status}")
+                week_assigned_client_ids.update(route_day.ordered_clients.values_list("client_id", flat=True))
+                route_days.append(route_day)
+                continue
 
             if daily_capacity_liters is not None:
                 route_day.daily_capacity_liters = daily_capacity_liters

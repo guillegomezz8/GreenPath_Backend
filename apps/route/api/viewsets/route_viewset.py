@@ -29,9 +29,11 @@ from apps.base.literals import (
     ROUTE_DAY_FINISH_SUCCESS,
     ROUTE_DAY_STOP_COMPLETED_SUCCESS,
     ROUTE_DAY_GOOGLE_NAVIGATION_READY,
+    ROUTE_WEEK_GENERATION_IN_PROGRESS,
 )
 from apps.base.logger import configure_logging
 from apps.base.permissions import IsOwnerUser, IsRouteCompanyGenerator
+from apps.company.models import CompanyHub
 from apps.route.api.serializers.route_serializers import RouteSerializer, CreateRouteSerializer, UpdateRouteSerializer, PartialUpdateRouteSerializer, RouteDaySerializer, GenerateWeeklyZoneRoutesInputSerializer, GenerateDailyZoneRouteInputSerializer, GenerateWeekSerializer, RouteZoneConfigSerializer, CompleteRouteDayClientSerializer
 from apps.route.api.serializers.route_serializers import FinishRouteDaySerializer
 from apps.collection.api.serializers.collection_serializers import CollectionSerializer
@@ -196,6 +198,10 @@ class RouteViewSet(viewsets.ModelViewSet):
             return Response({MESSAGE: WEEKLY_OPERATIONAL_ROUTE_GENERATED, 'route_days': payload}, status=status.HTTP_200_OK)
         except ValidationError:
             raise
+        except ValueError as e:
+            logging.warning(f'[route_viewset - generate_week] Validacion en generate_week para ruta {route.id}: {str(e)}')
+            response_status = status.HTTP_409_CONFLICT if str(e) == ROUTE_WEEK_GENERATION_IN_PROGRESS else status.HTTP_400_BAD_REQUEST
+            return Response({DETAILS: str(e)}, status=response_status)
         except Exception as e:
             logging.error(f'[route_viewset - generate_week] Error en generate_week: {str(e)}')
             return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -360,6 +366,7 @@ class RouteViewSet(viewsets.ModelViewSet):
             route = self.get_object()
             week_start_date_raw = request.query_params.get('week_start_date')
             start_date, end_date = self._resolve_week_window(route, week_start_date_raw)
+            hub = CompanyHub.objects.filter(company=route.company, location__isnull=False).first()
 
             zone_days_qs = RouteZoneDay.objects.filter(route=route).prefetch_related('zones').order_by('weekday')
             zone_days_payload = []
@@ -400,6 +407,10 @@ class RouteViewSet(viewsets.ModelViewSet):
                         'client_id': row.client_id,
                         'client_name': row.client.name,
                         'client_address': row.client.address,
+                        'client_location': {
+                            'lat': row.client.location.y,
+                            'lng': row.client.location.x,
+                        } if row.client.location else None,
                         'collection_request': {
                             'id': request_obj.id if request_obj else None,
                             'status': request_obj.status if request_obj else None,
@@ -442,6 +453,14 @@ class RouteViewSet(viewsets.ModelViewSet):
                     'week_start': route.week_start,
                     'week_end': route.week_end,
                     'default_daily_capacity_liters': resolve_route_default_capacity_liters(route),
+                    'hub': {
+                        'id': hub.id,
+                        'name': hub.name,
+                        'location': {
+                            'lat': hub.location.y,
+                            'lng': hub.location.x,
+                        },
+                    } if hub else None,
                 },
                 'zone_days': zone_days_payload,
                 'route_days': route_days_payload,

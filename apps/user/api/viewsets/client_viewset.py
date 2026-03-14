@@ -1,5 +1,5 @@
 from rest_framework import viewsets, status
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.decorators import action
 
@@ -16,13 +16,12 @@ from apps.base.utils import gen_password, send_access_email, send_access_email_g
 from apps.user.models.client import Client
 from apps.user.models.user import User
 from apps.collection.models import Collection
-from apps.base.enums import PickupFrequency
+from apps.base.enums import PickupFrequency, CollectionStatus
 from apps.base.permissions import IsOwnerUser
 from apps.collection.api.serializers.collection_serializers import CollectionSerializer
 from apps.user.api.serializers.client_serializers import ClientSerializer,CreateClientSerializer,UpdateClientSerializer,PartialUpdateClientSerializer
+from apps.user.utils import sync_client_location_from_address
 from apps.base.literals import (
-    ERROR,
-    ERROR_CREATING_CLIENT,
     DETAILS,
     INTERNAL_ERROR
 )
@@ -56,9 +55,19 @@ class ClientViewSet(viewsets.ModelViewSet):
     filterset_class = ClientFilter
 
     def get_queryset(self):
-        if self.request.user.is_staff:
+        if self.request.user.is_staff or self.request.user.is_superuser:
             return super().get_queryset()
-        return super().get_queryset().filter(companies=self.request.user.worker_profile.company)
+
+        user = self.request.user
+        base_qs = super().get_queryset()
+
+        if user.role_type == "client" and hasattr(user, "client_profile"):
+            return base_qs.none()
+
+        if hasattr(user, "worker_profile"):
+            return base_qs.filter(companies=user.worker_profile.company)
+
+        return base_qs.none()
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -72,11 +81,11 @@ class ClientViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            self.permission_classes = [IsOwnerUser]
+            self.permission_classes = [IsAuthenticated, IsOwnerUser]
         elif self.action in ['list', 'retrieve', 'collection_historial']:
             self.permission_classes = [IsAuthenticated]
         else:
-            self.permission_classes = [AllowAny]
+            self.permission_classes = [IsAuthenticated]
         return super(ClientViewSet, self).get_permissions()
 
     def perform_create(self, serializer):
@@ -88,7 +97,7 @@ class ClientViewSet(viewsets.ModelViewSet):
             get_access = client_data.pop("get_access", False)
             companies = client_data.pop("companies", None)
 
-            company = getattr(getattr(self.request.user, "worker_profile", None), "company", None)
+            company = self.request.user.worker_profile.company if hasattr(self.request.user, "worker_profile") else None
 
             with transaction.atomic():
                 user = User.objects.create_user(
@@ -101,7 +110,7 @@ class ClientViewSet(viewsets.ModelViewSet):
                 if get_access:
                     temp_password = gen_password()
                     user.set_password(temp_password)
-                    transaction.on_commit(lambda: send_access_email_google_api(user, temp_password, subject="Acceso a GreenPath como Cliente"))
+                    transaction.on_commit(lambda: send_access_email_google_api.delay(user.id, temp_password, subject="Acceso a GreenPath como Cliente"))
                 else:
                     user.set_unusable_password()
 
@@ -117,10 +126,11 @@ class ClientViewSet(viewsets.ModelViewSet):
 
                 client.save()
 
+            sync_client_location_from_address(client, clear_on_failure=True)
             logging.info(f"[client_viewset - perform_create] Cliente creado con éxito: {client.id}")
         except Exception as e:
             logging.error(f"[client_viewset - perform_create] Error creando cliente: {str(e)}")
-            return Response({DETAILS: {ERROR_CREATING_CLIENT: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
     def perform_destroy(self, instance):
         try:
@@ -178,21 +188,55 @@ class ClientViewSet(viewsets.ModelViewSet):
             logging.info(f"[client_viewset - collection_historial] Obteniendo historial de cliente {client_id} para usuario {request.user.id}")
             client = get_object_or_404(Client, id=client_id)
 
-            historial = Collection.objects.filter(client=client, worker__company=request.user.worker_profile.company).order_by('-collection_date')
+            historial = Collection.objects.filter(client=client)
+
+            if request.user.is_staff or request.user.is_superuser:
+                pass
+            elif request.user.role_type == "client":
+                if not hasattr(request.user, "client_profile") or request.user.client_profile.id != client.id:
+                    return Response({DETAILS: "No tienes permisos para consultar este historial."}, status=status.HTTP_403_FORBIDDEN)
+            elif hasattr(request.user, "worker_profile"):
+                historial = historial.filter(client__companies=request.user.worker_profile.company).distinct()
+            else:
+                return Response({DETAILS: "No tienes permisos para consultar este historial."}, status=status.HTTP_403_FORBIDDEN)
+
+            historial = historial.order_by("-collection_date")
             aggregates = historial.aggregate(
-                total_liters=Sum('liters_collected'),
-                avg_liters=Avg('liters_collected')
+                total_collections=Count("id"),
+                confirmed_collections=Count("id", filter=Q(status=CollectionStatus.CONFIRMED)),
+                pending_collections=Count("id", filter=Q(status=CollectionStatus.PENDING_MEASUREMENT)),
+                canceled_collections=Count("id", filter=Q(status=CollectionStatus.CANCELED)),
+                total_liters=Sum("net_liters", filter=~Q(status=CollectionStatus.CANCELED)),
+                avg_liters=Avg("net_liters", filter=~Q(status=CollectionStatus.CANCELED)),
+                total_paid=Sum("total_price", filter=Q(status=CollectionStatus.CONFIRMED)),
             )
 
             serializer = CollectionSerializer(historial, many=True)
 
-            total_liters = aggregates.get('total_liters') or 0
-            avg_liters = aggregates.get('avg_liters') or 0
+            total_collections = aggregates.get("total_collections") or 0
+            confirmed_collections = aggregates.get("confirmed_collections") or 0
+            pending_collections = aggregates.get("pending_collections") or 0
+            canceled_collections = aggregates.get("canceled_collections") or 0
+            effective_collections = confirmed_collections + pending_collections
+            total_liters = aggregates.get("total_liters") or 0
+            avg_liters = aggregates.get("avg_liters") or 0
+            total_paid = aggregates.get("total_paid") or 0
 
             response_data = {
                 "historial": serializer.data,
                 "total_liters": total_liters,
                 "media": round(avg_liters, 2),
+                "total_paid": total_paid,
+                "stats": {
+                    "total_collections": total_collections,
+                    "effective_collections": effective_collections,
+                    "confirmed_collections": confirmed_collections,
+                    "pending_collections": pending_collections,
+                    "canceled_collections": canceled_collections,
+                    "total_liters": total_liters,
+                    "avg_liters": round(avg_liters, 2),
+                    "total_paid": total_paid,
+                },
             }
 
             return Response(response_data, status=status.HTTP_200_OK)

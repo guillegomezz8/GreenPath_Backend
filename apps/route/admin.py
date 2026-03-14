@@ -32,29 +32,24 @@ class CollectionInline(admin.TabularInline):
         "worker",
         "container_type",
         "container_number",
-        "liters_collected",
+        "net_liters",
         "total_price",
         "status",
     )
-    readonly_fields = ("liters_collected", "total_price")
+    readonly_fields = ("net_liters", "total_price")
     autocomplete_fields = ("client", "worker")
     ordering = ("-collection_date",)
 
 
 @admin.register(Route)
 class RouteAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "company", "start_date", "end_date", "workers_count")
+    list_display = ("id", "name", "company", "worker", "start_date", "end_date")
     list_filter = ("company", "week_start", "week_end")
     search_fields = ("name", "company__name")
     ordering = ("-start_date",)
-    autocomplete_fields = ("company", "workers")
-    filter_horizontal = ("workers",)
+    autocomplete_fields = ("company", "worker")
     date_hierarchy = "start_date"
     inlines = (RouteDayInline,)
-
-    def workers_count(self, obj):
-        return obj.workers.count()
-    workers_count.short_description = "Trabajadores"
 
 
 @admin.register(RouteDay)

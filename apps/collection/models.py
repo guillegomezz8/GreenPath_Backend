@@ -10,6 +10,7 @@ from apps.base.models import BaseModel
 from apps.base.enums import ContainerType, CollectionStatus, DeductionReason, CollectionRequestStatus, PlannedSource
 from apps.user.models.client import Client
 from apps.user.models.worker import Worker
+from apps.user.models.user import User
 from apps.route.models import RouteDayClient
 from apps.base.enums import CollectionStatus, DeductionReason
 from apps.collection.utils import container_capacity_liters
@@ -202,13 +203,71 @@ class CollectionRequest(BaseModel):
         choices=ContainerType.choices,
         default=ContainerType.BIDONES,
     )
-    container_number = models.PositiveIntegerField("Número de envases", null=True, blank=True)
+    container_number = models.PositiveIntegerField(
+        "Número de envases",
+        null=True,
+        blank=True,
+    )
 
-    estimated_liters = models.DecimalField("Litros estimados", max_digits=10, decimal_places=2, null=True, blank=True)
+    estimated_liters = models.DecimalField(
+        "Litros estimados",
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
 
-    final_liters = models.DecimalField("Litros finales", max_digits=10, decimal_places=2, null=True, blank=True)
-    final_source = models.CharField("Fuente final", max_length=10, choices=PlannedSource.choices, null=True, blank=True)
-
+    final_liters = models.DecimalField(
+        "Litros finales",
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
+    final_source = models.CharField(
+        "Fuente final",
+        max_length=10,
+        choices=PlannedSource.choices,
+        null=True,
+        blank=True,
+    )
+    answered_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="answered_collection_requests",
+        verbose_name="Respondida por",
+    )
+    answered_at = models.DateTimeField(
+        "Respondida en",
+        null=True,
+        blank=True,
+    )
+    manual_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="manual_collection_requests",
+        verbose_name="Actualizada manualmente por",
+    )
+    manual_at = models.DateTimeField(
+        "Actualizada manualmente en",
+        null=True,
+        blank=True,
+    )
+    auto_estimate_task_id = models.CharField(
+        "ID de tarea de autoestimacion",
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+    auto_estimate_scheduled_at = models.DateTimeField(
+        "Autoestimacion programada en",
+        null=True,
+        blank=True,
+    )
     class Meta:
         verbose_name = "Solicitud de Recogida"
         verbose_name_plural = "Solicitudes de Recogida"
@@ -224,3 +283,4 @@ class CollectionRequest(BaseModel):
     
     def __str__(self):
         return f"Solicitud de Recogida - {self.route_day_client.client.name} - {self.route_day_client.route_day.date.strftime('%Y-%m-%d')}"
+

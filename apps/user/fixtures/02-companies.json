@@ -1,14 +1,14 @@
 [
-    {
-        "model": "company.company",
-        "pk": 1,
-        "fields": {
-            "name": "Servicios Coria S.L.",
-            "address": "Polígono Industrial La Estrella, Nave 12",
-            "phone": "955123456",
-            "email": "contacto@servicioscoria.es",
-            "cif": "B12345678",
-            "owner": 1
-        }
+  {
+    "model": "company.company",
+    "pk": 1,
+    "fields": {
+      "name": "Servicios Coria S.L.",
+      "address": "Poligono Industrial La Estrella, Nave 12",
+      "phone": "955123456",
+      "email": "contacto@servicioscoria.es",
+      "cif": "B12345678",
+      "owner": 3
     }
+  }
 ]

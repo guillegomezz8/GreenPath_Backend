@@ -23,12 +23,6 @@ class Weekday(models.IntegerChoices):
     SUNDAY = 6, 'Domingo'
 
 
-class CollectionStatus(models.TextChoices):
-    PENDING = 'PENDING', 'Pendiente'
-    COMPLETED = 'COMPLETED', 'Completada'
-    CANCELED = 'CANCELED', 'Cancelada'
-
-
 class ContainerType(models.TextChoices):
     BIDONES = 'BIDONES', 'Bidones (60L)'
     IBC = 'IBC', 'IBC (1000L)'

@@ -1,10 +1,11 @@
 from rest_framework import serializers
-from django.db.models import Sum, Count, Max
+from django.db.models import Sum, Max, Count, Q
 import logging
 
 from apps.base.logger import configure_logging
 from apps.user.api.serializers.user_nested_serializers import UserNestedWriteSerializer
 from apps.user.models.client import Client
+from apps.user.utils import sync_client_location_from_address
 from apps.collection.models import Collection
 from apps.base.enums import PickupFrequency, CollectionStatus
 
@@ -24,32 +25,42 @@ class ClientSerializer(serializers.ModelSerializer):
         model = Client
         exclude = ("modified_date", "deleted_date", "created_date")
 
+    def _get_collection_stats(self, obj):
+        if hasattr(obj, "_collection_stats_cache"):
+            return obj._collection_stats_cache
+
+        stats_cache = (
+            Collection.objects.filter(client=obj)
+            .aggregate(
+                total_pick_ups=Count("id", filter=~Q(status=CollectionStatus.CANCELED)),
+                last_pick_up=Max("collection_date", filter=~Q(status=CollectionStatus.CANCELED)),
+                last_completed_pick_up=Max("collection_date", filter=Q(status=CollectionStatus.CONFIRMED)),
+                total_paid=Sum("total_price", filter=Q(status=CollectionStatus.CONFIRMED)),
+            )
+        )
+        setattr(obj, "_collection_stats_cache", stats_cache)
+        return stats_cache
+
     def get_frequency(self, obj):
         return obj.get_frequency_display()
 
     def get_total_pick_ups(self, obj):
-        return Collection.objects.filter(client=obj).count()
+        stats = self._get_collection_stats(obj)
+        return stats.get("total_pick_ups") or 0
 
     def get_last_pick_up(self, obj):
-        dt = (
-            Collection.objects.filter(client=obj)
-            .aggregate(dt=Max("collection_date"))
-            .get("dt")
-        )
+        stats = self._get_collection_stats(obj)
+        dt = stats.get("last_pick_up")
         return dt or "-"
 
     def get_last_completed_pick_up(self, obj):
-        dt = (
-            Collection.objects.filter(client=obj, status=CollectionStatus.COMPLETED)
-            .aggregate(dt=Max("collection_date"))
-            .get("dt")
-        )
+        stats = self._get_collection_stats(obj)
+        dt = stats.get("last_completed_pick_up")
         return dt or "-"
 
     def get_total_paid(self, obj):
-        total = (
-            Collection.objects.filter(client=obj).aggregate(total=Sum("total_price")).get("total")
-        )
+        stats = self._get_collection_stats(obj)
+        total = stats.get("total_paid")
         return total or 0
 
 
@@ -113,20 +124,29 @@ class UpdateClientSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         try:
+            address_changed = (
+                "address" in validated_data
+                or "city" in validated_data
+                or "postal_code" in validated_data
+                or "country" in validated_data
+            )
             email = validated_data.pop("email", None)
 
             for attr, value in validated_data.items():
                 setattr(instance, attr, value)
             instance.save()
 
-            if email and getattr(instance, "user", None):
+            if address_changed:
+                sync_client_location_from_address(instance, clear_on_failure=True)
+
+            if email and hasattr(instance, "user") and instance.user:
                 instance.user.email = email
                 instance.user.full_clean(validate_unique=False)
                 instance.user.save(update_fields=["email"])
 
             return instance
         except Exception as e:
-            logging.error(f"Error updating client with id {instance.id}: {str(e)}")
+            logging.error(f"[client_serializers - update] Error updating client with id {instance.id}: {str(e)}")
             raise serializers.ValidationError(f"Error actualizando cliente: {str(e)}")
 
 
@@ -158,18 +178,27 @@ class PartialUpdateClientSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         try:
+            address_changed = (
+                "address" in validated_data
+                or "city" in validated_data
+                or "postal_code" in validated_data
+                or "country" in validated_data
+            )
             email = validated_data.pop("email", None)
 
             for attr, value in validated_data.items():
                 setattr(instance, attr, value)
             instance.save()
 
-            if email and getattr(instance, "user", None):
+            if address_changed:
+                sync_client_location_from_address(instance, clear_on_failure=True)
+
+            if email and hasattr(instance, "user") and instance.user:
                 instance.user.email = email
                 instance.user.full_clean(validate_unique=False)
                 instance.user.save(update_fields=["email"])
 
             return instance
         except Exception as e:
-            logging.error(f"Error updating client with id {instance.id}: {str(e)}")
+            logging.error(f"[client_serializers - update] Error updating client with id {instance.id}: {str(e)}")
             raise serializers.ValidationError(f"Error actualizando cliente: {str(e)}")

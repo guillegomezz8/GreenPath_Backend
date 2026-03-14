@@ -38,6 +38,12 @@ if [ "$SERVICE_NAME" = "greenpath_backend" ]; then
       sleep 3
    done
 
+   # Wait for setting passwords
+   while ! python manage.py celery_load_tasks  2>&1; do
+      echo "Creating Celery Tasks"
+      sleep 3
+   done
+
    echo "Django docker is fully configured successfully."
 fi
 exec "$@"

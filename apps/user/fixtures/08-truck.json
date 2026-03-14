@@ -10,11 +10,8 @@
       "capacity_liters": "18000.00",
       "status": "ACTIVE",
       "fuel": "DIESEL",
-      "company": 1,
-      "created_date": "2025-01-01T08:00:00Z",
-      "modified_date": "2025-01-01T08:00:00Z",
-      "deleted_date": null,
-      "disabled": false
+      "driver": 1,
+      "company": 1
     }
   },
   {
@@ -26,13 +23,10 @@
       "model": "FH16",
       "year": 2022,
       "capacity_liters": "20000.00",
-      "status": "ACTIVE",
+      "status": "IN_SERVICE",
       "fuel": "DIESEL",
-      "company": 1,
-      "created_date": "2025-01-01T08:00:00Z",
-      "modified_date": "2025-01-01T08:00:00Z",
-      "deleted_date": null,
-      "disabled": false
+      "driver": null,
+      "company": 1
     }
   },
   {
@@ -44,13 +38,10 @@
       "model": "R500",
       "year": 2021,
       "capacity_liters": "22000.00",
-      "status": "ACTIVE",
+      "status": "MAINTENANCE",
       "fuel": "DIESEL",
-      "company": 1,
-      "created_date": "2025-01-01T08:00:00Z",
-      "modified_date": "2025-01-01T08:00:00Z",
-      "deleted_date": null,
-      "disabled": false
+      "driver": null,
+      "company": 1
     }
   },
   {
@@ -62,13 +53,10 @@
       "model": "TGX",
       "year": 2019,
       "capacity_liters": "16000.00",
-      "status": "ACTIVE",
+      "status": "OUT_OF_SERVICE",
       "fuel": "DIESEL",
-      "company": 1,
-      "created_date": "2025-01-01T08:00:00Z",
-      "modified_date": "2025-01-01T08:00:00Z",
-      "deleted_date": null,
-      "disabled": false
+      "driver": null,
+      "company": 1
     }
   },
   {
@@ -82,11 +70,8 @@
       "capacity_liters": "24000.00",
       "status": "ACTIVE",
       "fuel": "DIESEL",
-      "company": 1,
-      "created_date": "2025-01-01T08:00:00Z",
-      "modified_date": "2025-01-01T08:00:00Z",
-      "deleted_date": null,
-      "disabled": false
+      "driver": null,
+      "company": 1
     }
   }
 ]

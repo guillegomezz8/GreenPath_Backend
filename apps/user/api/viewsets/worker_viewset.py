@@ -2,7 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework import serializers
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated
 
 import django_filters
 from django_filters.rest_framework import FilterSet, CharFilter, DjangoFilterBackend, BooleanFilter
@@ -68,6 +68,24 @@ class WorkerViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_class = WorkerFilter
 
+    def get_queryset(self):
+        base_qs = super().get_queryset()
+        user = self.request.user
+
+        if not user.is_authenticated:
+            return base_qs.none()
+
+        if user.is_staff or user.is_superuser:
+            return base_qs
+
+        if user.role_type == 'owner' and hasattr(user, "worker_profile"):
+            return base_qs.filter(company_id=user.worker_profile.company_id)
+
+        if user.role_type == 'worker' and hasattr(user, "worker_profile"):
+            return base_qs.filter(id=user.worker_profile.id)
+
+        return base_qs.none()
+
     def get_serializer_class(self):
         if self.action == 'create':
             return CreateWorkerSerializer
@@ -79,12 +97,12 @@ class WorkerViewSet(viewsets.ModelViewSet):
             return WorkerSerializer
 
     def get_permissions(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy', 'get_collections']:
-            self.permission_classes = [IsOwnerUser]
+        if self.action in ['create', 'update', 'partial_update', 'destroy', 'get_collections', 'activate']:
+            self.permission_classes = [IsAuthenticated, IsOwnerUser]
         elif self.action in ['list', 'retrieve']:
             self.permission_classes = [IsAuthenticated]
         else:
-            self.permission_classes = [AllowAny]
+            self.permission_classes = [IsAuthenticated]
         return super(WorkerViewSet, self).get_permissions()
 
     def perform_create(self, serializer):
@@ -94,7 +112,7 @@ class WorkerViewSet(viewsets.ModelViewSet):
             user_data = worker_data.pop("user")
             get_access = worker_data.pop("get_access", False)
 
-            company = getattr(getattr(self.request.user, "worker_profile", None), "company", None)
+            company = self.request.user.worker_profile.company if hasattr(self.request.user, "worker_profile") else None
 
             with transaction.atomic():
                 user = User.objects.create_user(
@@ -107,7 +125,7 @@ class WorkerViewSet(viewsets.ModelViewSet):
                 if get_access:
                     temp_password = gen_password()
                     user.set_password(temp_password)
-                    transaction.on_commit(lambda: send_access_email_google_api(user, temp_password, subject="Acceso a GreenPath como Trabajador"))
+                    transaction.on_commit(lambda: send_access_email_google_api.delay(user.id, temp_password, subject="Acceso a GreenPath como Trabajador"))
                 else:
                     user.set_unusable_password()
 
@@ -171,7 +189,7 @@ class WorkerViewSet(viewsets.ModelViewSet):
             return Response(response, status=status.HTTP_200_OK)
 
         except Exception as e:
-            logging.error(f"[client_viewset - list] Error al listar clientes: {str(e)}")
+            logging.error(f"[worker_viewset - list] Error al listar clientes: {str(e)}")
             return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
     @action(detail=True, methods=['put'])

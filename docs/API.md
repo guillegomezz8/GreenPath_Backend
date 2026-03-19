@@ -139,6 +139,52 @@ CRUD base (`GET/POST /companies/`, `GET/PUT/PATCH/DELETE /companies/{id}/`).
 Filtros soportados:
 - `name`, `address`, `phone`, `email`, `cif`
 
+Actions:
+- `GET /companies/settings/`
+- `PUT /companies/settings/`
+
+#### `GET /companies/settings/`
+
+Devuelve la configuracion global de la empresa asociada al usuario autenticado.
+
+Acceso:
+- `owner`: si
+- `worker`: si, solo lectura
+- `client`: no
+
+#### `PUT /companies/settings/`
+
+Actualiza la configuracion global de la empresa del owner autenticado.
+
+Payload actual:
+
+```json
+{
+  "default_price_per_liter": "1.250",
+  "billing_business_name": "Servicios Coria S.L.",
+  "billing_tax_id": "B12345678",
+  "billing_address": "Poligono Industrial La Estrella, Nave 12",
+  "billing_postal_code": "41110",
+  "billing_city": "Bollullos de la Mitacion",
+  "billing_province": "Sevilla",
+  "billing_country": "Espana",
+  "billing_phone": "955123456",
+  "billing_email": "facturacion@servicioscoria.es",
+  "billing_bank_account": "ES7620770024003102575766",
+  "billing_ler_code": "20 01 25",
+  "billing_footer": "Factura generada desde GreenPath.",
+  "hub_name": "Nave Principal Coria",
+  "hub_lat": 37.453664,
+  "hub_lng": -5.973891
+}
+```
+
+Uso actual:
+- precio por litro por defecto para recogidas manuales
+- precio por litro por defecto para recogidas creadas desde ejecucion de ruta
+- datos fiscales y bancarios usados para las facturas de venta PDF
+- configuracion del hub para operativa de rutas
+
 ### 5.5 Zones (`/zones/`)
 
 CRUD base (`GET/POST /zones/`, `GET/PUT/PATCH/DELETE /zones/{id}/`).
@@ -272,6 +318,11 @@ Filtros soportados:
 - `status`
 - `worker_id`
 
+Notas de negocio:
+- si no se envia `price_per_liter` al crear una recogida manual, se usa `CompanySettings.default_price_per_liter`
+- al registrar una parada desde una ruta, la recogida nace con el precio global de la empresa
+- `deduction_reason_label` expone el valor traducido del enum para detalle frontend
+
 Actions nuevas de planificacion:
 - `GET /collections/requests/me/`
 - `GET /collections/requests/{request_id}/`
@@ -327,6 +378,125 @@ Efectos:
 - `final_source=MANUAL`
 - `status=MANUAL`
 - guarda trazabilidad `manual_by`, `manual_at`
+
+### 5.9 Buyers (`/buyers/`)
+
+CRUD base (`GET/POST /buyers/`, `GET/PUT/PATCH/DELETE /buyers/{id}/`).
+
+Acceso:
+- solo `owner`
+
+Filtros soportados:
+- `fiscal_name`
+- `tax_id`
+- `city`
+- `province`
+- `search`
+
+Campos principales:
+- `fiscal_name`
+- `tax_id`
+- `fiscal_address`
+- `postal_code`
+- `city`
+- `province`
+- `country`
+- `email`
+- `phone`
+- `contact_person`
+- `notes`
+
+Notas:
+- Es un modulo interno.
+- Los compradores no acceden a la plataforma.
+- `full_fiscal_address` se expone en lectura para facilitar detalle y facturacion.
+
+### 5.10 Sales (`/sales/`)
+
+CRUD base (`GET/POST /sales/`, `GET/PUT/PATCH/DELETE /sales/{id}/`).
+
+Acceso:
+- solo `owner`
+
+Filtros soportados:
+- `invoice_number`
+- `buyer`
+- `invoice_year`
+- `search`
+
+Campos de escritura:
+- `buyer`
+- `invoice_number`
+- `invoice_date`
+- `product_description`
+- `quantity`
+- `unit`
+- `unit_price`
+- `tax_rate`
+- `currency`
+- `notes`
+
+Reglas:
+- `invoice_number` es manual y obligatorio.
+- `invoice_date` es la unica fecha visible y funcional del modulo.
+- internamente `sale_date` se sincroniza con `invoice_date` para mantener compatibilidad del modelo.
+- `subtotal`, `tax_amount` y `total` se recalculan en backend.
+- cada venta puede regenerar su factura PDF.
+
+#### `GET /sales/{id}/invoice/download/`
+
+Descarga el PDF de factura.
+
+Comportamiento:
+- si la venta no tiene PDF generado, backend intenta generarlo en ese momento
+- si sigue sin existir, devuelve `404`
+
+#### `POST /sales/{id}/invoice/regenerate/`
+
+Regenera el PDF de una venta.
+
+Response 200:
+```json
+{
+  "message": "Factura regenerada correctamente.",
+  "sale": {
+    "id": 2003,
+    "invoice_number": "004/2026"
+  }
+}
+```
+
+#### `GET /sales/economic-summary/`
+
+Resumen economico global por empresa.
+
+Response 200:
+```json
+{
+  "total_cost": "15420.00",
+  "total_income": "74288.38",
+  "net_profit": "58868.38",
+  "total_bought_volume": "12110.00",
+  "total_sold_volume": "61540.00",
+  "monthly": [
+    {
+      "year": 2026,
+      "month": 3,
+      "income": "23568.62",
+      "cost": "2140.20",
+      "profit": "21428.42",
+      "sold_volume": "19450.00",
+      "bought_volume": "1830.00"
+    }
+  ]
+}
+```
+
+Interpretacion:
+- `total_cost`: coste confirmado procedente de recogidas (`Collection`)
+- `total_income`: ingresos de ventas (`Sale`)
+- `net_profit`: ingresos menos costes
+- `monthly`: serie mensual para panel economico
 
 ## 6. Flujo de planificacion semanal (operativo)
 

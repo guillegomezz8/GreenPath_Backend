@@ -30,6 +30,7 @@ urlpatterns = [
     path('companies/',include('apps.company.api.routers')),
     path('routes/',include('apps.route.api.routers')),
     path('collections/',include('apps.collection.api.routers')),
+    path('',include('apps.sale.api.routers')),
     path('zones/',include('apps.zone.api.routers')),
     path('trucks/',include('apps.truck.api.routers'))
 ]

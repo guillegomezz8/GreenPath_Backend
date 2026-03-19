@@ -1,9 +1,11 @@
+import json
+
 from rest_framework import serializers
 from django.db.models import Sum, Count, Q
 import logging
 
 from apps.base.logger import configure_logging
-from apps.base.enums import CollectionStatus
+from apps.base.enums import CollectionStatus, Role
 from apps.user.api.serializers.user_nested_serializers import UserNestedWriteSerializer
 from apps.user.models.client import Client
 from apps.user.models.worker import Worker
@@ -98,7 +100,7 @@ class CreateWorkerSerializer(serializers.ModelSerializer):
 
     get_access = serializers.BooleanField(required=True, write_only=True)
 
-    role = serializers.CharField(required=False, allow_blank=False, max_length=10)
+    role = serializers.ChoiceField(choices=Role.choices, required=False, default=Role.WORKER)
 
     class Meta:
         model = Worker
@@ -115,6 +117,16 @@ class CreateWorkerSerializer(serializers.ModelSerializer):
             "birth_date",
             "photo",
         )
+
+    def to_internal_value(self, data):
+        normalized_data = {key: data.get(key) for key in data.keys()} if hasattr(data, "keys") else dict(data)
+        user_data = normalized_data.get("user")
+        if isinstance(user_data, str):
+            try:
+                normalized_data["user"] = json.loads(user_data)
+            except json.JSONDecodeError:
+                pass
+        return super().to_internal_value(normalized_data)
 
     def validate_phone(self, v):
         v = (v or "").strip()
@@ -134,7 +146,7 @@ class UpdateWorkerSerializer(serializers.ModelSerializer):
     birth_date = serializers.DateField(required=False, allow_null=True)
     photo = serializers.ImageField(required=False, allow_null=True)
 
-    role = serializers.CharField(required=False, allow_blank=False, max_length=10)
+    role = serializers.ChoiceField(choices=Role.choices, required=False)
 
     class Meta:
         model = Worker
@@ -180,7 +192,7 @@ class PartialUpdateWorkerSerializer(serializers.ModelSerializer):
     dni = serializers.CharField(required=False, max_length=255, trim_whitespace=True)
     birth_date = serializers.DateField(required=False, allow_null=True)
     photo = serializers.ImageField(required=False, allow_null=True)
-    role = serializers.CharField(required=False, allow_blank=False, max_length=10)
+    role = serializers.ChoiceField(choices=Role.choices, required=False)
 
     class Meta:
         model = Worker

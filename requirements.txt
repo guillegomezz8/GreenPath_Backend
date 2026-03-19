@@ -59,3 +59,5 @@ google-auth==2.35.0
 google-auth-oauthlib==1.2.1
 flower==1.2.0
 django-cleanup
+weasyprint==62.3
+pydyf==0.10.0

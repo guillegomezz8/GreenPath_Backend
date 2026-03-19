@@ -34,6 +34,7 @@ from apps.base.literals import (
 from apps.collection.models import Collection, CollectionRequest
 from apps.collection.tasks import auto_estimate_collection_request_liters, notify_collection_request_created
 from apps.company.models import CompanyHub
+from apps.company.utils import resolve_default_collection_price_per_liter
 from apps.route.models import Route, RouteDay, RouteDayClient, RouteZoneDay
 from apps.user.models.client import Client
 from apps.zone.models import Zone
@@ -610,8 +611,6 @@ def finish_route_day(route_day, close_action=None):
         if not normalized_action:
             raise ValueError(ROUTE_DAY_FINISH_DECISION_REQUIRED)
         route_day.status = normalized_action
-    elif canceled_stops > 0:
-        route_day.status = RouteDayStatus.PARTIAL
     else:
         route_day.status = RouteDayStatus.COMPLETED
 
@@ -645,8 +644,8 @@ def complete_route_day_client(route_day, route_day_client, user, payload):
     if route_day.status != RouteDayStatus.IN_PROGRESS:
         raise ValueError(ROUTE_DAY_STOP_ROUTE_NOT_STARTED)
 
-    active_collection = Collection.objects.filter(route_day_client=route_day_client).exclude(status=CollectionStatus.CANCELED).first()
-    if active_collection:
+    existing_collection = Collection.objects.filter(route_day_client=route_day_client).order_by("-id").first()
+    if existing_collection:
         raise ValueError(ROUTE_DAY_STOP_ALREADY_COMPLETED)
 
     force = payload.get("force", False)
@@ -676,7 +675,8 @@ def complete_route_day_client(route_day, route_day_client, user, payload):
 
     measured_liters = None
     deduction_liters = Decimal("0.00")
-    price_per_liter = Decimal("0.00")
+    resolved_price = resolve_default_collection_price_per_liter(company=route_day.route.company)
+    price_per_liter = resolved_price if resolved_price is not None else Decimal("0.00")
     status_value = CollectionStatus.CANCELED if mark_as_canceled else CollectionStatus.PENDING_MEASUREMENT
 
     collection = Collection.objects.create(

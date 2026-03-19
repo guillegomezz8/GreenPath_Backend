@@ -11,7 +11,7 @@ class CompanyHubInline(admin.StackedInline):
     extra = 0
     max_num = 1
     can_delete = False
-    fields = ("name", "address", "location")
+    fields = ("name", "location")
 
 
 class CompanySettingsInline(admin.StackedInline):
@@ -31,7 +31,6 @@ class CompanySettingsInline(admin.StackedInline):
         "billing_phone",
         "billing_email",
         "billing_bank_account",
-        "billing_logo",
         "billing_ler_code",
         "billing_footer",
     )

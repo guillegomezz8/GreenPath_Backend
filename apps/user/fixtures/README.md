@@ -12,6 +12,9 @@ Carga recomendada:
 8. `08-truck.json`
 9. `09-company-hubs.json`
 10. `10-route-zone-days.json`
+11. `11-company-settings.json`
+12. `12-buyers.json`
+13. `13-sales.json`
 
 Ejemplo de carga:
 
@@ -26,5 +29,14 @@ python manage.py loaddata \
   apps/user/fixtures/07-zones.json \
   apps/user/fixtures/08-truck.json \
   apps/user/fixtures/09-company-hubs.json \
-  apps/user/fixtures/10-route-zone-days.json
+  apps/user/fixtures/10-route-zone-days.json \
+  apps/user/fixtures/11-company-settings.json \
+  apps/user/fixtures/12-buyers.json \
+  apps/user/fixtures/13-sales.json
 ```
+
+Notas:
+
+- `11-company-settings.json` ya incluye datos fiscales demo para emitir facturas de venta desde el primer arranque.
+- `12-buyers.json` crea compradores internos de ejemplo para el modulo de ventas.
+- `13-sales.json` crea ventas demo con numero de factura manual y PDF regenerable desde la API o el frontend.

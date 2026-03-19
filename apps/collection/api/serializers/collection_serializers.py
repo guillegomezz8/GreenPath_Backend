@@ -2,8 +2,10 @@ import logging
 
 from rest_framework import serializers
 
+from apps.base.enums import CollectionStatus
 from apps.base.literals import COLLECTION_REQUEST_FINAL_LITERS_REQUIRED, COLLECTION_REQUEST_FINAL_LITERS_INVALID
 from apps.base.logger import configure_logging
+from apps.company.utils import resolve_default_collection_price_per_liter
 from apps.collection.models import Collection, CollectionRequest
 
 configure_logging()
@@ -11,6 +13,8 @@ configure_logging()
 
 class CollectionSerializer(serializers.ModelSerializer):
     status = serializers.SerializerMethodField()
+    status_code = serializers.CharField(source='status', read_only=True)
+    deduction_reason_label = serializers.CharField(source='get_deduction_reason_display', read_only=True)
     client_name = serializers.CharField(source='client.name', read_only=True)
     route_name = serializers.SerializerMethodField()
     worker_name = serializers.SerializerMethodField()
@@ -38,6 +42,36 @@ class CollectionSerializer(serializers.ModelSerializer):
         if hasattr(worker, "user") and worker.user:
             return worker.user.username
         return None
+
+
+def _normalize_collection_validated_data(validated_data, partial=False):
+    status_value = validated_data.get("status")
+    measured_liters = validated_data.get("measured_liters")
+
+    if status_value == CollectionStatus.CANCELED:
+        return validated_data
+
+    if measured_liters is not None:
+        validated_data["status"] = CollectionStatus.CONFIRMED
+        return validated_data
+
+    if not partial and status_value is None:
+        validated_data["status"] = CollectionStatus.PENDING_MEASUREMENT
+    return validated_data
+
+
+def _apply_default_price_per_liter(validated_data):
+    if "price_per_liter" in validated_data and validated_data.get("price_per_liter") is not None:
+        return validated_data
+
+    default_price = resolve_default_collection_price_per_liter(
+        client=validated_data.get("client"),
+        worker=validated_data.get("worker"),
+        route_day_client=validated_data.get("route_day_client"),
+    )
+    if default_price is not None:
+        validated_data["price_per_liter"] = default_price
+    return validated_data
 
 
 class CreateCollectionSerializer(serializers.ModelSerializer):
@@ -71,6 +105,8 @@ class CreateCollectionSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         try:
+            validated_data = _apply_default_price_per_liter(validated_data)
+            validated_data = _normalize_collection_validated_data(validated_data)
             collection = Collection.objects.create(**validated_data)
             return collection
         except Exception as e:
@@ -109,6 +145,7 @@ class UpdateCollectionSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         try:
+            validated_data = _normalize_collection_validated_data(validated_data)
             for attr, value in validated_data.items():
                 setattr(instance, attr, value)
             instance.save()
@@ -149,6 +186,7 @@ class PartialUpdateCollectionSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         try:
+            validated_data = _normalize_collection_validated_data(validated_data, partial=True)
             for attr, value in validated_data.items():
                 setattr(instance, attr, value)
             instance.save()

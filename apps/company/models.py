@@ -1,6 +1,8 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.contrib.gis.db import models as geomodels
+from django.core.validators import MinValueValidator
+from decimal import Decimal
 
 import logging
 
@@ -64,3 +66,40 @@ class CompanyHub(BaseModel):
 
     def __str__(self):
         return f"{self.name} - {self.company.name}"
+
+
+class CompanySettings(BaseModel):
+    company = models.OneToOneField(
+        Company,
+        on_delete=models.CASCADE,
+        related_name="settings",
+        verbose_name="Empresa",
+    )
+
+    default_price_per_liter = models.DecimalField(
+        "Precio global por litro",
+        max_digits=7,
+        decimal_places=3,
+        default=Decimal("1.200"),
+        validators=[MinValueValidator(Decimal("0.00"))],
+    )
+    billing_business_name = models.CharField("Razon social", max_length=255, blank=True, default="")
+    billing_tax_id = models.CharField("CIF", max_length=20, blank=True, default="")
+    billing_address = models.CharField("Direccion fiscal", max_length=255, blank=True, default="")
+    billing_postal_code = models.CharField("Codigo postal", max_length=10, blank=True, default="")
+    billing_city = models.CharField("Ciudad", max_length=100, blank=True, default="")
+    billing_province = models.CharField("Provincia", max_length=100, blank=True, default="")
+    billing_country = models.CharField("Pais", max_length=100, blank=True, default="Espana")
+    billing_phone = models.CharField("Telefono", max_length=20, blank=True, default="")
+    billing_email = models.EmailField("Email", blank=True, default="")
+    billing_bank_account = models.CharField("Cuenta bancaria", max_length=64, blank=True, default="")
+    billing_logo = models.ImageField("Logo facturacion", upload_to="company/billing/", max_length=255, blank=True, null=True)
+    billing_ler_code = models.CharField("Codigo LER", max_length=50, blank=True, default="")
+    billing_footer = models.TextField("Pie de factura", blank=True, default="")
+
+    class Meta:
+        verbose_name = "Configuracion de Empresa"
+        verbose_name_plural = "Configuraciones de Empresa"
+
+    def __str__(self):
+        return f"Configuracion - {self.company.name}"

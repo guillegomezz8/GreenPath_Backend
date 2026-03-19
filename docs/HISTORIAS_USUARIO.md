@@ -60,6 +60,51 @@ Criterios de aceptacion:
 2. Si hay paradas pendientes al finalizar, se exige decision (`PARTIAL` o `CANCELED`).
 3. Puedo abrir enlace de navegacion Google por dia.
 
+### US-OWN-005B (P1) Configurar precio global de empresa
+
+Como Owner quiero definir un precio global por litro para que las recogidas nazcan con un valor economico coherente.
+
+Criterios de aceptacion:
+1. Existe una pantalla de configuracion accesible solo para owner.
+2. Puedo guardar un `default_price_per_liter` por empresa.
+3. Las nuevas recogidas toman ese valor por defecto sin impedir ajuste manual posterior.
+
+### US-OWN-005C (P0) Gestionar compradores internos
+
+Como Owner quiero mantener una cartera interna de compradores para reutilizar sus datos fiscales al crear ventas.
+
+Criterios de aceptacion:
+1. Puedo crear, editar, listar y consultar compradores.
+2. Los compradores guardan razon social, CIF, direccion fiscal y datos de contacto.
+3. Los compradores no tienen acceso a la plataforma.
+
+### US-OWN-005D (P0) Registrar ventas con factura
+
+Como Owner quiero registrar ventas con numero de factura manual para controlar ingresos reales del negocio.
+
+Criterios de aceptacion:
+1. Puedo crear una venta seleccionando comprador y fecha de factura.
+2. El sistema calcula base imponible, IVA y total.
+3. Puedo descargar y regenerar el PDF de factura de esa venta.
+
+### US-OWN-005E (P1) Configurar datos fiscales de empresa
+
+Como Owner quiero editar los datos fiscales y bancarios de mi empresa sin tocar codigo.
+
+Criterios de aceptacion:
+1. Existe una pantalla de configuracion solo para owner.
+2. Puedo guardar razon social, CIF, direccion fiscal, cuenta bancaria y Codigo LER.
+3. Las facturas nuevas reutilizan esos datos automaticamente.
+
+### US-OWN-005F (P1) Ver beneficio neto real
+
+Como Owner quiero ver costes, ingresos y beneficio neto para entender la rentabilidad real del negocio.
+
+Criterios de aceptacion:
+1. Las recogidas confirmadas computan como coste.
+2. Las ventas computan como ingreso.
+3. Las estadisticas muestran balance neto y evolucion mensual.
+
 ## 3. Historias Worker
 
 ### US-WRK-001 (P0) Ver solo rutas asignadas
@@ -546,6 +591,15 @@ Criterios de aceptacion:
 2. Predominan casos reales de bidones.
 3. Hay cobertura de frecuencias y estados diversos.
 
+### US-PLT-012B (P1) Fixtures economicas utiles
+
+Como equipo quiero fixtures de compradores, ventas y datos fiscales para probar el modulo economico desde el primer arranque.
+
+Criterios de aceptacion:
+1. Existen compradores demo listos para seleccionar en ventas.
+2. Existen ventas demo con numero de factura manual y fechas coherentes.
+3. La configuracion global incluye datos fiscales basicos para regenerar PDFs sin edicion previa.
+
 ### US-PLT-013 (P2) Observabilidad de tareas Celery
 
 Como equipo quiero visibilidad de tareas para actuar ante retrasos o fallos.
@@ -572,6 +626,15 @@ Criterios de aceptacion:
 1. Estados y etiquetas devueltos son consistentes.
 2. Campos clave no cambian forma inesperadamente.
 3. Las pantallas no dependen de hardcodes fragiles.
+
+### US-PLT-015B (P1) Parametros globales extensibles por empresa
+
+Como sistema quiero centralizar parametros globales de empresa para evitar hardcodes dispersos y facilitar evolucion futura.
+
+Criterios de aceptacion:
+1. Existe un modelo dedicado de configuracion global por empresa.
+2. El precio por litro se resuelve desde esa configuracion cuando no se informa manualmente.
+3. La estructura permite ampliar despues con IVA, IRPF u otras reglas.
 
 ### US-PLT-016 (P2) Limites de seguridad de API key externa
 
@@ -684,6 +747,24 @@ Criterios de aceptacion:
 1. Solo estados validos impactan ingresos.
 2. Los importes se agregan sin duplicados.
 3. El dato mensual es consistente con historico.
+
+### US-DAT-002B (P1) Consistencia del precio por defecto en recogidas
+
+Como Owner quiero que el precio usado por defecto en recogidas sea estable y auditable.
+
+Criterios de aceptacion:
+1. Existe un valor global visible para la empresa.
+2. Las recogidas nuevas lo usan salvo override manual.
+3. El detalle de recogida sigue mostrando el valor finalmente guardado.
+
+### US-DAT-002C (P1) Consistencia economica entre compras y ventas
+
+Como Owner quiero que el panel economico combine correctamente costes de recogidas e ingresos de ventas.
+
+Criterios de aceptacion:
+1. El resumen economico separa `total_cost` y `total_income`.
+2. El beneficio neto se calcula como `income - cost`.
+3. El volumen comprado y el volumen vendido se muestran por separado.
 
 ### US-DAT-003 (P2) Auditoria de acciones manuales
 

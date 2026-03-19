@@ -25,6 +25,10 @@ MAX_CLIENTS_PER_DAY = 15
 #Empresas
 ERROR_CREATING_COMPANY = 'Error creando empresa'
 ONLY_OWNERS_CAN_CREATE_COMPANIES = 'Solo los dueños pueden crear empresas'
+COMPANY_SETTINGS_UPDATED = 'Configuracion de empresa actualizada correctamente.'
+COMPANY_SETTINGS_FORBIDDEN = 'Solo owner o worker de la empresa pueden consultar esta configuracion.'
+COMPANY_SETTINGS_UPDATE_FORBIDDEN = 'Solo los dueños pueden actualizar la configuracion de empresa.'
+COMPANY_SETTINGS_NOT_FOUND = 'No se ha encontrado una empresa asociada al usuario.'
 
 #Trabajadores
 ERROR_CREATING_WORKER = 'Error creando trabajador'

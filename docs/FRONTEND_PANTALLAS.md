@@ -1,26 +1,26 @@
 # Inventario de Pantallas Frontend
 
-Fecha de repaso: 2026-03-14
+Fecha de repaso: 2026-03-19
 
 ## 1. Autenticacion
 
-## 1.1 Social login
+### 1.1 Social login
 
 - Ruta: `/socialLogin`
 - Archivo: `src/pages/oauth/SocialLogin.jsx`
 - Estado: Implementada
 - Notas:
-  - Login Google.
-  - Redireccion por rol (`client` -> `/my-requests`, resto -> `/dashboard`).
+  - Login Google
+  - Redireccion por rol (`client` -> `/my-requests`, resto -> `/dashboard`)
 
-## 1.2 Login usuario/password
+### 1.2 Login usuario/password
 
 - Ruta: `/login`
 - Archivo: `src/pages/oauth/Login.jsx`
 - Estado: Implementada
 - Notas:
-  - Login JWT.
-  - Redireccion por rol via `AuthProvider`.
+  - Login JWT
+  - Redireccion por rol via `AuthProvider`
 
 ## 2. Dashboard
 
@@ -28,8 +28,9 @@ Fecha de repaso: 2026-03-14
 - Archivo: `src/pages/dashboard/Dashboard.jsx`
 - Estado: Implementada
 - Notas:
-  - Vista owner/worker con KPIs globales.
-  - Vista client con KPIs de solicitudes/recogidas propias.
+  - Vista owner/worker con KPIs globales
+  - Vista client con KPIs de solicitudes y recogidas propias
+  - Acceso rapido a rutas operativas
 
 ## 3. Perfil
 
@@ -37,10 +38,9 @@ Fecha de repaso: 2026-03-14
 - Archivo: `src/pages/profile/ProfilePage.jsx`
 - Estado: Implementada
 - Notas:
-  - Edicion de datos.
-  - Cambio de contraseña.
-  - Cambio de foto (si perfil lo permite).
-  - Boton atras eliminado (cabecera limpia).
+  - Edicion de datos
+  - Cambio de contrasena
+  - Cambio de foto si el perfil lo permite
 
 ## 4. Clientes
 
@@ -90,8 +90,8 @@ Fecha de repaso: 2026-03-14
 - Archivo: `src/pages/collectionZones/CollectionZonesList.jsx`
 - Estado: Implementada
 - Notas:
-  - Alta/edicion/borrado de poligonos.
-  - Integracion mapa.
+  - Alta, edicion y borrado de poligonos
+  - Integracion con mapa
 
 ## 8. Rutas
 
@@ -100,24 +100,22 @@ Fecha de repaso: 2026-03-14
   - `/routes/new`
   - `/routes/:id`
   - `/routes/:id/edit`
+  - `/routes/:id/execute`
 - Archivos:
   - `src/pages/routes/RoutesList.jsx`
   - `src/pages/routes/RouteCreate.jsx`
   - `src/pages/routes/RouteDetail.jsx`
   - `src/pages/routes/RouteEdit.jsx`
+  - `src/pages/routes/RouteExecution.jsx`
   - `src/pages/routes/RouteForm.jsx`
 - Estado: Implementadas
 - Notas:
-  - Generacion semanal con modal compartido y responsive desde listado y detalle.
-  - Listado con filtro rapido: todas / con trabajadores / sin trabajadores.
-  - Detalle con resumen operativo (dias, paradas previstas, registradas, pendientes).
-  - Filtros por estado de `RouteDay` y boton expandir/ocultar todos.
-  - Pantalla separada `Realizar ruta` (`/routes/:id/execute`) para concentrar la operativa diaria.
-  - Ejecucion de `RouteDay` (start/finish) desde la vista operativa.
-  - Modal de cierre parcial/cancelado cuando hay pendientes.
-  - Dropdown de parada pendiente para registrar recogida.
-  - Tabla de paradas plegable (oculta por defecto).
-  - En movil: acciones full-width, modal de generacion adaptado y operativa basada en mapa + panel apilado.
+  - Generacion semanal con modal compartido y responsive desde listado y detalle
+  - Listado con filtros rapidos: todas / con trabajador / sin trabajador
+  - Detalle orientado a planificacion semanal
+  - Pantalla separada `Realizar ruta` para la operativa diaria
+  - Modales de generacion, cierre y registro adaptados a movil
+  - Operativa basada en mapa + panel lateral/apilado segun breakpoint
 
 ## 9. Recogidas
 
@@ -132,57 +130,122 @@ Fecha de repaso: 2026-03-14
   - `src/pages/collections/CollectionDetail.jsx`
   - `src/pages/collections/CollectionEdit.jsx`
 - Estado: Implementadas
+- Notas:
+  - El precio por litro se precarga desde la configuracion global de empresa
+  - La edicion esta enfocada al flujo de medicion en nave
+  - El detalle muestra el motivo de deduccion traducido
 
-## 10. Solicitudes de recogida (cliente)
+## 10. Compradores
+
+- Rutas:
+  - `/buyers`
+  - `/buyers/new`
+  - `/buyers/:id`
+  - `/buyers/:id/edit`
+- Archivos:
+  - `src/pages/buyers/BuyersList.jsx`
+  - `src/pages/buyers/BuyerCreate.jsx`
+  - `src/pages/buyers/BuyerDetail.jsx`
+  - `src/pages/buyers/BuyerEdit.jsx`
+  - `src/pages/buyers/BuyerForm.jsx`
+- Estado: Implementadas
+- Notas:
+  - Solo visibles para `owner`
+  - Modulo interno sin acceso para el comprador
+  - Filtros reforzados por ciudad, provincia y datos de contacto
+
+## 11. Ventas
+
+- Rutas:
+  - `/sales`
+  - `/sales/new`
+  - `/sales/:id`
+  - `/sales/:id/edit`
+- Archivos:
+  - `src/pages/sales/SalesList.jsx`
+  - `src/pages/sales/SaleCreate.jsx`
+  - `src/pages/sales/SaleDetail.jsx`
+  - `src/pages/sales/SaleEdit.jsx`
+  - `src/pages/sales/SaleForm.jsx`
+- Estado: Implementadas
+- Notas:
+  - Solo visibles para `owner`
+  - Numero de factura manual
+  - Una sola fecha visible y operativa: `invoice_date`
+  - Descarga y regeneracion de factura PDF
+
+## 12. Configuracion de empresa
+
+- Ruta:
+  - `/settings`
+- Archivo:
+  - `src/pages/settings/CompanySettingsPage.jsx`
+- Estado: Implementada
+- Notas:
+  - Solo visible para `owner`
+  - Secciones en dropdown independientes:
+    - precio global por litro
+    - datos de facturacion
+    - hub de empresa
+  - Botones de guardar y restablecer por bloque
+  - El logo de facturacion ya no forma parte del flujo funcional
+
+## 13. Solicitudes de recogida (cliente)
 
 - Ruta: `/my-requests`
 - Archivo: `src/pages/collections/CollectionRequestsPage.jsx`
-- Estado: Implementada en este repaso
+- Estado: Implementada
 - Notas:
-  - Lista por estado.
-  - Vista limite de respuesta.
-  - Accion responder litros para solicitudes abiertas.
+  - Lista por estado
+  - Vista de limite de respuesta
+  - Accion de responder litros para solicitudes abiertas
 
-## 11. Estadisticas
+## 14. Estadisticas
 
 - Ruta: `/stats`
 - Archivo: `src/pages/stats/Stats.jsx`
 - Estado: Implementada
+- Notas:
+  - Resumen economico real:
+    - costes por recogidas confirmadas
+    - ingresos por ventas
+    - beneficio neto
+    - volumen comprado vs vendido
 
-## 12. Error
+## 15. Error
 
 - Ruta: `*`
 - Archivo: `src/pages/error/Error404.jsx`
 - Estado: Implementada
 
-## 13. Navegacion y layout
+## 16. Navegacion y layout
 
-## 13.1 Sidebar por rol
+### 16.1 Sidebar por rol
 
 - Archivo: `src/components/layout/Sidebar.jsx`
 - Estado: Actualizado
 - Comportamiento:
-  - `owner`: menu completo.
-  - `worker`: menu operativo.
-  - `client`: dashboard + solicitudes + recogidas.
-  - Bloque foto/email como acceso a perfil.
+  - `owner`: menu completo, incluyendo compradores, ventas, configuracion y estadisticas
+  - `worker`: menu operativo
+  - `client`: dashboard + solicitudes + recogidas
+  - Bloque foto/email como acceso a perfil
 
-## 13.2 Topbar
+### 16.2 Topbar
 
 - Archivo: `src/components/layout/Topbar.jsx`
 - Estado: Actualizada
 - Comportamiento:
-  - Solo boton `Cerrar sesion` a la derecha.
-  - Sin acceso a perfil en topbar.
+  - Solo boton `Cerrar sesion` a la derecha
+  - Sin acceso a perfil en topbar
 
-## 13.3 MainLayout
+### 16.3 MainLayout
 
 - Archivo: `src/components/layout/MainLayout.jsx`
 - Estado: Ajustado
 - Notas:
-  - Corregido desplazamiento de topbar con sidebar abierta.
+  - Corregido desplazamiento de topbar con sidebar abierta
 
-## 14. Endpoints frontend utilizados (resumen)
+## 17. Endpoints frontend utilizados (resumen)
 
 - Auth:
   - `POST /login/`
@@ -199,21 +262,24 @@ Fecha de repaso: 2026-03-14
   - `finish_route_day`
   - `complete_stop`
   - `google-navigation`
-  - detalle operativo con mapa reactivo por `RouteDay` usando `route.hub` y `client_location`
-  - pantalla separada `Realizar ruta` (`/routes/:id/execute`) para concentrar la operativa diaria y dejar `Detalle` mas limpio
-  - acceso rapido desde dashboard en bloque `Rutas Operativas`
-  - jerarquia visual de acciones unificada con boton principal para `Realizar ruta`, secundarios para consulta/edicion y acento para `Generar semana`
-  - modal compartido `GenerateWeekDialog` para mantener consistencia entre listado y detalle
 - Recogidas:
   - CRUD `collections`
   - `GET /collections/requests/me/`
   - `POST /collections/requests/{id}/answer/`
-- Clientes, workers, trucks, zones:
-  - CRUD + acciones especificas.
+- Configuracion:
+  - `GET /companies/settings/`
+  - `PUT /companies/settings/`
+- Compradores:
+  - CRUD `buyers`
+- Ventas:
+  - CRUD `sales`
+  - `GET /sales/{id}/invoice/download/`
+  - `POST /sales/{id}/invoice/regenerate/`
+  - `GET /sales/economic-summary/`
 
-## 15. Resultado del repaso
+## 18. Resultado del repaso
 
-- Pantallas principales operativas: si.
-- Pantalla faltante detectada y completada: `Mis solicitudes`.
-- Navegacion por rol revisada y ajustada.
-- Flujo cliente reforzado para evitar entradas a modulos no aplicables.
+- Pantallas principales operativas: si
+- Flujo economico owner-only implementado en frontend: si
+- Navegacion por rol revisada y ajustada
+- Configuracion y estadisticas alineadas con ventas + facturacion

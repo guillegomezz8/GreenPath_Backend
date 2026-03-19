@@ -32,7 +32,9 @@ Reglas:
 - `complete`: solo con ruta diaria `IN_PROGRESS`.
 - `complete`: bloquea salto de orden por defecto; se puede forzar con `force=true`.
 - `complete`: crea `Collection` ligada a `route_day_client` y actualiza `CollectionRequest` a `MANUAL`.
+- `complete`: usa el precio global de empresa por defecto si existe.
 - `finish`: solo desde `IN_PROGRESS` y calcula estado final (`COMPLETED`, `PARTIAL` o `CANCELED`).
+- `finish`: si ya no quedan pendientes, una parada cancelada no fuerza `PARTIAL`.
 - `google-navigation`: devuelve URL de Google Maps con origen hub + waypoints ordenados.
 
 ### UX frontend
@@ -52,6 +54,17 @@ Reglas:
 - Seleccion de parada activa sin listado largo duplicado debajo.
 - Layout responsive: el panel operativo se apila bajo el mapa hasta resoluciones muy anchas.
 - Modales operativos (`finalizar`, `registrar parada`) con scroll interno y botones full-width en movil.
+
+## Configuracion economica asociada
+
+- Endpoint: `GET/PUT /companies/settings/`
+- Valor actual: `default_price_per_liter`
+- El mismo `CompanySettings` tambien guarda los datos fiscales usados por el modulo de ventas y sus facturas PDF
+- Uso:
+  - recogidas manuales
+  - recogidas creadas al registrar una parada de ruta
+- Override:
+  - el precio sigue siendo editable por recogida en create/edit
 
 `Dashboard`:
 - Bloque `Rutas Operativas` con acceso directo a `Realizar ruta` y `Ver detalle`.
@@ -170,6 +183,11 @@ Estados esperados:
 - `AUTO_ESTIMATED`
 - `ANSWERED`
 - `MANUAL`
+
+## Recogidas y precio por defecto
+
+- Si una recogida se crea sin `price_per_liter`, backend intenta resolver el valor desde `CompanySettings`.
+- En detalle de recogida se expone `deduction_reason_label` para usar el enum traducido en frontend.
 
 Trazabilidad guardada:
 - `answered_by`, `answered_at`

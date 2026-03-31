@@ -25,18 +25,18 @@ if [ "$SERVICE_NAME" = "greenpath_backend" ]; then
       sleep 3
    done
 
-   echo "Apply fixtures"
-   # Wait for few minute and load some fixtures
-   while ! python manage.py loaddata apps/user/fixtures/*.json  2>&1; do
-      echo "Populating db is in progress status"
-      sleep 3
-   done
+   # echo "Apply fixtures"
+   # # Wait for few minute and load some fixtures
+   # while ! python manage.py loaddata apps/user/fixtures/*.json  2>&1; do
+   #    echo "Populating db is in progress status"
+   #    sleep 3
+   # done
 
-   # Wait for setting passwords
-   while ! python manage.py set_user_passwords  2>&1; do
-      echo "Setting password for Users"
-      sleep 3
-   done
+   # # Wait for setting passwords
+   # while ! python manage.py set_user_passwords  2>&1; do
+   #    echo "Setting password for Users"
+   #    sleep 3
+   # done
 
    # Wait for setting passwords
    while ! python manage.py celery_load_tasks  2>&1; do

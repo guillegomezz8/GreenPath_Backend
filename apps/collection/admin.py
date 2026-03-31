@@ -14,6 +14,7 @@ class CollectionAdmin(admin.ModelAdmin):
         "planned_route_day",
         "worker",
         "status",
+        "billable",
         "estimated_liters",
         "net_liters",
         "total_price_display",
@@ -21,6 +22,7 @@ class CollectionAdmin(admin.ModelAdmin):
 
     list_filter = (
         "status",
+        "billable",
         "collection_date",
         "container_type",
         "worker",
@@ -75,6 +77,7 @@ class CollectionAdmin(admin.ModelAdmin):
         }),
         ("Facturación", {
             "fields": (
+                "billable",
                 "price_per_liter",
                 "net_liters",
                 "total_price",

@@ -220,7 +220,7 @@ def generate_sale_invoice_pdf(sale):
 def company_collection_cost_queryset(company):
     return (
         Collection.objects
-        .filter(status=CollectionStatus.CONFIRMED)
+        .filter(status=CollectionStatus.CONFIRMED, billable=True)
         .filter(
             models.Q(client__companies__id=company.id) |
             models.Q(worker__company_id=company.id) |

@@ -1,69 +1,151 @@
 # GreenPath Backend
 
-Backend Django para la gestion de recogida de aceite usado.
+Backend Django de GreenPath, una plataforma para gestionar la recogida de aceite usado, su operacion diaria, su cierre economico y el registro de ventas con facturacion PDF.
 
-## Stack
+## 1. Vision general
+
+GreenPath cubre el ciclo funcional principal del negocio:
+
+1. configuracion de empresa y datos maestros
+2. planificacion geografica de rutas
+3. generacion semanal de jornadas y paradas
+4. solicitud previa de litros al cliente
+5. ejecucion diaria de la ruta
+6. medicion y cierre economico de recogidas
+7. gestion de compradores internos
+8. registro de ventas
+9. generacion de facturas PDF
+10. analitica de costes, ingresos y beneficio
+
+No es solo una API de CRUD. El sistema combina operacion, automatizacion, trazabilidad y reporting.
+
+## 2. Stack principal
 
 - Python 3.11
-- Django + Django REST Framework
+- Django
+- Django REST Framework
 - PostgreSQL + PostGIS
 - Celery + Redis
+- React + Vite en frontend
 - Google Directions API para optimizacion de rutas
-- Gmail API para envio de correos operativos
+- Gmail API para notificaciones operativas
+- WeasyPrint para facturas PDF
+- Docker Compose para entorno local
 
-## Modulos principales
+## 3. Modulos funcionales actuales
 
-- `clients`: clientes, frecuencia de recogida y geolocalizacion.
-- `workers`: trabajadores y empresa asociada.
-- `trucks`: camiones y conductor asignado.
-- `company`: empresa, hub y configuracion operativa global.
-- `zones`: zonas geograficas de recogida.
-- `routes`: rutas plantilla, dias operativos y paradas planificadas.
-- `collections`: recogidas reales y solicitudes previas de estimacion.
-- `sales`: compradores internos, ventas, facturas PDF y resumen economico.
+- `clients`: clientes, frecuencia de recogida, geolocalizacion e historial
+- `workers`: trabajadores, rol operativo y datos de empresa
+- `trucks`: flota y asignacion de conductor
+- `company`: empresa, hub y configuracion operativa/fiscal global
+- `zones`: zonas geograficas de recogida
+- `routes`: rutas plantilla, dias operativos y paradas planificadas
+- `collections`: solicitudes de recogida y recogidas reales
+- `sales`: compradores internos, ventas, facturas PDF y resumen economico
 
-## Estado actual
+## 4. Capacidades funcionales destacadas
+
+### 4.1 Rutas y operacion
+
+- configuracion de rutas plantilla con un trabajador asignado
+- zonas por dia (`RouteZoneDay`)
+- generacion semanal con `generate-week`
+- control de `regenerate` y proteccion de dias ya operados
+- limite por capacidad diaria y por maximo de clientes por dia
+- optimizacion opcional con Google Directions
+- ejecucion diaria con inicio, registro de parada y cierre de jornada
+
+### 4.2 Solicitudes al cliente
+
+- creacion automatica de `CollectionRequest`
+- expiracion basada en `inicio_route_day - 36h`
+- respuesta del cliente desde portal
+- cierre manual por owner/worker
+- autoestimacion con Celery
+- notificacion por email cuando Gmail API esta disponible
+
+### 4.3 Recogidas y economia
+
+- recogidas pendientes de medicion, confirmadas o canceladas
+- medicion en nave y deducciones
+- precio por litro precargado desde configuracion de empresa
+- bandera `billable` para decidir si una recogida computa economicamente
+- solo las recogidas `CONFIRMED` y `billable=true` entran en costes y agregados economicos
+
+### 4.4 Ventas y facturacion
+
+- modulo owner-only de compradores (`Buyer`)
+- modulo owner-only de ventas (`Sale`)
+- numero de factura manual
+- fecha funcional unica: `invoice_date`
+- recalculo backend de subtotal, IVA y total
+- PDF de factura descargable y regenerable
+
+### 4.5 Configuracion global de empresa
+
+- precio global por litro
+- hub geolocalizado
+- razon social
+- CIF
+- direccion fiscal
+- codigo postal, ciudad, provincia y pais
+- telefono y email
+- cuenta bancaria
+- codigo LER
+- pie de factura
+
+## 5. Estado funcional actual
 
 Actualmente estan operativos:
 
-- CRUD de clientes, trabajadores, camiones y zonas.
-- Configuracion de rutas y zonas por dia.
-- Generacion semanal de rutas operativas con `generate-week`.
-- Ejecucion de `RouteDay`: iniciar, registrar parada, finalizar y exportar navegacion.
-- `CollectionRequest` con expiracion, trazabilidad y tareas Celery.
-- Estadisticas y panel operativo ya integrados en la API.
-- Configuracion global por empresa con precio por litro, hub y datos de facturacion.
-- Modulo interno de compradores (`buyers`) solo para owner.
-- Modulo de ventas (`sales`) con numero de factura manual, una sola fecha operativa (`invoice_date`) y generacion de PDF.
-- Resumen economico con costes de recogidas, ingresos por ventas y beneficio neto.
+- CRUD de clientes, trabajadores, camiones y zonas
+- configuracion de rutas y zonas por dia
+- generacion semanal de rutas operativas con `POST /routes/{id}/generate-week/`
+- ejecucion diaria de `RouteDay`
+- solicitudes previas al cliente con expiracion y trazabilidad
+- dashboard y estadisticas por rol
+- configuracion global por empresa
+- recogidas con control de `facturable`
+- compradores internos, ventas y facturas PDF
+- resumen economico con costes, ingresos y beneficio neto
 
-## Flujo de generacion semanal
+## 6. Reglas de negocio clave
 
-Endpoint principal:
+- solo owner puede generar semana operativa
+- `regenerate=true` solo se admite si la semana sigue siendo editable
+- los dias ya operados se preservan cuando no se regenera
+- la capacidad diaria se aplica de forma estricta
+- una parada cancelada cuenta como procesada para cerrar la jornada
+- una recogida no facturable sigue existiendo, pero no entra en estadisticas economicas
+- las ventas computan como ingreso
+- las recogidas confirmadas y facturables computan como coste
 
-- `POST /routes/{id}/generate-week/`
+## 7. Integraciones externas
 
-Comportamiento actual:
+### 7.1 Google Maps / Directions
 
-- Crea o reutiliza `RouteDay` dentro de la semana solicitada.
-- Genera `RouteDayClient` desde las zonas configuradas para cada weekday.
-- Filtra clientes por ubicacion y frecuencia real de recogida.
-- Calcula frecuencia e historico previo dentro de la misma empresa de la ruta.
-- Evita duplicidades del mismo cliente en la misma semana.
-- Respeta `max_clients_per_day`.
-- Respeta `daily_capacity_liters` de forma estricta.
-- Optimiza el orden con Google Directions si hay `GOOGLE_MAPS_API_KEY`.
-- Crea o actualiza `CollectionRequest` por parada.
-- Programa autoestimacion con Celery cuando expira la solicitud.
+Se utiliza para:
 
-Reglas importantes:
+- geocodificar direcciones de clientes
+- optimizar el orden de paradas en la generacion semanal
+- abrir navegacion desde la pantalla de ejecucion de ruta
 
-- `generate-week` solo lo puede ejecutar un owner.
-- `regenerate=true` solo se permite si toda la semana sigue siendo editable, es decir, sin ejecucion previa ni recogidas asociadas.
-- Los `RouteDay` que ya no son editables se preservan y no se tocan en una generacion normal.
-- Si ya existe una generacion en curso para la misma ruta y semana, se devuelve conflicto.
+### 7.2 Gmail API
 
-## Variables de entorno relevantes
+Se utiliza para:
+
+- envio de credenciales de acceso
+- envio de notificaciones de solicitud de estimacion al cliente
+
+### 7.3 Celery y Redis
+
+Se utilizan para:
+
+- autoestimacion de solicitudes expiradas
+- envio de notificaciones asincronas
+- tareas programadas y periodicas
+
+## 8. Variables de entorno relevantes
 
 - `DB_ENGINE`
 - `DB_NAME`
@@ -78,60 +160,12 @@ Reglas importantes:
 - `GMAIL_CLIENT_SECRET_JSON`
 - `GMAIL_TOKEN_JSON`
 
-## Configuracion global de empresa
-
-Endpoint principal:
-
-- `GET /companies/settings/`
-- `PUT /companies/settings/`
-
-Comportamiento actual:
-
-- Guarda el `default_price_per_liter` de la empresa.
-- Guarda datos fiscales y bancarios para facturacion de ventas:
-  - razon social
-  - CIF
-  - direccion fiscal
-  - codigo postal, ciudad y provincia
-  - pais
-  - telefono
-  - email
-  - cuenta bancaria
-  - Codigo LER
-  - pie de factura
-- Guarda y actualiza el hub de empresa.
-- Se aplica por defecto al crear recogidas manuales.
-- Se aplica por defecto al registrar una parada desde una ruta.
-- El valor sigue siendo editable luego en cada recogida concreta.
-
-## Compradores y ventas
-
-Endpoints principales:
-
-- `GET/POST /buyers/`
-- `GET/PUT/PATCH/DELETE /buyers/{id}/`
-- `GET/POST /sales/`
-- `GET/PUT/PATCH/DELETE /sales/{id}/`
-- `GET /sales/{id}/invoice/download/`
-- `POST /sales/{id}/invoice/regenerate/`
-- `GET /sales/economic-summary/`
-
-Comportamiento actual:
-
-- Todo el bloque es solo para `owner`.
-- `Buyer` es un maestro interno, sin acceso a plataforma.
-- `Sale` registra comprador, descripcion, cantidad, unidad, precio unitario, IVA y total.
-- El numero de factura es manual.
-- La unica fecha visible y funcional es `invoice_date`.
-- El PDF se genera con WeasyPrint y puede regenerarse cuando se necesite.
-- El resumen economico separa costes de recogidas frente a ingresos por ventas.
-
 Notas:
 
-- `GMAIL_CLIENT_SECRET_JSON` y `GMAIL_TOKEN_JSON` deben ir en una sola linea dentro de `.env`.
-- `GMAIL_FROM` no debe llevar espacios antes ni despues del email.
+- `GMAIL_CLIENT_SECRET_JSON` y `GMAIL_TOKEN_JSON` deben ir en una sola linea dentro de `.env`
+- `GMAIL_FROM` no debe llevar espacios adicionales
 
-## Desarrollo local
+## 9. Puesta en marcha local
 
 Levantar servicios:
 
@@ -139,37 +173,174 @@ Levantar servicios:
 docker-compose up --build
 ```
 
-Backend:
+Servicios principales:
 
-- API base: `http://localhost:8000/`
+- API: `http://localhost:8000/`
 - Swagger: `http://localhost:8000/docs/`
-- Schema: `http://localhost:8000/schema/`
-- Admin: `http://localhost:8000/admin/`
+- OpenAPI schema: `http://localhost:8000/schema/`
+- Admin Django: `http://localhost:8000/admin/`
 
-## Documentacion adicional
+## 10. Fixtures de demo
 
-- `docs/API.md`
-- `docs/ROUTE_FLOW.md`
-- `docs/FUNCIONAL.md`
-- `docs/ARQUITECTURA_TECNICA.md`
-- `apps/user/fixtures/README.md`
+Para poblar un entorno de pruebas se recomienda cargar, al menos, en este orden:
 
-## Estado funcional de rutas
+```bash
+python manage.py loaddata \
+  apps/user/fixtures/01-users.json \
+  apps/user/fixtures/02-companies.json \
+  apps/user/fixtures/03-workers.json \
+  apps/user/fixtures/04-clients.json \
+  apps/user/fixtures/05-routes.json \
+  apps/user/fixtures/06-collections.json \
+  apps/user/fixtures/07-zones.json \
+  apps/user/fixtures/08-truck.json \
+  apps/user/fixtures/09-company-hubs.json \
+  apps/user/fixtures/10-route-zone-days.json \
+  apps/user/fixtures/11-company-settings.json \
+  apps/user/fixtures/12-buyers.json \
+  apps/user/fixtures/13-sales.json
+```
 
-El flujo de rutas ya no es solo de planificacion. Tambien cubre:
+Consulta `apps/user/fixtures/README.md` para el detalle.
 
-- inicio de ruta diaria
-- registro ordenado de paradas
-- cierre de ruta diaria
-- navegacion Google Maps
-- solicitudes previas al cliente
-- autoestimacion si el cliente no responde
-- separacion frontend entre `Detalle de ruta` y `Realizar ruta`
-- acceso rapido desde dashboard a rutas operativas
-- modal responsive compartido para `Generar semana` en listado y detalle
+## 11. Mapa de documentacion
 
-## Pendiente o mejorable
+- `docs/INDICE_DOCUMENTACION.md`: indice general y lectura recomendada
+- `docs/FUNCIONAL.md`: especificacion funcional completa del sistema
+- `docs/REQUISITOS.md`: catalogo formal de requisitos de negocio, funcionales y no funcionales
+- `docs/INTEGRACIONES_Y_APIS_EXTERNAS.md`: APIs externas, configuracion y riesgos de integracion
+- `docs/PLANIFICACION_Y_COSTES.md`: metodologia, estimaciones, planificacion y costes
+- `docs/MEMORIA_FUNCIONAL_TFG.md`: version orientada a memoria/defensa academica
+- `docs/CASOS_DE_USO.md`: secuencias funcionales por actor
+- `docs/MANUAL_USUARIO.md`: manual de uso por rol y recomendaciones
+- `docs/API.md`: endpoints, payloads y reglas de API
+- `docs/ARQUITECTURA_TECNICA.md`: arquitectura, capas e integraciones
+- `docs/FRONTEND_PANTALLAS.md`: inventario y comportamiento del frontend
+- `docs/TESTING.md`: estrategia, ejecucion y cobertura actual de tests
+- `docs/ROUTE_FLOW.md`: detalle del flujo de rutas y su operacion
+- `docs/HISTORIAS_USUARIO.md`: backlog funcional y criterios de aceptacion
 
-- tests automatizados especificos de generacion semanal y ejecucion de rutas
-- endurecer concurrencia distribuida si se despliega con multiples workers web
-- ampliar analitica y reporting avanzado
+## 12. Recomendacion de lectura
+
+Si alguien se incorpora al proyecto, el orden recomendado es:
+
+1. `README.md`
+2. `docs/INDICE_DOCUMENTACION.md`
+3. `docs/FUNCIONAL.md`
+4. `docs/REQUISITOS.md`
+5. `docs/INTEGRACIONES_Y_APIS_EXTERNAS.md`
+6. `docs/PLANIFICACION_Y_COSTES.md`
+7. `docs/MEMORIA_FUNCIONAL_TFG.md`
+8. `docs/CASOS_DE_USO.md`
+9. `docs/MANUAL_USUARIO.md`
+10. `docs/ARQUITECTURA_TECNICA.md`
+11. `docs/API.md`
+12. `docs/FRONTEND_PANTALLAS.md`
+13. `docs/TESTING.md`
+
+## 13. Estado y siguientes mejoras naturales
+
+El sistema esta funcionalmente avanzado y cubre el flujo principal del negocio.
+Las siguientes mejoras naturales, fuera del alcance actual, serian:
+
+- ampliar tests automatizados end-to-end
+- endurecer concurrencia distribuida en generacion semanal para despliegues multi-instancia
+- ampliar reporting avanzado
+- integrar contabilidad o exportaciones financieras externas
+
+## 14. Validacion rapida recomendada
+
+Cuando se retome el proyecto o se quiera revisar su salud minima, conviene ejecutar al menos:
+
+### Backend
+
+```bash
+python manage.py check
+python manage.py check --tag admin
+python manage.py makemigrations --check --dry-run
+```
+
+### Frontend
+
+```bash
+npm run build
+```
+
+### Revision funcional minima
+
+Se recomienda comprobar manualmente:
+
+- login por rol
+- generacion semanal de rutas
+- ejecucion diaria de una jornada
+- medicion y confirmacion de una recogida
+- alta de una venta y descarga de su factura PDF
+- dashboard y estadisticas economicas
+
+## 15. Testing automatizado actual
+
+GreenPath ya dispone de una base real de tests automatizados en backend y frontend.
+Para el detalle operativo completo conviene consultar tambien `docs/TESTING.md`.
+
+### Backend
+
+La suite backend esta organizada por modulo y vive principalmente en:
+
+- `apps/auth/tests/`
+- `apps/base/tests.py` y `apps/base/test_utils.py`
+- `apps/company/tests/`
+- `apps/truck/tests/`
+- `apps/zone/tests/`
+- `apps/user/tests/`
+- `apps/collection/tests/`
+- `apps/route/tests/`
+- `apps/sale/tests/`
+
+Cobertura funcional actual destacada:
+
+- autenticacion y permisos base
+- company settings y hub
+- camiones y reasignacion de conductor
+- zonas y filtros de busqueda
+- clientes y trabajadores
+- recogidas y `billable`
+- generacion semanal y cierre de jornada
+- compradores, ventas y resumen economico
+
+Comando recomendado dentro del contenedor backend:
+
+```bash
+python manage.py test apps.auth.tests apps.base.tests apps.company.tests apps.truck.tests apps.zone.tests apps.user.tests apps.collection.tests apps.route.tests apps.sale.tests
+```
+
+### Frontend
+
+La suite frontend usa `Vitest + Testing Library` y vive en `src/**/__tests__/`.
+
+Cobertura funcional actual destacada:
+
+- `buyers`: estado vacio y filtro base
+- `sales`: formulario y detalle
+- `collections`: detalle economico y traducciones
+- `clients`: historial y badges facturables
+- `routes`: `GenerateWeekDialog`
+- `settings`: guardado independiente por seccion
+- `stats`: resumen economico
+- `trucks`: listado vacio
+- `profile`: perfil owner sin campos impropios
+- `workers`: alta y edicion sin exponer rol/company
+
+Comando recomendado en frontend:
+
+```bash
+npm run test
+```
+
+Si el entorno local da problemas con `node_modules`, la ejecucion en contenedor temporal de Node suele ser la via mas estable.
+
+### Snapshot de cobertura a fecha 2026-03-24
+
+- backend: `25` tests verdes
+- frontend: `17` tests verdes
+
+No sustituyen a una suite E2E completa, pero ya cubren reglas de negocio y UX que antes solo estaban protegidas por revision manual.

@@ -1,174 +1,441 @@
 # Arquitectura Tecnica del Proyecto
 
-## 1. Stack
+Fecha de revision: 2026-03-24
 
-- Backend: Django + Django REST Framework
-- Base de datos: PostgreSQL + PostGIS
-- Cola asincrona: Celery
-- Broker/Backend de tareas: Redis
-- Frontend: React + Vite + Tailwind + componentes UI propios
-- PDF de facturas: WeasyPrint + plantilla HTML/CSS
-- Contenedores: Docker Compose
+## 1. Objetivo de esta documentacion
 
-## 2. Estructura backend (alto nivel)
+Este documento describe la arquitectura tecnica de GreenPath a alto y medio nivel.
+Su objetivo es facilitar:
 
-- `apps/base`
-  - enums, literals, permisos, utilidades comunes
-- `apps/user`
-  - usuarios, clientes y trabajadores
-- `apps/company`
-  - empresa, hub y configuracion global (`CompanySettings`)
-- `apps/sale`
-  - compradores, ventas, facturas PDF y resumen economico
-- `apps/route`
-  - rutas plantilla, dias operativos y paradas
-- `apps/collection`
-  - recogidas y solicitudes de recogida
-- `apps/truck`
-  - flota y asignacion de conductores
-- `apps/zone`
-  - zonas geograficas de recogida
+- onboarding tecnico
+- mantenimiento evolutivo
+- localizacion de responsabilidades por modulo
+- comprension del flujo entre frontend, API, base de datos y tareas asincronas
 
-## 3. Modelado operativo clave
+## 2. Principios de arquitectura
 
-- `Route`: plantilla de ruta
-- `RouteZoneDay`: zonas asociadas a un dia de semana
-- `RouteDay`: ruta diaria generada
-- `RouteDayClient`: parada de cliente en una ruta diaria
-- `CollectionRequest`: solicitud de litros previa a la recogida
-- `Collection`: recogida ejecutada y liquidable
-- `Buyer`: comprador interno para el modulo de ventas
-- `Sale`: venta con datos fiscales, importes calculados y PDF asociado
-- `CompanyHub`: origen logico de optimizacion
-- `CompanySettings`: configuracion global por empresa para precio por litro, hub y datos fiscales de facturacion
+GreenPath se apoya en varios principios tecnicos:
 
-## 4. Geoespacial
+- modularidad por dominio funcional
+- aislamiento de datos por empresa
+- logica de negocio concentrada en backend
+- frontend orientado a experiencia por rol
+- uso de integraciones externas como complemento, no como dependencia absoluta del flujo base
+- configuracion editable para evitar valores criticos hardcodeados
 
-- `Zone` usa `PolygonField`
-- `Client` usa `PointField`
-- La seleccion de clientes para una ruta diaria usa pertenencia espacial (`within`)
-- El frontend define y edita poligonos desde mapa
+## 3. Stack tecnico
 
-## 5. Generacion semanal y optimizacion
+### 3.1 Backend
 
-La accion `POST /routes/{route_id}/generate-week/`:
+- Django
+- Django REST Framework
+- Django Filter
+- PostGIS
+- Celery
+- Redis
+- WeasyPrint
 
-1. Crea o actualiza `RouteDay`
-2. Si `regenerate=true`, valida antes que toda la semana siga siendo editable y sin ejecucion previa
-3. Preserva cualquier `RouteDay` que ya no sea editable
-4. Genera `RouteDayClient` por zonas y frecuencia
-5. Respeta `max_clients_per_day` y `daily_capacity_liters` de forma estricta
-6. Optimiza el orden con Google Directions (`optimize:true`)
-7. Crea o actualiza `CollectionRequest`
-8. Agenda Celery para autoestimacion en `expires_at`
+### 3.2 Frontend
 
-## 6. Ejecucion operativa de ruta
+- React
+- Vite
+- Tailwind CSS
+- componentes UI reutilizables propios
 
-- Inicio de dia: `start_route_day`
-- Registro de parada: `complete_stop`
-- Cierre de dia: `finish_route_day`
-  - con pendientes exige decision (`PARTIAL` o `CANCELED`)
-  - sin pendientes cierra como `COMPLETED`, aunque existan paradas canceladas
+### 3.3 Infraestructura local
 
-## 6.1 Configuracion global de empresa
+- Docker Compose
+- contenedores para backend, frontend, postgres, redis, celery, celery beat y flower
 
-- Endpoint: `GET/PUT /companies/settings/`
-- Modelo: `CompanySettings` (one-to-one con `Company`)
-- Uso actual:
-  - `default_price_per_liter`
-  - hub de empresa
-  - datos fiscales y bancarios para facturas PDF
-- Aplicacion:
-  - creacion manual de `Collection`
-  - registro de parada desde `RouteDay`
-  - emision y regeneracion de facturas de venta
+## 4. Organizacion del backend
 
-## 6.2 Ventas y facturacion
+El backend se estructura por dominios en `apps/`.
 
-- Modelos:
-  - `Buyer`
-  - `Sale`
-- Endpoints:
-  - `/buyers/`
-  - `/sales/`
-  - `/sales/{id}/invoice/download/`
-  - `/sales/{id}/invoice/regenerate/`
-  - `/sales/economic-summary/`
-- Reglas:
-  - acceso solo `owner`
-  - `invoice_number` manual y unico por empresa
-  - `invoice_date` como unica fecha funcional visible
-  - `sale_date` se sincroniza internamente con `invoice_date`
-  - `subtotal`, `tax_amount` y `total` se recalculan en backend
-  - el PDF se genera con WeasyPrint usando `templates/sale/invoice.html`
+### 4.1 `apps/base`
 
-## 7. Solicitudes y trazabilidad
+Responsabilidades:
 
-`CollectionRequest` guarda:
+- enums
+- literals
+- permisos
+- logger
+- utilidades comunes
 
-- datos de plan (`container_type`, `container_number`, `estimated_liters`)
-- resultado (`final_liters`, `final_source`)
-- trazabilidad:
-  - `answered_by`, `answered_at`
-  - `manual_by`, `manual_at`
-- scheduling:
-  - `auto_estimate_task_id`
-  - `auto_estimate_scheduled_at`
+### 4.2 `apps/user`
 
-## 8. Seguridad y permisos
+Responsabilidades:
 
-- Seguridad por autenticacion JWT
-- Permisos por rol (`owner`, `worker`, `client`)
-- Restriccion por empresa en querysets y acciones criticas
-- Permiso dedicado para generacion de ruta semanal
-- Bloque de compradores, ventas, facturas y configuracion fiscal restringido a `owner`
+- modelo `User`
+- perfiles de `Client` y `Worker`
+- serializers y viewsets de usuarios, clientes y trabajadores
+- geocodificacion de clientes
 
-## 9. Frontend y modularidad
+### 4.3 `apps/company`
 
-- Paginas por dominio (`clients`, `workers`, `routes`, `collections`, `buyers`, `sales`, `settings`, `stats`)
-- Layout comun (`MainLayout`, `Sidebar`, `Topbar`)
-- Navegacion por rol desde sidebar
-- Utilidades comunes de estado y errores en `components/Utils`
-- En rutas:
-  - `RouteDetail` prioriza planificacion y consulta semanal
-  - `RouteExecution` concentra la operativa diaria con mapa, acciones y modales responsive
-  - `GenerateWeekDialog` se comparte entre listado y detalle
-- En negocio economico:
-  - `BuyersList`, `BuyerCreate`, `BuyerEdit`, `BuyerDetail`
-  - `SalesList`, `SaleCreate`, `SaleEdit`, `SaleDetail`
-  - `CompanySettingsPage` permite ajustar precio global, datos fiscales y hub
-  - `Stats` consume resumen economico combinado de recogidas y ventas
+Responsabilidades:
 
-## 10. Observabilidad
+- `Company`
+- `CompanyHub`
+- `CompanySettings`
+- configuracion operativa y fiscal global
 
-- Logging unificado con formato:
-  - `logging.info/error/warning([archivo - funcion] mensaje)`
-- Uso de literales centralizados para respuestas y mensajes API
+### 4.4 `apps/zone`
 
-## 11. Despliegue local
+Responsabilidades:
 
-Recomendado:
+- gestion de zonas geograficas de recogida
+- almacenamiento de poligonos
 
-1. Levantar backend y frontend con Docker Compose
-2. Cargar fixtures, incluyendo:
-   - `apps/user/fixtures/11-company-settings.json`
-   - `apps/user/fixtures/12-buyers.json`
-   - `apps/user/fixtures/13-sales.json`
-3. Crear semana operativa desde detalle de ruta
-4. Ejecutar flujo de parada y validacion de solicitudes
-5. Revisar ventas y facturas desde el modulo owner
+### 4.5 `apps/truck`
 
-## 12. Riesgos tecnicos conocidos
+Responsabilidades:
 
-- Concurrencia extrema en regeneraciones semanales: mitigada parcialmente, escalable con lock distribuido
-- Integraciones externas (Google Directions, correo): requieren credenciales y monitorizacion
-- WeasyPrint: requiere dependencias del sistema presentes en la imagen Docker
-- Calidad de datos geograficos: coordenadas invalidas afectan inclusion de clientes
+- gestion de flota
+- asignacion de conductor a camion
 
-## 13. Recomendaciones inmediatas
+### 4.6 `apps/route`
 
-- Anadir tests E2E de flujo:
-  - generar semana -> ejecutar paradas -> cerrar route day
-  - crear venta -> regenerar factura -> descargar PDF
-- Auditar todos los `get_queryset` para cubrir rol client sin errores
-- Anadir dashboard especifico de salud de tareas Celery
+Responsabilidades:
+
+- `Route`
+- `RouteZoneDay`
+- `RouteDay`
+- `RouteDayClient`
+- generacion semanal
+- ejecucion diaria
+- integracion con Google Directions
+
+### 4.7 `apps/collection`
+
+Responsabilidades:
+
+- `CollectionRequest`
+- `Collection`
+- tareas Celery asociadas a expiraciones y notificaciones
+- respuestas del cliente y resolucion manual
+
+### 4.8 `apps/sale`
+
+Responsabilidades:
+
+- `Buyer`
+- `Sale`
+- generacion de facturas PDF
+- resumen economico
+
+## 5. Modelado tecnico esencial
+
+### 5.1 Jerarquia principal de operacion
+
+- `Company`
+- `Worker` / `Client`
+- `Route`
+- `RouteDay`
+- `RouteDayClient`
+- `CollectionRequest`
+- `Collection`
+
+### 5.2 Jerarquia principal de negocio economico
+
+- `CompanySettings`
+- `Buyer`
+- `Sale`
+- `invoice_pdf`
+
+## 6. Flujo tecnico de generacion semanal
+
+La accion `POST /routes/{route_id}/generate-week/` hace, a grandes rasgos, lo siguiente:
+
+1. valida permisos
+2. valida payload de entrada
+3. resuelve la ventana semanal
+4. crea o reutiliza `RouteDay`
+5. obtiene las zonas del dia desde `RouteZoneDay`
+6. selecciona clientes geograficamente dentro de las zonas
+7. filtra por frecuencia y planificacion previa de la misma empresa
+8. aplica limite de capacidad y maximo de clientes
+9. crea o actualiza `RouteDayClient`
+10. optimiza orden con Google si procede
+11. crea o actualiza `CollectionRequest`
+12. agenda tarea de autoestimacion
+
+## 7. Flujo tecnico de ejecucion diaria
+
+La ejecucion diaria esta separada de la planificacion.
+El backend ofrece acciones especificas para:
+
+- iniciar jornada
+- registrar una parada
+- finalizar jornada
+- obtener enlace de navegacion
+
+Esto permite que el frontend tenga una pantalla operativa (`RouteExecution`) distinta del detalle de ruta (`RouteDetail`).
+
+## 8. Flujo tecnico de solicitudes al cliente
+
+### 8.1 Creacion
+
+- se crea desde la generacion semanal
+- se guarda `expires_at`
+- se programa `auto_estimate_collection_request_liters`
+- puede lanzarse correo de notificacion
+
+### 8.2 Resolucion
+
+La solicitud puede resolverse por tres vias:
+
+- cliente responde a tiempo
+- owner/worker intervienen manualmente
+- Celery autoestima cuando expira
+
+### 8.3 Trazabilidad
+
+`CollectionRequest` guarda informacion de autoria y scheduling, por ejemplo:
+
+- `answered_by`, `answered_at`
+- `manual_by`, `manual_at`
+- `auto_estimate_task_id`
+- `auto_estimate_scheduled_at`
+
+## 9. Flujo tecnico de recogidas
+
+Una `Collection` puede nacer por dos caminos:
+
+- alta manual desde el modulo de recogidas
+- creacion/actualizacion al completar una parada de ruta
+
+Elementos clave:
+
+- `price_per_liter` puede venir por defecto de `CompanySettings`
+- `billable` decide si la recogida participa en estadisticas economicas
+- los importes agregados de cliente, trabajador y resumen economico filtran por `CONFIRMED` y `billable=true`
+
+## 10. Flujo tecnico de ventas y facturacion
+
+1. el owner crea una `Sale`
+2. el backend valida `invoice_number` y `invoice_date`
+3. recalcula `subtotal`, `tax_amount` y `total`
+4. sincroniza `sale_date` con `invoice_date`
+5. genera o regenera el PDF con WeasyPrint
+6. expone descarga via endpoint dedicado
+
+## 11. Frontend y organizacion de pantallas
+
+El frontend esta organizado por dominio funcional:
+
+- `clients`
+- `workers`
+- `trucks`
+- `collectionZones`
+- `routes`
+- `collections`
+- `buyers`
+- `sales`
+- `settings`
+- `stats`
+
+Patrones destacables:
+
+- layout comun con sidebar y topbar
+- navegacion condicionada por rol
+- pantallas de detalle separadas de pantallas de operacion cuando el caso lo exige
+- componentes comunes para botones, filtros, contadores y estados vacios
+
+## 12. Seguridad y permisos
+
+La seguridad combina:
+
+- autenticacion JWT
+- restricciones por rol
+- restricciones por empresa
+- permisos dedicados para acciones sensibles
+
+Ejemplos:
+
+- `generate-week` solo owner
+- compradores y ventas solo owner
+- client solo ve sus solicitudes y recogidas
+- worker solo opera rutas de su empresa y, normalmente, las que tiene asignadas
+
+## 13. Integraciones externas
+
+### 13.1 Google Maps / Directions
+
+Uso actual:
+
+- geocodificacion de clientes
+- optimizacion del orden de paradas
+- construccion de enlace de navegacion
+
+Comportamiento esperado:
+
+- si falta API key, el flujo principal no debe romperse
+- el backend deja logs claros cuando la optimizacion no se aplica
+
+### 13.2 Gmail API
+
+Uso actual:
+
+- alta de usuario con envio de acceso
+- notificaciones de `CollectionRequest`
+
+Comportamiento esperado:
+
+- si no esta configurada, se omite la notificacion operativa sin tumbar el resto del flujo
+
+### 13.3 WeasyPrint
+
+Uso actual:
+
+- facturas PDF de ventas
+- render a partir de plantilla HTML/CSS
+
+## 14. Observabilidad
+
+El proyecto utiliza logging normalizado con formato por archivo y funcion.
+Se busca que los logs permitan seguir:
+
+- generacion semanal
+- optimizacion Google
+- tareas Celery
+- envio de emails
+- errores de validacion o integracion
+
+## 15. Despliegue y dependencias del entorno
+
+Para que el sistema funcione completo se necesitan:
+
+- PostGIS para campos geograficos
+- Redis para broker/result backend de Celery
+- dependencias del sistema para WeasyPrint en la imagen Docker
+- claves validas de Google y Gmail si se quieren usar integraciones externas
+
+## 16. Riesgos tecnicos conocidos
+
+- concurrencia extrema en regeneraciones semanales
+- calidad irregular de datos geograficos
+- dependencia de credenciales externas
+- peso del bundle frontend, mejorable con code splitting
+
+## 17. Recomendaciones de evolucion
+
+- tests E2E del flujo de rutas
+- tests del flujo de ventas y facturas
+- monitorizacion especifica de tareas Celery
+- endurecimiento de locks distribuidos si se despliega en multi-instancia
+
+## 18. Ciclo de vida tecnico de una peticion
+
+De forma simplificada, una peticion tipica en GreenPath sigue este recorrido:
+
+1. el frontend autentica con JWT y llama a un endpoint DRF
+2. el `ViewSet` resuelve permisos, queryset y serializer de entrada
+3. el serializer valida estructura, tipos y reglas basicas
+4. la logica de negocio se ejecuta en utilidades o metodos de dominio
+5. el ORM persiste cambios en PostgreSQL/PostGIS
+6. si aplica, se registran tareas asyncronas en Celery
+7. el serializer de salida devuelve datos enriquecidos para frontend
+8. el frontend transforma la respuesta en estado de interfaz, tarjetas, tablas o mapas
+
+Este patron se repite en la mayor parte del producto y explica por que el backend concentra la verdad funcional.
+
+## 19. Mapa de tareas asincronas
+
+Las tareas Celery cumplen un papel clave en dos zonas:
+
+### 19.1 Solicitudes de recogida
+
+- programacion de autoestimacion al expirar una `CollectionRequest`
+- notificacion por email al cliente cuando se crea la solicitud
+- revocacion y reprogramacion cuando cambia la planificacion
+
+### 19.2 Correos y procesos diferidos
+
+- envio de accesos a nuevos usuarios
+- envio de notificaciones operativas
+- desacoplamiento de acciones lentas para no bloquear la API principal
+
+### 19.3 Consideraciones de arquitectura
+
+- Redis actua como broker y backend de resultados
+- Celery Beat permite programacion periodica cuando procede
+- la persistencia de ids de tarea ayuda a evitar duplicidades basicas
+- si el proyecto escala a multi-instancia, conviene endurecer locks distribuidos y deduplicacion
+
+## 20. Persistencia geoespacial y documental
+
+### 20.1 Persistencia geoespacial
+
+GreenPath depende de PostGIS para:
+
+- almacenar poligonos de zonas
+- almacenar puntos de clientes y hub
+- resolver inclusion geografica en zonas de ruta
+
+Esto hace que la calidad de coordenadas no sea un detalle accesorio, sino una condicion estructural del flujo de planificacion.
+
+### 20.2 Persistencia documental
+
+El sistema genera y conserva documentos de negocio en forma de PDF:
+
+- facturas de venta ligadas a `Sale`
+- posible documentacion complementaria asociada a medios o email
+
+La generacion se hace con WeasyPrint a partir de plantillas HTML/CSS, lo que permite versionar la presentacion en el propio repositorio y regenerar documentos de forma controlada.
+
+## 21. Validacion automatizada actual
+
+GreenPath ya cuenta con una capa base de validacion automatizada tanto en backend como en frontend.
+
+### 21.1 Backend
+
+La estrategia backend combina:
+
+- tests modulares por app
+- helpers compartidos de test para contexto de empresa y usuarios
+- validacion de permisos, API y reglas de negocio
+
+Cobertura actual especialmente relevante:
+
+- autenticacion y login
+- permisos base y owner-only
+- settings de empresa y hub
+- CRUD critico de trabajadores, clientes, camiones y zonas
+- `CollectionRequest`, `Collection` y filtro `billable`
+- `generate-week` y cierre de `RouteDay`
+- compradores, ventas y resumen economico
+
+### 21.2 Frontend
+
+La estrategia frontend usa:
+
+- `Vitest`
+- `@testing-library/react`
+- `@testing-library/user-event`
+- mocks de API y contexto para aislar pantallas por modulo
+
+Cobertura actual especialmente relevante:
+
+- `WorkerCreate` y `WorkerEdit`
+- `BuyersList`
+- `SaleForm` y `SaleDetail`
+- `CollectionDetail`
+- `ClientDetail`
+- `GenerateWeekDialog`
+- `CompanySettingsPage`
+- `Stats`
+- `TrucksList`
+- `ProfilePage`
+
+### 21.3 Alcance y limite actual
+
+La cobertura actual protege reglas importantes de negocio y UX, pero todavia no sustituye:
+
+- tests E2E completos de flujos largos
+- tests de componentes mapa-heavy como `collectionZones`
+- pruebas multi-dispositivo reales en rutas operativas
+
+Por eso la estrategia recomendada sigue siendo mixta:
+
+- tests automaticos para regresiones frecuentes
+- validacion manual guiada para flujos GIS, PDF e integraciones externas

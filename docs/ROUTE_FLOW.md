@@ -1,212 +1,416 @@
-# Flujo de generacion de rutas (Route)
+# Route Flow - Flujo de Rutas GreenPath
 
-## Estado actual
+Fecha de revision: 2026-03-22
 
-Si, ahora mismo **si se usa Google para optimizacion**.
+## 1. Objetivo del documento
 
-La optimizacion principal se hace en:
-- `apps/route/utils.py` -> `optimize_route_day_with_google(route_day)`
-- Endpoint Google usado: `https://maps.googleapis.com/maps/api/directions/json`
-- Se envia `waypoints=optimize:true|...`
+Este documento describe el flujo completo del modulo de rutas en GreenPath, desde la configuracion de una ruta plantilla hasta la ejecucion diaria y su impacto en solicitudes, recogidas y navegacion.
 
-Si falla Google, no hay API key o no hay hub, se mantiene el orden actual y el flujo sigue.
+Su objetivo es servir como referencia para:
 
-## Punto de entrada API
+- entender el comportamiento funcional del modulo de rutas
+- localizar sus puntos de entrada en backend y frontend
+- explicar que automatismos existen y bajo que condiciones
+- documentar reglas de negocio y decisiones actuales del sistema
 
-- Endpoint: `POST /routes/{id}/generate-week/`
+## 2. Stack tecnologico implicado en el flujo de rutas
+
+El flujo de rutas no depende de una sola tecnologia, sino de varias piezas coordinadas.
+
+### Backend
+
+- Django
+- Django REST Framework
+- Django Filter
+- PostgreSQL + PostGIS
+- Celery
+- Redis
+
+### Frontend
+
+- React
+- Vite
+- Tailwind CSS
+- Leaflet / React Leaflet para mapa operativo
+
+### Integraciones externas
+
+- Google Maps Directions API para optimizacion del orden de paradas
+- Google Maps / navegador del dispositivo para abrir navegacion externa
+- Gmail API para correos asociados a `CollectionRequest` cuando procede
+
+## 3. Alcance del modulo de rutas
+
+El modulo de rutas cubre estas responsabilidades:
+
+- definir rutas plantilla
+- asignar un trabajador a la ruta
+- definir el rango de dias operativos de la semana
+- asociar zonas por dia (`RouteZoneDay`)
+- generar semanas operativas (`RouteDay` + `RouteDayClient`)
+- optimizar el orden de paradas
+- crear solicitudes previas de estimacion (`CollectionRequest`)
+- permitir la ejecucion diaria de la jornada
+- registrar paradas y crear recogidas reales
+
+## 4. Entidades implicadas
+
+### `Route`
+
+Plantilla de ruta.
+Contiene:
+
+- empresa
+- trabajador asignado
+- fechas de vigencia
+- inicio y fin de semana operativa
+
+### `RouteZoneDay`
+
+Relaciona una ruta con las zonas que debe cubrir en un weekday concreto.
+
+### `RouteDay`
+
+Jornada diaria generada para una fecha concreta.
+Guarda estado, capacidad diaria y marcas reales de inicio/fin.
+
+### `RouteDayClient`
+
+Parada concreta dentro de un `RouteDay`.
+Guarda cliente y orden planificado.
+
+### `CollectionRequest`
+
+Solicitud previa de litros asociada a una parada.
+
+### `Collection`
+
+Recogida real resultante de operar una parada.
+
+## 5. Punto de entrada principal de planificacion
+
+### Endpoint
+
+- `POST /routes/{id}/generate-week/`
+
+### Backend
+
 - View: `apps/route/api/viewsets/route_viewset.py` -> `generate_week`
-- Serializer de entrada: `GenerateWeekSerializer`
+- Serializer: `GenerateWeekSerializer`
+- Servicio principal: `apps/route/utils.py` -> `generate_week_for_route(...)`
 
-## Ejecucion operativa de ruta diaria
+### Permisos
 
-Endpoints nuevos para operar una `RouteDay` ya generada:
+- `generate-week` solo puede ejecutarlo `owner`
+
+## 6. Flujo funcional de generacion semanal
+
+Cuando el owner genera una semana, el flujo esperado es el siguiente:
+
+1. selecciona ruta y fecha de inicio de semana
+2. informa capacidad global o capacidades por dia
+3. opcionalmente indica `regenerate`
+4. backend valida permisos, rango de fechas y consistencia del payload
+5. se crean o reutilizan `RouteDay`
+6. se generan `RouteDayClient` por cada jornada valida
+7. se optimiza el orden de paradas si procede
+8. se crean o actualizan `CollectionRequest`
+9. se programa autoestimacion con Celery
+10. se devuelve resumen de jornadas generadas
+
+## 7. Validaciones de entrada de `generate-week`
+
+El endpoint soporta dos modos de capacidad:
+
+### Modo A
+
+- `daily_capacity_liters` global para todos los dias
+
+### Modo B
+
+- `days[]` con capacidad especifica por fecha
+
+Reglas:
+
+- `week_start_date` es obligatorio
+- debe venir `daily_capacity_liters` o `days[]`
+- no pueden venir ambos a la vez
+- en `days[]` no puede haber fechas duplicadas
+- las fechas de `days[]` deben estar dentro de la semana solicitada
+- la semana debe estar dentro del rango de vigencia de la ruta
+
+## 8. Reglas clave de la generacion semanal
+
+### 8.1 Idempotencia
+
+La operacion es idempotente.
+Si se repite una generacion sobre la misma semana, el backend reutiliza o actualiza jornadas segun el estado real del sistema.
+
+### 8.2 `regenerate`
+
+`regenerate=true` solo se permite si toda la semana sigue siendo editable.
+
+Se bloquea cuando existen dias con:
+
+- ejecucion previa
+- recogidas asociadas
+- trazabilidad operativa no reversible
+
+### 8.3 Preservacion de jornadas ya operadas
+
+Si `regenerate=false`, una jornada ya operada se preserva.
+El sistema no altera sus paradas ni su capacidad.
+
+### 8.4 Capacidad diaria
+
+La capacidad diaria se aplica de forma estricta.
+Si una nueva parada hace superar el total planificado del dia, no se inserta.
+
+### 8.5 Limite maximo de clientes por dia
+
+El backend respeta `max_clients_per_day` antes de seguir anadiendo clientes al `RouteDay`.
+
+## 9. Seleccion de clientes para cada jornada
+
+La generacion de paradas se hace en `generate_route_day_clients(...)`.
+
+Pasos principales:
+
+1. localizar las zonas del weekday actual (`RouteZoneDay`)
+2. buscar clientes con geolocalizacion dentro de esas zonas
+3. restringir por empresa de la ruta
+4. calcular historico previo del cliente dentro de la misma empresa
+5. aplicar frecuencia de recogida
+6. evitar duplicidades de un mismo cliente en la misma semana
+7. insertar paradas respetando capacidad y limite diario
+
+## 10. Reglas de frecuencia de cliente
+
+Se usan las frecuencias configuradas en cliente:
+
+- `WEEKLY` -> 7 dias
+- `2_WEEKS` -> 14 dias
+- `3_WEEKS` -> 21 dias
+- `4_WEEKS` -> 28 dias
+
+La decision de si un cliente esta "due" se apoya en:
+
+- ultima recogida real
+- ultima planificacion previa
+- ambas calculadas dentro de la misma empresa de la ruta
+
+Esto evita mezclar historico si un cliente pertenece a mas de una empresa.
+
+## 11. Optimizacion con Google Directions
+
+### Funcion principal
+
+- `apps/route/utils.py` -> `optimize_route_day_with_google(route_day)`
+
+### Comportamiento
+
+1. toma clientes del dia en orden actual
+2. usa `CompanyHub.location` como origen
+3. construye `waypoints=optimize:true|...`
+4. consulta Google Directions
+5. reescribe `RouteDayClient.order` si la respuesta es valida
+
+### Cuando no se aplica
+
+La optimizacion no se aplica si:
+
+- hay menos de 2 paradas
+- la empresa no tiene hub
+- no existe `GOOGLE_MAPS_API_KEY`
+- Google responde error o estructura invalida
+
+### Fallback
+
+En todos esos casos se conserva el orden existente y el flujo no se rompe.
+
+## 12. CollectionRequest y automatizacion asociada
+
+Cada parada generada puede crear o actualizar una `CollectionRequest`.
+
+### Regla temporal
+
+- `expires_at = inicio_route_day - 36 horas`
+
+### Programacion
+
+- si `expires_at` ya vencio, la tarea se ejecuta inmediatamente
+- si no ha vencido, se agenda con `eta=expires_at`
+
+### Dedupe
+
+Si una solicitud ya tenia una task programada y se recalcula, la task anterior se revoca y se reprograma.
+
+### Notificacion
+
+Cuando la solicitud es nueva, se puede lanzar notificacion por email al cliente.
+
+## 13. Flujo de respuesta del cliente
+
+El cliente puede interactuar con su solicitud mediante:
+
+- `GET /collections/requests/me`
+- `GET /collections/requests/{id}`
+- `POST /collections/requests/{id}/answer`
+
+El sistema admite estos estados:
+
+- `PENDING`
+- `AUTO_ESTIMATED`
+- `ANSWERED`
+- `MANUAL`
+
+Reglas:
+
+- el cliente solo responde mientras la solicitud no este expirada
+- owner o worker pueden fijar litros manualmente
+- si no hay respuesta a tiempo, Celery puede autoestimar
+
+## 14. Ejecucion operativa de una jornada
+
+Una vez generada la semana, la operacion diaria se concentra en estos endpoints:
 
 - `POST /routes/{id}/route-days/{route_day_id}/start/`
 - `POST /routes/{id}/route-days/{route_day_id}/finish/`
 - `POST /routes/{id}/route-days/{route_day_id}/stops/{route_day_client_id}/complete/`
 - `GET /routes/{id}/route-days/{route_day_id}/google-navigation/`
 
-Reglas:
+## 15. Reglas de `start`, `complete` y `finish`
 
-- `start`: solo desde `PLANNED` o `PARTIAL` (pasa a `IN_PROGRESS`, set `started_at`).
-- `complete`: solo con ruta diaria `IN_PROGRESS`.
-- `complete`: bloquea salto de orden por defecto; se puede forzar con `force=true`.
-- `complete`: crea `Collection` ligada a `route_day_client` y actualiza `CollectionRequest` a `MANUAL`.
-- `complete`: usa el precio global de empresa por defecto si existe.
-- `finish`: solo desde `IN_PROGRESS` y calcula estado final (`COMPLETED`, `PARTIAL` o `CANCELED`).
-- `finish`: si ya no quedan pendientes, una parada cancelada no fuerza `PARTIAL`.
-- `google-navigation`: devuelve URL de Google Maps con origen hub + waypoints ordenados.
+### `start`
 
-### UX frontend
+- solo desde estados permitidos (`PLANNED` o `PARTIAL`)
+- cambia a `IN_PROGRESS`
+- fija `started_at`
 
-`Detalle de ruta`:
-- Consulta de planificacion semanal.
-- Resumen operativo superior.
-- Filtro por estado de `RouteDay`.
-- Tabla/listado de paradas por dia en modo lectura.
-- Acciones principales reducidas a consulta, edicion, generacion y acceso a `Realizar ruta`.
-- Modal de `Generar semana` compartido entre listado y detalle, con layout responsive para movil/tablet.
+### `complete`
 
-`Realizar ruta`:
-- Pantalla separada para operativa diaria (`/routes/:id/execute`).
-- Mapa operativo reactivo por dia con hub, secuencia de paradas y acceso directo a Google Maps.
-- Acciones de inicio, cierre y registro de paradas integradas en el panel lateral del mapa.
-- Seleccion de parada activa sin listado largo duplicado debajo.
-- Layout responsive: el panel operativo se apila bajo el mapa hasta resoluciones muy anchas.
-- Modales operativos (`finalizar`, `registrar parada`) con scroll interno y botones full-width en movil.
+- solo con `RouteDay` en `IN_PROGRESS`
+- por defecto no permite saltarse el orden
+- admite `force=true` cuando el flujo lo requiere
+- crea o actualiza `Collection`
+- actualiza la solicitud asociada cuando procede
+- usa precio global de empresa por defecto si existe
 
-## Configuracion economica asociada
+### `finish`
 
-- Endpoint: `GET/PUT /companies/settings/`
-- Valor actual: `default_price_per_liter`
-- El mismo `CompanySettings` tambien guarda los datos fiscales usados por el modulo de ventas y sus facturas PDF
-- Uso:
-  - recogidas manuales
-  - recogidas creadas al registrar una parada de ruta
-- Override:
-  - el precio sigue siendo editable por recogida en create/edit
+- solo desde `IN_PROGRESS`
+- si no quedan pendientes: `COMPLETED`
+- si quedan pendientes: exige decision entre `PARTIAL` o `CANCELED`
+- una parada cancelada cuenta como procesada y no impide cerrar como `COMPLETED` si no quedan pendientes reales
 
-`Dashboard`:
-- Bloque `Rutas Operativas` con acceso directo a `Realizar ruta` y `Ver detalle`.
-- Prioriza visualmente las rutas que encajan con el dia actual.
+## 16. Relacion con `Collection`
 
-Notas:
-- Accion masiva para expandir/ocultar todos los dias visibles.
-- Barra de progreso por dia (registradas vs pendientes).
-- En movil, la tabla de paradas se reemplaza por tarjetas por parada para evitar scroll horizontal.
+Al operar una parada, el sistema crea o actualiza la recogida real.
 
-Validaciones de entrada:
-- `week_start_date` obligatorio
-- `daily_capacity_liters` global **o** `days[]` por fecha
-- no se permiten ambos a la vez
-- no se permiten fechas duplicadas en `days`
-- fechas de `days` deben estar en la semana (`start + 6`)
+Puntos importantes:
 
-Permisos:
-- `IsOwnerUser` para `generate_week` y `generate_range_routes`
-- `IsRouteCompanyGenerator` para consulta operativa y ejecucion de `RouteDay`
+- la recogida puede nacer pendiente de medicion
+- la medicion final se consolida despues en nave
+- si no se informa `price_per_liter`, se toma por defecto desde `CompanySettings`
+- la recogida puede marcarse como `billable` o no
 
-## Flujo interno principal
+### Impacto economico
 
-Funcion orquestadora:
-- `apps/route/utils.py` -> `generate_week_for_route(route, week_start_date, regenerate=False, daily_capacity_liters=None, days=None)`
+Solo las recogidas:
 
-Pasos:
-1. Crea lock temporal por ruta+semana (`cache.add`) para evitar doble generacion concurrente.
-2. Bloquea la ruta en DB con `select_for_update`.
-3. Valida rango de fechas contra `route.start_date` y `route.end_date`.
-4. Si `regenerate=true`, valida antes que no exista ningun `RouteDay` de la semana con ejecucion previa o recogidas asociadas.
-5. Recorre 7 dias de la semana solicitada.
-6. Omite dias fuera del rango de la ruta y fuera de `week_start/week_end` de la propia ruta.
-7. Crea o recupera `RouteDay` (`get_or_create`).
-8. Si un `RouteDay` existente ya no es editable, lo preserva y no modifica paradas ni capacidad.
-9. Asigna `daily_capacity_liters` (global o por dia) solo en dias editables.
-10. Llama a `generate_route_day_clients(...)` para generar y ordenar paradas.
-11. Devuelve lista de `RouteDay` generados/preservados.
-12. Libera lock.
+- `CONFIRMED`
+- `billable=true`
 
-## Generacion de paradas (RouteDayClient)
+computan en los costes y en el resumen economico global.
 
-Funcion:
-- `apps/route/utils.py` -> `generate_route_day_clients(route_day, regenerate=False, reserved_client_ids=None)`
+## 17. Frontend asociado al flujo de rutas
 
-Pasos:
-1. Busca configuracion de zonas de ese weekday (`RouteZoneDay`).
-2. Si el `RouteDay` ya no es editable, no modifica nada; y si ademas `regenerate=True`, lanza error.
-3. Si `regenerate=True`:
-- revoca tareas de `CollectionRequest` existentes
-- borra paradas anteriores del dia
-4. Si hay `reserved_client_ids` (clientes ya planificados en la semana), elimina duplicados existentes de ese dia.
-5. Construye filtro espacial OR con `location__within` para todas las zonas del dia.
-6. Busca clientes de la empresa con geolocalizacion.
-7. Anota `last_collection_date` por cliente para evitar N+1.
-7.1. Esa ultima recogida y la ultima planificacion previa se calculan dentro de la misma empresa de la ruta, para no mezclar historico si un cliente pertenece a varias empresas.
-8. Filtra clientes "due" por frecuencia:
-- WEEKLY -> 7
-- 2_WEEKS -> 14
-- 3_WEEKS -> 21
-- 4_WEEKS -> 28
-9. Inserta `RouteDayClient` secuencialmente (`order` incremental) respetando:
-- `max_clients_per_day`
-- `daily_capacity_liters` de forma estricta desde la primera parada
-10. Optimiza orden con Google (`optimize_route_day_with_google`).
-11. Crea/actualiza `CollectionRequest` por cada parada.
+### `RouteDetail`
 
-## Optimizacion Google
+Ruta:
 
-Funcion:
-- `apps/route/utils.py` -> `optimize_route_day_with_google(route_day)`
+- `/routes/:id`
 
-Comportamiento:
-1. Toma clientes del dia ordenados por `order`.
-2. Busca origen en `CompanyHub.location` de la empresa.
-3. Elige destino provisional como cliente mas lejano al hub.
-4. Envia `origin`, `destination` y `waypoints optimize:true` a Google Directions.
-5. Reescribe `RouteDayClient.order` con el orden optimizado.
+Responsabilidad:
 
-Fallback seguro:
-- si no hay hub
-- si no hay `GOOGLE_MAPS_API_KEY`
-- si Google responde error/sin rutas
+- planificacion semanal
+- consulta de estados por jornada
+- acceso a generacion semanal
+- acceso a la operativa diaria
 
-En todos esos casos: se conserva orden existente y el flujo continua.
+### `RouteExecution`
 
-## CollectionRequest y Celery
+Ruta:
 
-Funcion clave:
-- `apps/route/utils.py` -> `_schedule_collection_request(route_day_client, route_day_start)`
+- `/routes/:id/execute`
 
-Reglas:
-- `expires_at = route_day_start - 36 horas`
-- crea o actualiza `CollectionRequest` (1:1 con parada)
-- dedupe/reprogramacion por `auto_estimate_task_id`
-- revoca task anterior si cambia programacion
+Responsabilidad:
 
-Programacion task:
-- `_enqueue_auto_estimate_task(...)`
-- si `expires_at <= now`: lanza inmediata
-- si no: `apply_async(eta=expires_at)`
+- ejecutar la jornada diaria
+- mostrar mapa operativo
+- iniciar/finalizar jornada
+- seleccionar parada activa
+- registrar recogida
 
-Notificacion:
-- al crear solicitud nueva se encola `notify_collection_request_created`.
+### Componentes clave
 
-## Uso posterior por cliente/operacion
+- `GenerateWeekDialog`
+- `RouteDayMap`
+- `RouteActionButton`
 
-Endpoints en `CollectionViewSet`:
-- `GET /collections/requests/me`
-- `GET /collections/requests/{id}`
-- `POST /collections/requests/{id}/answer`
-- `POST /collections/requests/{id}/manual`
+## 18. Responsive y UX del modulo de rutas
 
-Estados esperados:
-- `PENDING`
-- `AUTO_ESTIMATED`
-- `ANSWERED`
-- `MANUAL`
+El modulo de rutas es uno de los mas sensibles en movilidad, por eso se han tomado varias decisiones especificas:
 
-## Recogidas y precio por defecto
+- separacion entre detalle y ejecucion
+- mapa y panel operativo adaptados por breakpoint
+- modales de registro y cierre con scroll interno
+- acciones primarias a ancho completo en movil
+- contadores plegables en listados
+- chips o selectores compactos para jornadas y estados
 
-- Si una recogida se crea sin `price_per_liter`, backend intenta resolver el valor desde `CompanySettings`.
-- En detalle de recogida se expone `deduction_reason_label` para usar el enum traducido en frontend.
+## 19. Filtros principales del modulo
 
-Trazabilidad guardada:
-- `answered_by`, `answered_at`
-- `manual_by`, `manual_at`
-- `auto_estimate_task_id`, `auto_estimate_scheduled_at`
+### Filtro de rutas
 
-## Filtros en rutas
+`RouteFilter` soporta:
 
-`RouteFilter` actual:
-- `date` -> `route_days__date` (exact)
-- `status` -> `route_days__status` (icontains)
-- `search` -> `name`, `company__name`, `worker__name`, `worker__surname`
+- `date`
+- `status`
+- `search`
 
-## Resumen rapido
+Busqueda sobre:
 
-- La generacion semanal esta separada y limpia (viewset -> serializer -> utils).
-- `generate-week` solo lo puede ejecutar owner.
-- Hay dedupe semanal de clientes para no duplicar paradas.
-- Los dias ya operados no se tocan en regeneraciones normales y bloquean `regenerate=true`.
-- Se usa Google Directions para optimizar orden.
-- Si Google no esta disponible, el proceso no se rompe.
-- `CollectionRequest` y tareas Celery quedan enlazadas automaticamente tras generar.
+- `name`
+- `company__name`
+- `worker__name`
+- `worker__surname`
+
+### Vista operativa
+
+La vista `operational-overview` admite `week_start_date=YYYY-MM-DD` para cargar una semana concreta.
+
+## 20. Riesgos y puntos de atencion
+
+- clientes sin geolocalizacion no entran en planificacion automatica
+- zonas mal definidas reducen calidad de la generacion
+- sin hub o sin Google API key no hay optimizacion real del orden
+- regenerar semanas ya operadas esta bloqueado para proteger trazabilidad
+- la capacidad diaria debe entenderse como restriccion operativa, no como simple campo informativo
+
+## 21. Resumen ejecutivo del flujo
+
+- el owner configura ruta, zonas y capacidades
+- el sistema genera jornadas y paradas
+- Google puede optimizar el orden
+- se crean solicitudes al cliente con expiracion automatica
+- owner o worker ejecutan la jornada diaria
+- cada parada puede terminar en recogida real
+- la recogida medida y facturable impacta en estadisticas economicas
+
+## 22. Referencias relacionadas
+
+- `docs/FUNCIONAL.md`
+- `docs/API.md`
+- `docs/ARQUITECTURA_TECNICA.md`
+- `docs/FRONTEND_PANTALLAS.md`

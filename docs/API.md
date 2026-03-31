@@ -1,6 +1,32 @@
 # API GreenPath (Backend Django)
 
-## 1. Informacion general
+Fecha de revision: 2026-03-22
+
+## 1. Objetivo de este documento
+
+Este documento describe los contratos principales de la API backend de GreenPath.
+Su funcion es servir como referencia para:
+
+- desarrollo frontend
+- pruebas manuales o automatizadas
+- integraciones futuras
+- revisiones funcionales y tecnicas
+
+El documento se centra en:
+
+- endpoints disponibles
+- permisos de acceso
+- payloads esperados
+- convenciones de respuesta
+- reglas de negocio visibles desde la API
+
+Para contexto de producto y negocio conviene complementar esta lectura con:
+
+- `docs/FUNCIONAL.md`
+- `docs/ARQUITECTURA_TECNICA.md`
+- `docs/ROUTE_FLOW.md`
+
+## 2. Informacion general
 
 - Base path API: `/`
 - Documentacion OpenAPI: `GET /schema/`
@@ -10,7 +36,46 @@
 - Timezone en backend: `UTC` (`USE_TZ=True`)
 - Paginacion por defecto: `page_size=10` (parametro `page_size` soportado)
 
-## 2. Autenticacion
+## 3. Modelo de acceso
+
+Roles principales:
+
+- `owner`: gestion completa
+- `worker`: operacion de empresa
+- `client`: portal cliente
+- `staff/superuser`: administracion ampliada
+
+Notas:
+
+- La mayoria de consultas y acciones se restringen por rol y por empresa.
+- Algunos permisos se refuerzan en acciones custom, incluso si el `get_queryset` ya reduce el alcance.
+- El bloque economico (`buyers`, `sales`, configuracion fiscal) esta reservado a `owner`.
+
+## 4. Convenciones de respuesta
+
+Codigos tipicos:
+
+- `200`: lectura o accion correcta
+- `201`: recurso creado
+- `204`: sin contenido
+- `400`: error de validacion o regla de negocio
+- `401`: autenticacion ausente o invalida
+- `403`: acceso denegado por rol o empresa
+- `404`: recurso no encontrado
+- `409`: conflicto, por ejemplo lock funcional de generacion semanal
+
+Paginacion:
+
+- Formato A: `count`, `total_pages`, `next`, `previous`, `results`
+- Formato B: `count`, `next`, `previous`, `results`
+
+Convenciones practicas:
+
+- Algunos serializers exponen campos enriquecidos para frontend como `*_label`, `*_name` o datos agregados.
+- Cuando existe logica economica, backend recalcula los importes relevantes y no se fia del frontend como fuente final de verdad.
+- Las respuestas de acciones custom suelen incluir `message` y, cuando aplica, el recurso o resumen afectado.
+
+## 5. Autenticacion
 
 ### `POST /login/`
 Login con usuario y password.
@@ -74,33 +139,9 @@ Request:
 }
 ```
 
-## 3. Roles y permisos (resumen)
+## 6. Endpoints por modulo
 
-- `owner`: rol principal de gestion.
-- `worker`: operacion de empresa.
-- `client`: portal cliente.
-- `staff/superuser`: acceso administrativo ampliado.
-
-Notas:
-- Hay restricciones por rol y tambien por empresa en varios `get_queryset`.
-- Algunas validaciones de permisos se refuerzan dentro de acciones custom (ejemplo: collection requests).
-
-## 4. Convenciones de respuesta
-
-- Exito tipico: `200/201` con objeto o `results`.
-- Error validacion: `400`.
-- No autorizado/autenticacion: `401`.
-- Prohibido por rol/empresa: `403`.
-- No encontrado: `404`.
-- Conflicto (lock de generacion semanal): `409`.
-
-Paginacion:
-- Formato A (paginador global): `count`, `total_pages`, `next`, `previous`, `results`.
-- Formato B (algunos list custom): `count`, `next`, `previous`, `results` (sin `total_pages`).
-
-## 5. Endpoints por modulo
-
-### 5.1 Users (`/users/`)
+### 6.1 Users (`/users/`)
 
 CRUD base (`GET/POST /users/`, `GET/PUT/PATCH/DELETE /users/{id}/`).
 
@@ -112,7 +153,7 @@ Actions:
 Filtros soportados:
 - `username`, `email`, `is_active`, `is_superuser`, `is_staff`
 
-### 5.2 Workers (`/workers/`)
+### 6.2 Workers (`/workers/`)
 
 CRUD base (`GET/POST /workers/`, `GET/PUT/PATCH/DELETE /workers/{id}/`).
 
@@ -122,7 +163,7 @@ Actions:
 Filtros soportados:
 - `name`, `surname`, `phone`, `dni`, `role`, `disabled`, `search`
 
-### 5.3 Clients (`/clients/`)
+### 6.3 Clients (`/clients/`)
 
 CRUD base (`GET/POST /clients/`, `GET/PUT/PATCH/DELETE /clients/{id}/`).
 
@@ -132,7 +173,7 @@ Actions:
 Filtros soportados:
 - `name`, `phone`, `cif`, `address`, `frequency`, `search`
 
-### 5.4 Companies (`/companies/`)
+### 6.4 Companies (`/companies/`)
 
 CRUD base (`GET/POST /companies/`, `GET/PUT/PATCH/DELETE /companies/{id}/`).
 
@@ -185,7 +226,7 @@ Uso actual:
 - datos fiscales y bancarios usados para las facturas de venta PDF
 - configuracion del hub para operativa de rutas
 
-### 5.5 Zones (`/zones/`)
+### 6.5 Zones (`/zones/`)
 
 CRUD base (`GET/POST /zones/`, `GET/PUT/PATCH/DELETE /zones/{id}/`).
 
@@ -197,7 +238,7 @@ Payload zona (create/update):
 - `name`
 - `polygon` en WKT (`POLYGON((lng lat,...))`) o array `[[lng,lat], ...]`
 
-### 5.6 Trucks (`/trucks/`)
+### 6.6 Trucks (`/trucks/`)
 
 CRUD base (`GET/POST /trucks/`, `GET/PUT/PATCH/DELETE /trucks/{id}/`).
 
@@ -217,7 +258,7 @@ Filtros soportados:
 - `year`, `year_gte`, `year_lte`
 - `company`, `driver`, `search`
 
-### 5.7 Routes (`/routes/`)
+### 6.7 Routes (`/routes/`)
 
 CRUD base (`GET/POST /routes/`, `GET/PUT/PATCH/DELETE /routes/{id}/`).
 
@@ -308,7 +349,7 @@ Request:
 }
 ```
 
-### 5.8 Collections (`/collections/`)
+### 6.8 Collections (`/collections/`)
 
 CRUD base (`GET/POST /collections/`, `GET/PUT/PATCH/DELETE /collections/{id}/`).
 
@@ -317,11 +358,15 @@ Filtros soportados:
 - `worker` (nombre worker)
 - `status`
 - `worker_id`
+- `billable`
 
 Notas de negocio:
 - si no se envia `price_per_liter` al crear una recogida manual, se usa `CompanySettings.default_price_per_liter`
 - al registrar una parada desde una ruta, la recogida nace con el precio global de la empresa
 - `deduction_reason_label` expone el valor traducido del enum para detalle frontend
+- `billable` es opcional y por defecto vale `true`
+- `billable_label` expone `Facturable` o `No facturable`
+- si `billable=false`, la recogida sigue siendo operativa y visible, pero queda fuera de estadisticas economicas, `total_paid` de cliente y `total_incomes` de trabajador
 
 Actions nuevas de planificacion:
 - `GET /collections/requests/me/`
@@ -379,7 +424,7 @@ Efectos:
 - `status=MANUAL`
 - guarda trazabilidad `manual_by`, `manual_at`
 
-### 5.9 Buyers (`/buyers/`)
+### 6.9 Buyers (`/buyers/`)
 
 CRUD base (`GET/POST /buyers/`, `GET/PUT/PATCH/DELETE /buyers/{id}/`).
 
@@ -411,7 +456,7 @@ Notas:
 - Los compradores no acceden a la plataforma.
 - `full_fiscal_address` se expone en lectura para facilitar detalle y facturacion.
 
-### 5.10 Sales (`/sales/`)
+### 6.10 Sales (`/sales/`)
 
 CRUD base (`GET/POST /sales/`, `GET/PUT/PATCH/DELETE /sales/{id}/`).
 
@@ -493,12 +538,49 @@ Response 200:
 ```
 
 Interpretacion:
-- `total_cost`: coste confirmado procedente de recogidas (`Collection`)
+- `total_cost`: coste confirmado procedente de recogidas (`Collection`) con `billable=true`
 - `total_income`: ingresos de ventas (`Sale`)
 - `net_profit`: ingresos menos costes
 - `monthly`: serie mensual para panel economico
+- `total_bought_volume`: solo volumen de recogidas confirmadas y facturables
 
-## 6. Flujo de planificacion semanal (operativo)
+## 7. Convenciones transversales de la API
+
+### 7.1 Fechas y horas
+
+- los `datetime` se almacenan en backend con `USE_TZ=True`
+- el frontend debe tratar las fechas operativas (`date`) como fechas de negocio, no como `datetime`
+- en rutas y ventas hay que diferenciar entre fecha funcional y timestamps tecnicos
+- `expires_at`, `started_at`, `finished_at` y campos similares deben mostrarse en zona horaria de interfaz
+
+### 7.2 Importes y precision
+
+- los importes monetarios se calculan en backend y viajan como `string` decimal
+- el frontend no debe recalcular subtotales o totales como fuente de verdad final
+- en recogidas y ventas los campos economicos se deben considerar de precision fija
+
+### 7.3 Coordenadas y GIS
+
+- las zonas pueden enviarse en WKT o como lista de coordenadas `lng/lat`
+- la ubicacion de clientes y hubs se trabaja con SRID 4326
+- las reglas geograficas de inclusion en ruta dependen de que `location` exista realmente
+
+### 7.4 Paginacion y filtros
+
+- todos los listados deben asumir respuesta paginada salvo indicacion contraria
+- cuando un modulo soporte `search`, el frontend debe usarlo como entrada principal de busqueda libre
+- filtros booleanos como `billable`, `disabled` o similares deben enviarse como `true/false`
+
+## 8. Errores funcionales frecuentes expuestos por la API
+
+- `400` en `generate-week` por fecha invalida, payload inconsistente o regla de negocio incumplida
+- `409` en `generate-week` cuando existe lock funcional o conflicto de regeneracion
+- `400` en `collections` si la medicion o las deducciones son inconsistentes
+- `400` en `sales` si el numero de factura ya existe para la misma empresa
+- `403` cuando un rol intenta acceder a bloques owner-only como `buyers`, `sales` o configuracion
+- `404` cuando el recurso existe pero no pertenece al ambito visible del usuario autenticado
+
+## 9. Flujo de planificacion semanal (operativo)
 
 1. `generate-week` crea/actualiza `RouteDay` para los dias habilitados de la ruta.
 2. Si `regenerate=false`, preserva cualquier `RouteDay` que ya no sea editable.
@@ -517,7 +599,7 @@ Interpretacion:
 - si `expires_at <= now`, se encola inmediata
 - se encola email `notify_collection_request_created`
 
-## 7. Modelo CollectionRequest (campos relevantes)
+## 10. Modelo CollectionRequest (campos relevantes)
 
 - `route_day_client` (one-to-one)
 - `expires_at`
@@ -530,7 +612,7 @@ Interpretacion:
 - Scheduling task:
 - `auto_estimate_task_id`, `auto_estimate_scheduled_at`
 
-## 8. Valores enumerados importantes
+## 11. Valores enumerados importantes
 
 - `PickupFrequency`: `WEEKLY`, `2_WEEKS`, `3_WEEKS`, `4_WEEKS`
 - `RouteDayStatus`: `PLANNED`, `IN_PROGRESS`, `COMPLETED`, `PARTIAL`, `CANCELED`
@@ -538,7 +620,7 @@ Interpretacion:
 - `PlannedSource`: `CLIENT`, `AUTO`, `MANUAL`
 - `ContainerType`: `BIDONES`, `IBC`
 
-## 9. Ejemplos rapidos (curl)
+## 12. Ejemplos rapidos (curl)
 
 ### Login
 ```bash
@@ -571,7 +653,7 @@ curl -X POST http://localhost:8000/collections/requests/55/manual/ \
   -d '{"final_liters":"240.00"}'
 ```
 
-## 10. Recomendacion de uso
+## 13. Recomendacion de uso
 
 - Para contrato exacto de schemas, usa siempre `GET /schema/` o `GET /docs/`.
 - Esta guia sirve como referencia funcional y de negocio de la API real del proyecto.

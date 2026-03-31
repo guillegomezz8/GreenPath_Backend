@@ -2,7 +2,7 @@ import logging
 
 from django.utils import timezone
 from django.db.models import Q
-from django_filters.rest_framework import FilterSet, CharFilter, DjangoFilterBackend
+from django_filters.rest_framework import FilterSet, CharFilter, BooleanFilter, DjangoFilterBackend
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -48,11 +48,12 @@ class CollectionFilter(FilterSet):
     worker = CharFilter(field_name="worker__name", lookup_expr="icontains")
     status = CharFilter(field_name="status", lookup_expr="icontains")
     worker_id = CharFilter(field_name="worker__id", lookup_expr="exact")
+    billable = BooleanFilter(field_name="billable")
     search = CharFilter(method="filter_search")
 
     class Meta:
         model = Collection
-        fields = ["client", "worker", "status", "worker_id", "search"]
+        fields = ["client", "worker", "status", "worker_id", "billable", "search"]
 
     def filter_search(self, queryset, name, value):
         return queryset.filter(

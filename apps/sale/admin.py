@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib import admin
 from django.core.exceptions import ValidationError
+from django.utils.html import format_html
 
 from apps.sale.models import Buyer, Sale
 
@@ -42,20 +43,53 @@ class SaleAdminForm(forms.ModelForm):
 
 @admin.register(Buyer)
 class BuyerAdmin(admin.ModelAdmin):
-    list_display = ("id", "fiscal_name", "tax_id", "company", "city", "phone", "email")
-    search_fields = ("fiscal_name", "tax_id", "city", "province", "email", "phone")
+    list_display = (
+        "id",
+        "fiscal_name",
+        "tax_id",
+        "company",
+        "city",
+        "province",
+        "contact_person",
+        "email",
+        "phone",
+    )
+    search_fields = ("fiscal_name", "tax_id", "city", "province", "email", "phone", "contact_person")
+    list_filter = ("company", "city", "province", "country")
     autocomplete_fields = ("company",)
     ordering = ("fiscal_name",)
+    readonly_fields = ("full_fiscal_address_display",)
+    fieldsets = (
+        ("Empresa y fiscal", {
+            "fields": ("company", "fiscal_name", "tax_id"),
+        }),
+        ("Direccion", {
+            "fields": ("fiscal_address", "postal_code", "city", "province", "country", "full_fiscal_address_display"),
+        }),
+        ("Contacto", {
+            "fields": ("contact_person", "email", "phone"),
+        }),
+        ("Notas", {
+            "fields": ("notes",),
+        }),
+    )
+
+    @admin.display(description="Direccion fiscal completa")
+    def full_fiscal_address_display(self, obj):
+        return obj.full_fiscal_address
 
 
 @admin.register(Sale)
 class SaleAdmin(admin.ModelAdmin):
     form = SaleAdminForm
     list_display = ("id", "invoice_number", "invoice_date", "buyer", "company", "total", "currency")
-    search_fields = ("invoice_number", "buyer__fiscal_name", "buyer__tax_id", "product_description")
+    search_fields = ("invoice_number", "buyer__fiscal_name", "buyer__tax_id", "product_description", "notes")
+    list_filter = ("company", "invoice_date", "currency", "tax_rate")
     autocomplete_fields = ("company", "buyer")
+    list_select_related = ("company", "buyer")
     ordering = ("-invoice_date", "-id")
-    readonly_fields = ("subtotal", "tax_amount", "total", "invoice_generated_at")
+    date_hierarchy = "invoice_date"
+    readonly_fields = ("subtotal", "tax_amount", "total", "invoice_generated_at", "invoice_pdf_link")
     fieldsets = (
         ("Factura", {
             "fields": ("company", "buyer", "manual_invoice_number", "invoice_date", "currency"),
@@ -67,9 +101,15 @@ class SaleAdmin(admin.ModelAdmin):
             "fields": ("subtotal", "tax_amount", "total"),
         }),
         ("PDF y trazabilidad", {
-            "fields": ("invoice_pdf", "invoice_generated_at", "disabled"),
+            "fields": ("invoice_pdf", "invoice_pdf_link", "invoice_generated_at", "disabled"),
         }),
         ("Notas", {
             "fields": ("notes",),
         }),
     )
+
+    @admin.display(description="Factura PDF")
+    def invoice_pdf_link(self, obj):
+        if not obj.invoice_pdf:
+            return "Sin PDF"
+        return format_html('<a href="{}" target="_blank">Abrir factura</a>', obj.invoice_pdf.url)

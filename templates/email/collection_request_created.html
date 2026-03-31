@@ -1,0 +1,39 @@
+{% extends "email/base.html" %}
+
+{% block title %}Solicitud de estimación de recogida{% endblock %}
+{% block preheader %}Tienes una nueva solicitud de estimación pendiente en GreenPath.{% endblock %}
+{% block eyebrow %}<p class="eyebrow">Solicitud de recogida</p>{% endblock %}
+{% block hero_title %}Nueva estimación pendiente{% endblock %}
+{% block hero_subtitle %}Necesitamos que revises los datos de tu próxima recogida para cerrar la planificación.{% endblock %}
+
+{% block content %}
+  <div class="body-copy">
+    <p>Hola{% if client_name %} {{ client_name }}{% endif %},</p>
+    <p>Hemos preparado una nueva solicitud de estimación para tu recogida programada.</p>
+  </div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="panel">
+    <tr>
+      <td class="panel-row">
+        <span class="label">Ruta</span>
+        <span class="value strong">{{ route_name }}</span>
+      </td>
+    </tr>
+    <tr>
+      <td class="panel-row">
+        <span class="label">Fecha prevista</span>
+        <span class="value">{{ route_date|date:"d/m/Y" }}</span>
+      </td>
+    </tr>
+    <tr>
+      <td class="panel-row">
+        <span class="label">Responder antes de</span>
+        <span class="value">{{ expires_at|date:"d/m/Y H:i" }}</span>
+      </td>
+    </tr>
+  </table>
+
+  <div class="note">
+    Si no recibimos una respuesta antes del límite indicado, el sistema podrá estimar automáticamente los litros para mantener la ruta operativa.
+  </div>
+{% endblock %}

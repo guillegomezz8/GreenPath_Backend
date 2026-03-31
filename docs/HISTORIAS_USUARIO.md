@@ -766,6 +766,15 @@ Criterios de aceptacion:
 2. El beneficio neto se calcula como `income - cost`.
 3. El volumen comprado y el volumen vendido se muestran por separado.
 
+### US-DAT-002D (P1) Controlar si una recogida computa economicamente
+
+Como Owner quiero decidir si una recogida es facturable para excluir casos internos o excepcionales del reporting economico.
+
+Criterios de aceptacion:
+1. Una recogida puede marcarse como `Facturable` o `No facturable` en alta y edicion.
+2. El detalle y el listado muestran claramente ese estado.
+3. Solo las recogidas confirmadas y facturables computan como coste en estadisticas.
+
 ### US-DAT-003 (P2) Auditoria de acciones manuales
 
 Como Owner quiero saber quien hizo ajustes manuales sensibles.

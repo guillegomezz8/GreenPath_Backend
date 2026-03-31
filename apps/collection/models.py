@@ -107,6 +107,11 @@ class Collection(BaseModel):
         default=Decimal("0.00"),
     )
 
+    billable = models.BooleanField(
+        "Facturable",
+        default=True,
+    )
+
     total_price = models.DecimalField(
         "Precio Total",
         max_digits=12,

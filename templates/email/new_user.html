@@ -1,132 +1,31 @@
-<!DOCTYPE html>
-<html lang="es" xmlns="http://www.w3.org/1999/xhtml">
-<head>
-  <meta charset="utf-8" />
-  <meta name="x-apple-disable-message-reformatting">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <meta name="color-scheme" content="light only">
-  <title>Acceso a GreenPath</title>
-  <style>
-    /* Resets + base */
-    :root { color-scheme: light only; }
-    body, table, td, a { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, "Helvetica Neue", sans-serif; }
-    img { border: 0; outline: none; text-decoration: none; height: auto; line-height: 100%; }
-    table { border-collapse: collapse !important; }
-    a { color: #16a34a; text-decoration: none; }
-    .preheader {
-      display: none !important; visibility: hidden; opacity: 0; color: transparent; height: 0; width: 0; overflow: hidden;
-      mso-hide: all; line-height: 1px; max-height: 0; max-width: 0;
-    }
+{% extends "email/base.html" %}
 
-    /* Layout */
-    .bg { background: #f3f6fb; }
-    .outer-pad { padding: 28px 16px; }
-    .container { width: 100%; max-width: 620px; margin: 0 auto; }
-    .brand-strip { height: 6px; width: 100%; background: #16a34a; border-radius: 999px; margin: 0 0 14px 0; }
+{% block title %}Acceso a GreenPath{% endblock %}
+{% block preheader %}Tu usuario y contraseña temporal para acceder a GreenPath ya están listos.{% endblock %}
+{% block hero_title %}Tu acceso a <span class="brand">GreenPath</span>{% endblock %}
+{% block hero_subtitle %}Hemos creado tu acceso a la plataforma. Aquí tienes tus credenciales temporales.{% endblock %}
 
-    /* Card */
-    .card {
-      background: #ffffff; border-radius: 14px; padding: 28px 24px;
-      border: 1px solid #e5e7eb;
-    }
-    .title { margin: 0 0 6px 0; font-size: 24px; line-height: 1.3; font-weight: 800; letter-spacing: -0.2px; text-align: center; }
-    .brand { color: #16a34a; }
-    .subtitle { margin: 0 0 18px 0; color: #64748B; font-size: 14px; line-height: 1.6; text-align: center; }
-
-    /* Panel credenciales */
-    .panel { width: 100%; background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 10px; margin: 10px 0 8px 0; }
-    .panel-row { padding: 12px 14px; font-size: 14px; border-bottom: 1px solid #e5e7eb; }
-    .panel-row:last-child { border-bottom: none; }
-    .label { display: inline-block; min-width: 160px; color: #475569; font-weight: 600; }
-    .value { float: right; }
-    .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace; background: #eef2ff; color: #0f172a; border-radius: 8px; padding: 6px 10px; }
-    .strong { font-weight: 700; }
-
-    /* Textos */
-    .hint { margin: 14px 0 6px 0; font-size: 13px; color: #6b7280; text-align: center; }
-
-    /* CTA */
-    .cta-wrap { margin: 16px 0 0 0; }
-    .btn {
-      background: #16a34a; color: #ffffff !important; display: inline-block;
-      padding: 14px 26px; border-radius: 10px; font-weight: 700; font-size: 14px; text-decoration: none;
-    }
-
-    /* Otros */
-    .hr { border: none; border-top: 1px solid #e5e7eb; margin: 22px 0; }
-    .support { font-size: 13px; color: #64748B; text-align: center; }
-    .footer { padding: 18px 0 28px 0; text-align: center; }
-    .small { font-size: 12px; }
-    .muted { color: #64748B; }
-
-    /* Responsive */
-    @media (max-width: 620px) {
-      .outer-pad { padding: 20px 12px !important; }
-      .card { padding: 22px 18px !important; }
-      .title { font-size: 22px !important; }
-      .label { min-width: 120px; }
-      .value { float: none; display: block; margin-top: 6px; }
-    }
-  </style>
-</head>
-<body style="margin:0; padding:0; background:#f3f6fb; -webkit-text-size-adjust:100%;">
-
-  <!-- Preheader -->
-  <div class="preheader">Tu usuario y contraseña temporal para acceder a GreenPath están listos.</div>
-
-  <!-- Background + centered container -->
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="bg">
+{% block content %}
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="panel">
     <tr>
-      <td align="center" class="outer-pad">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="container">
-
-          <!-- Brand strip -->
-          <tr>
-            <td class="brand-strip" style="background:#16a34a; border-radius:999px; height:6px;"></td>
-          </tr>
-
-          <!-- Card -->
-          <tr>
-            <td class="card" style="background:#ffffff; border:1px solid #e5e7eb; border-radius:14px; padding:28px 24px;">
-              <h1 class="title">Tu acceso a <span class="brand">GreenPath</span></h1>
-              <p class="subtitle">Hemos creado tu acceso a la plataforma. Aquí tienes tus credenciales temporales:</p>
-
-              <!-- Credenciales -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="panel">
-                <tr>
-                  <td class="panel-row">
-                    <span class="label">Usuario</span>
-                    <span class="value code">{{ username }}</span>
-                  </td>
-                </tr>
-                <tr>
-                  <td class="panel-row">
-                    <span class="label">Contraseña temporal</span>
-                    <span class="value code strong">{{ temp_password }}</span>
-                  </td>
-                </tr>
-              </table>
-
-              <p class="hint">Por seguridad, te recomendamos cambiar la contraseña tras iniciar sesión (Perfil → Seguridad).</p>
-              
-              <hr class="hr" />
-
-              <p class="support">¿Necesitas ayuda? Escríbenos a
-                <a href="mailto:greenpath@soporte.com">greenpath@soporte.com</a>.
-              </p>
-            </td>
-          </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td class="footer">
-              <p class="small muted">© {{ year }} GreenPath. Todos los derechos reservados.</p>
-            </td>
-          </tr>
-
-        </table>
+      <td class="panel-row">
+        <span class="label">Usuario</span>
+        <span class="value code">{{ username }}</span>
+      </td>
+    </tr>
+    <tr>
+      <td class="panel-row">
+        <span class="label">Contraseña temporal</span>
+        <span class="value code strong">{{ temp_password }}</span>
       </td>
     </tr>
   </table>
-</body>
-</html>
+
+  <div class="note">
+    Por seguridad, te recomendamos cambiar la contraseña después de iniciar sesión desde tu perfil.
+  </div>
+{% endblock %}
+
+{% block support %}
+  Si necesitas ayuda, escribe a <a href="mailto:greenpath@soporte.com">greenpath@soporte.com</a>.
+{% endblock %}

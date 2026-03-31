@@ -35,7 +35,7 @@ class ClientSerializer(serializers.ModelSerializer):
                 total_pick_ups=Count("id", filter=~Q(status=CollectionStatus.CANCELED)),
                 last_pick_up=Max("collection_date", filter=~Q(status=CollectionStatus.CANCELED)),
                 last_completed_pick_up=Max("collection_date", filter=Q(status=CollectionStatus.CONFIRMED)),
-                total_paid=Sum("total_price", filter=Q(status=CollectionStatus.CONFIRMED)),
+                total_paid=Sum("total_price", filter=Q(status=CollectionStatus.CONFIRMED, billable=True)),
             )
         )
         setattr(obj, "_collection_stats_cache", stats_cache)

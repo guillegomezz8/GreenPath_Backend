@@ -16,6 +16,7 @@ from apps.base.logger import configure_logging
 from apps.base.utils import gen_password, send_access_email, send_access_email_google_api
 from apps.user.models.user import User
 from apps.user.models.worker import Worker
+from apps.base.enums import Role
 from apps.base.permissions import IsOwnerUser
 from apps.collection.api.serializers.collection_serializers import CollectionSerializer
 from apps.user.api.serializers.worker_serializers import WorkerSerializer,CreateWorkerSerializer,UpdateWorkerSerializer,PartialUpdateWorkerSerializer,DashboardSerializer
@@ -111,6 +112,8 @@ class WorkerViewSet(viewsets.ModelViewSet):
             worker_data = dict(serializer.validated_data)
             user_data = worker_data.pop("user")
             get_access = worker_data.pop("get_access", False)
+            worker_data.pop("company", None)
+            worker_data.pop("role", None)
 
             company = self.request.user.worker_profile.company if hasattr(self.request.user, "worker_profile") else None
 
@@ -131,7 +134,7 @@ class WorkerViewSet(viewsets.ModelViewSet):
 
                 user.save(update_fields=["password"])
 
-                worker = Worker.objects.create(user=user, **worker_data)
+                worker = Worker.objects.create(user=user, role=Role.WORKER, **worker_data)
 
                 if company:
                     worker.company = company

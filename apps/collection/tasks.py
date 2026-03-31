@@ -4,7 +4,9 @@ import os
 
 from celery import shared_task
 from django.db.models import Avg
+from django.template.loader import render_to_string
 from django.utils import timezone
+from django.utils.html import strip_tags
 
 from apps.base.literals import COLLECTION_REQUEST_NOTIFY_BODY, COLLECTION_REQUEST_NOTIFY_SUBJECT
 from apps.base.enums import CollectionRequestStatus, PlannedSource, CollectionStatus
@@ -119,11 +121,22 @@ def notify_collection_request_created(collection_request_id):
             route_date=route_day.date,
             expires_at=collection_request.expires_at,
         )
+        html_message = render_to_string(
+            "email/collection_request_created.html",
+            {
+                "client_name": collection_request.route_day_client.client.name,
+                "route_name": route_day.route.name,
+                "route_date": route_day.date,
+                "expires_at": collection_request.expires_at,
+                "year": timezone.now().year,
+            },
+        )
+        text_message = strip_tags(html_message) or message
         sent = send_email_google_api(
             to_email=email,
             subject=subject,
-            text_message=message,
-            html_message=None,
+            text_message=text_message,
+            html_message=html_message,
         )
         if sent:
             logging.info(f"[collection_tasks - notify_collection_request_created] Notificacion enviada a {email} para solicitud {collection_request.id}")

@@ -15,6 +15,7 @@ class CollectionSerializer(serializers.ModelSerializer):
     status = serializers.SerializerMethodField()
     status_code = serializers.CharField(source='status', read_only=True)
     deduction_reason_label = serializers.CharField(source='get_deduction_reason_display', read_only=True)
+    billable_label = serializers.SerializerMethodField()
     client_name = serializers.CharField(source='client.name', read_only=True)
     route_name = serializers.SerializerMethodField()
     worker_name = serializers.SerializerMethodField()
@@ -42,6 +43,9 @@ class CollectionSerializer(serializers.ModelSerializer):
         if hasattr(worker, "user") and worker.user:
             return worker.user.username
         return None
+
+    def get_billable_label(self, obj):
+        return "Facturable" if obj.billable else "No facturable"
 
 
 def _normalize_collection_validated_data(validated_data, partial=False):
@@ -80,6 +84,7 @@ class CreateCollectionSerializer(serializers.ModelSerializer):
     measured_liters = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, allow_null=True)
     deduction_liters = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
     deduction_notes = serializers.CharField(required=False, allow_blank=True)
+    billable = serializers.BooleanField(required=False, default=True)
 
     class Meta:
         model = Collection
@@ -95,6 +100,7 @@ class CreateCollectionSerializer(serializers.ModelSerializer):
             'deduction_reason',
             'deduction_notes',
             'price_per_liter',
+            'billable',
             'status',
             'notes',
             'estimated_liters',
@@ -120,6 +126,7 @@ class UpdateCollectionSerializer(serializers.ModelSerializer):
     measured_liters = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, allow_null=True)
     deduction_liters = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
     deduction_notes = serializers.CharField(required=False, allow_blank=True)
+    billable = serializers.BooleanField(required=False)
 
     class Meta:
         model = Collection
@@ -135,6 +142,7 @@ class UpdateCollectionSerializer(serializers.ModelSerializer):
             'deduction_reason',
             'deduction_notes',
             'price_per_liter',
+            'billable',
             'status',
             'notes',
             'estimated_liters',
@@ -161,6 +169,7 @@ class PartialUpdateCollectionSerializer(serializers.ModelSerializer):
     measured_liters = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, allow_null=True)
     deduction_liters = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
     deduction_notes = serializers.CharField(required=False, allow_blank=True)
+    billable = serializers.BooleanField(required=False)
 
     class Meta:
         model = Collection
@@ -176,6 +185,7 @@ class PartialUpdateCollectionSerializer(serializers.ModelSerializer):
             'deduction_reason',
             'deduction_notes',
             'price_per_liter',
+            'billable',
             'status',
             'notes',
             'estimated_liters',

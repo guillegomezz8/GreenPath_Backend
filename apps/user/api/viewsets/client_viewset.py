@@ -208,7 +208,7 @@ class ClientViewSet(viewsets.ModelViewSet):
                 canceled_collections=Count("id", filter=Q(status=CollectionStatus.CANCELED)),
                 total_liters=Sum("net_liters", filter=~Q(status=CollectionStatus.CANCELED)),
                 avg_liters=Avg("net_liters", filter=~Q(status=CollectionStatus.CANCELED)),
-                total_paid=Sum("total_price", filter=Q(status=CollectionStatus.CONFIRMED)),
+                total_paid=Sum("total_price", filter=Q(status=CollectionStatus.CONFIRMED, billable=True)),
             )
 
             serializer = CollectionSerializer(historial, many=True)

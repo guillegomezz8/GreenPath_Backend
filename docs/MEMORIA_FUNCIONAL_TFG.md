@@ -1,6 +1,6 @@
 # Memoria Funcional TFG - GreenPath
 
-Fecha de revision: 2026-03-24
+Fecha de revision: 2026-04-08
 
 ## 1. Introduccion
 
@@ -96,8 +96,10 @@ Tomando como referencia la organizacion habitual de una memoria de TFG, el proye
 - `docs/API.md` cubre contratos y endpoints
 - `docs/FRONTEND_PANTALLAS.md` cubre la interfaz y el flujo por pantallas
 - `docs/INTEGRACIONES_Y_APIS_EXTERNAS.md` cubre APIs usadas, configuracion y riesgos
+- `docs/DESPLIEGUE_Y_OPERACION.md` cubre puesta en marcha, soporte y continuidad
 - `docs/TESTING.md` cubre validacion automatizada y manual
 - `docs/PLANIFICACION_Y_COSTES.md` cubre metodologia, estimaciones, planificacion y costes
+- `docs/BIBLIOGRAFIA_Y_FUENTES.md` recoge las fuentes empleadas y la base bibliografica del trabajo
 - `docs/CASOS_DE_USO.md` describe secuencias funcionales por actor
 - `docs/MANUAL_USUARIO.md` sirve como anexo de uso del sistema
 
@@ -242,7 +244,7 @@ A fecha de esta revision, el sistema cubre el flujo principal del negocio y disp
 - soporte para operacion diaria y bloque economico
 - testing automatizado modular
 
-### 7.1 Snapshot de testing actual
+### 7.1 Snapshot de testing actual a fecha 2026-04-05
 
 - backend: 25 tests automatizados
 - frontend: 17 tests automatizados

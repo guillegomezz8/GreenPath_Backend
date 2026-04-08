@@ -2,7 +2,7 @@ import io
 import logging
 import math
 import re
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
 
 from django.core.files.base import ContentFile
@@ -70,17 +70,19 @@ def _buyer_address_lines(buyer):
     return [value for value in lines if value]
 
 
-def _format_money(value, currency="EUR"):
-    amount = Decimal(value or Decimal("0.00")).quantize(Decimal("0.01"))
+def _format_money(value, currency="EUR", decimals=2):
+    quantizer = Decimal("1").scaleb(-decimals)
+    amount = Decimal(value or Decimal("0.00")).quantize(quantizer, rounding=ROUND_HALF_UP)
     symbol = "\u20ac" if currency == "EUR" else currency
-    raw = f"{amount:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    raw = f"{amount:,.{decimals}f}".replace(",", "X").replace(".", ",").replace("X", ".")
     return f"{raw} {symbol}".strip()
 
 
 
-def _format_decimal(value, suffix=""):
-    amount = Decimal(value or Decimal("0.00")).quantize(Decimal("0.01"))
-    raw = f"{amount:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+def _format_decimal(value, suffix="", decimals=2):
+    quantizer = Decimal("1").scaleb(-decimals)
+    amount = Decimal(value or Decimal("0.00")).quantize(quantizer, rounding=ROUND_HALF_UP)
+    raw = f"{amount:,.{decimals}f}".replace(",", "X").replace(".", ",").replace("X", ".")
     return f"{raw}{suffix}".strip()
 
 
@@ -125,9 +127,9 @@ def _invoice_template_context(sale, settings_obj):
 
     items = [
         {
-            "cantidad": f"{_format_decimal(sale.quantity)} {sale.unit}".strip(),
+            "cantidad": f"{_format_decimal(sale.quantity, decimals=0)} {sale.unit}".strip(),
             "descripcion": sale.product_description,
-            "precio_unitario": _format_money(sale.unit_price, sale.currency),
+            "precio_unitario": _format_money(sale.unit_price, sale.currency, decimals=3),
             "total": _format_money(sale.subtotal, sale.currency),
         }
     ]
@@ -180,10 +182,10 @@ def _invoice_template_context(sale, settings_obj):
         "invoice_number": sale.invoice_number,
         "invoice_date": sale.invoice_date.strftime("%d/%m/%Y"),
         "sale_date": sale.sale_date.strftime("%d/%m/%Y"),
-        "quantity_label": f"{_format_decimal(sale.quantity)} {sale.unit}".strip(),
-        "quantity": _format_decimal(sale.quantity),
+        "quantity_label": f"{_format_decimal(sale.quantity, decimals=0)} {sale.unit}".strip(),
+        "quantity": _format_decimal(sale.quantity, decimals=0),
         "product_description": sale.product_description,
-        "unit_price": _format_money(sale.unit_price, sale.currency),
+        "unit_price": _format_money(sale.unit_price, sale.currency, decimals=3),
         "subtotal": _format_money(sale.subtotal, sale.currency),
         "tax_rate": _format_decimal(sale.tax_rate),
         "tax_amount": _format_money(sale.tax_amount, sale.currency),

@@ -1,6 +1,6 @@
 # Casos de Uso GreenPath
 
-Fecha de revision: 2026-03-31
+Fecha de revision: 2026-04-08
 
 ## 1. Objetivo del documento
 
@@ -290,6 +290,50 @@ Cada caso de uso se expresa con:
 
 - el owner puede interpretar costes, ingresos y beneficio neto
 
+### CU-010B. Gestionar configuracion global de empresa
+
+**Actor principal:** Owner
+
+**Objetivo:** mantener los parametros operativos y fiscales que afectan a recogidas y facturas.
+
+**Precondiciones:**
+
+- el owner esta autenticado
+- existe una empresa asociada al owner
+
+**Flujo principal:**
+
+1. el owner accede al modulo de configuracion
+2. actualiza precio global por litro, datos fiscales o hub
+3. guarda cada bloque de forma independiente
+4. el sistema valida y persiste la configuracion
+
+**Resultado esperado:**
+
+- la empresa conserva parametros globales reutilizables por nuevos flujos operativos y economicos
+
+### CU-010C. Marcar una recogida como facturable o no facturable
+
+**Actor principal:** Owner
+
+**Objetivo:** decidir si una recogida confirmada debe participar en el bloque economico.
+
+**Precondiciones:**
+
+- existe una `Collection`
+- el owner puede editar la recogida
+
+**Flujo principal:**
+
+1. el owner abre el detalle o la edicion de la recogida
+2. revisa estado, medicion e importe
+3. marca la recogida como facturable o no facturable
+4. guarda la informacion
+
+**Resultado esperado:**
+
+- la recogida mantiene su valor operativo, pero su impacto economico queda controlado segun la decision tomada
+
 ## 4. Casos de uso del worker
 
 ### CU-011. Consultar rutas asignadas
@@ -412,7 +456,7 @@ Cada caso de uso se expresa con:
 
 **Flujo principal:**
 
-1. el client accede a su panel
+1. el client accede a su area funcional
 2. consulta la solicitud pendiente
 3. revisa fecha y limite de respuesta
 
@@ -545,3 +589,10 @@ Estos casos de uso no sustituyen a la documentacion de requisitos ni a la docume
 - onboarding funcional
 - validacion manual de flujos
 - preparacion de anexos de memoria
+
+Tambien conviene leer este documento junto con:
+
+- `docs/FUNCIONAL.md`
+- `docs/REQUISITOS.md`
+- `docs/MANUAL_USUARIO.md`
+- `docs/ROUTE_FLOW.md`

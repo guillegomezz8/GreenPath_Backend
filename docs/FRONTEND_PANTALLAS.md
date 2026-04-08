@@ -1,6 +1,6 @@
 # Guia de Pantallas Frontend GreenPath
 
-Fecha de revision: 2026-03-24
+Fecha de revision: 2026-04-05
 
 ## 1. Objetivo del documento
 
@@ -236,6 +236,12 @@ Objetivo:
 - Archivo: `src/pages/workers/WorkerCreate.jsx`
 - Estado: implementada
 
+Notas:
+
+- el formulario crea solo trabajadores operativos normales
+- no expone seleccion de rol ni de empresa
+- la creacion de owners o administradores avanzados queda fuera del flujo normal del frontend
+
 ### 8.3 Detalle de trabajador
 
 - Ruta: `/workers/:id`
@@ -258,6 +264,12 @@ Notas:
 - Ruta: `/workers/:id/edit`
 - Archivo: `src/pages/workers/WorkerEdit.jsx`
 - Estado: implementada
+
+Notas:
+
+- la edicion no permite cambiar el rol
+- si el registro corresponde a un owner, la pantalla lo refleja como `Propietario` sin degradarlo a `worker`
+- el backend ignora o bloquea cambios de `role` y `company` por este flujo
 
 ## 9. Modulo de camiones
 

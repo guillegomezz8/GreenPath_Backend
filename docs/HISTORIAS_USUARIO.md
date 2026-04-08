@@ -1,6 +1,6 @@
 # Historias de Usuario GreenPath
 
-Fecha: 2026-03-04
+Fecha de revision: 2026-04-08
 
 ## 1. Convenciones
 
@@ -17,10 +17,10 @@ Fecha: 2026-03-04
 
 ### US-OWN-001 (P0) Crear y mantener rutas plantilla
 
-Como Owner quiero crear/editar rutas plantilla con trabajadores y rango operativo para planificar semanas de trabajo.
+Como Owner quiero crear/editar rutas plantilla con un trabajador asignado y rango operativo para planificar semanas de trabajo.
 
 Criterios de aceptacion:
-1. Puedo crear ruta con nombre, fechas, `week_start`, `week_end` y trabajadores.
+1. Puedo crear ruta con nombre, fechas, `week_start`, `week_end` y un trabajador asignado.
 2. Puedo editar una ruta existente sin perder configuracion valida.
 3. Si faltan datos obligatorios, el sistema bloquea guardado y muestra error.
 
@@ -217,7 +217,7 @@ Como equipo quiero documentacion actualizada para acelerar mantenimiento y onboa
 Criterios de aceptacion:
 1. API, flujo de rutas y pantallas reflejan estado real.
 2. Existe inventario de historias de usuario con prioridad.
-3. Cada repaso funcional deja evidencia fechada.
+3. Cada revision documental relevante deja evidencia fechada.
 
 ## 6. Historias UX movil (transversal)
 
@@ -241,12 +241,12 @@ Criterios de aceptacion:
 
 ## 7. Historias Owner (ampliacion)
 
-### US-OWN-006 (P1) Reasignar trabajadores sin romper plan operativo
+### US-OWN-006 (P1) Reasignar trabajador sin romper plan operativo
 
-Como Owner quiero reasignar trabajadores de una ruta para cubrir bajas o cambios de turno.
+Como Owner quiero reasignar el trabajador de una ruta para cubrir bajas o cambios de turno.
 
 Criterios de aceptacion:
-1. Puedo editar trabajadores asignados desde formulario de ruta.
+1. Puedo editar el trabajador asignado desde formulario de ruta.
 2. La ruta mantiene su configuracion de zonas y rango semanal.
 3. El cambio queda reflejado en listado y detalle de ruta.
 
@@ -615,7 +615,7 @@ Como equipo quiero registrar cambios de reglas para evitar regresiones.
 
 Criterios de aceptacion:
 1. Cambios relevantes quedan en docs fechados.
-2. Existe historial de repaso funcional.
+2. Existe historial de revisiones documentales del proyecto.
 3. El equipo puede reconstruir por que se cambio una regla.
 
 ### US-PLT-015 (P2) Calidad de respuestas para frontend
@@ -896,12 +896,12 @@ Criterios de aceptacion:
 2. Se documentan acciones custom y filtros.
 3. Se incluyen ejemplos minimos de uso.
 
-### US-DOC-003 (P2) Publicar repaso funcional por fecha
+### US-DOC-003 (P2) Publicar revisiones documentales por fecha
 
 Como equipo quiero snapshots de estado para trazabilidad de proyecto.
 
 Criterios de aceptacion:
-1. Cada repaso genera archivo fechado.
+1. Cada revision documental relevante deja referencia fechada.
 2. Incluye cambios, validacion y riesgos.
 3. Sirve de base para siguiente iteracion.
 
@@ -922,3 +922,20 @@ Criterios de aceptacion:
 1. Historias se agrupan por rol y dominio.
 2. Se distinguen historias funcionales y tecnicas.
 3. Se facilita estimacion y planificacion por sprint.
+
+## 16. Observaciones de mantenimiento del backlog
+
+Este documento combina historias:
+
+- funcionales
+- tecnicas
+- de calidad
+- de UX movil
+- de documentacion y gobierno
+
+Por ello conviene leerlo junto con:
+
+- `docs/REQUISITOS.md`
+- `docs/CASOS_DE_USO.md`
+- `docs/FUNCIONAL.md`
+- `docs/TESTING.md`

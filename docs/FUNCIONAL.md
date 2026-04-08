@@ -1,53 +1,100 @@
 # Documento Funcional GreenPath
 
-Fecha de revision: 2026-03-24
-Version funcional: 1.0
+Fecha de revision: 2026-04-05
+Version funcional: 1.2
 
 ## 1. Proposito del documento
 
-Este documento describe el funcionamiento real de GreenPath desde el punto de vista de negocio y operacion.
+Este documento describe el funcionamiento real de GreenPath desde el punto de vista de negocio, operacion y gestion.
 Su objetivo es servir como referencia comun para:
 
-- entender que problemas resuelve la plataforma
+- entender que problema resuelve la plataforma
 - delimitar el alcance funcional actual
-- explicar como interactuan los distintos roles
-- describir los procesos principales del negocio
-- fijar las reglas de negocio que debe respetar el sistema
-- apoyar tareas de mantenimiento, evolucion y defensa del proyecto
+- identificar que actores intervienen en cada proceso
+- describir los flujos principales del negocio
+- fijar las reglas funcionales que condicionan el comportamiento del sistema
+- apoyar tareas de mantenimiento, evolucion, defensa y documentacion academica
 
 Este documento no sustituye a la documentacion tecnica ni a la documentacion de API.
-Su foco principal es explicar que hace el sistema, para quien lo hace y bajo que reglas.
+Su foco principal es explicar que hace el sistema, para quien lo hace, por que aporta valor y bajo que reglas debe operar.
 
-## 2. Contexto y objetivo de negocio
+## 2. Resumen ejecutivo
 
-GreenPath es una plataforma orientada a la gestion integral de una empresa que:
+GreenPath es una plataforma para gestionar de forma unificada la operacion de una empresa dedicada a la recogida de aceite usado y a su posterior venta.
 
-- recoge aceite usado desde una red de clientes
-- planifica rutas operativas por zonas y dias
-- ejecuta esas rutas en calle y en nave
-- registra el coste real de las recogidas
-- registra ventas a compradores internos
-- emite facturas de venta en PDF
-- calcula indicadores economicos y operativos del negocio
+El sistema cubre el ciclo funcional principal del negocio:
 
-El problema principal que resuelve GreenPath es la falta de un sistema unificado para gestionar, en una misma operacion:
+1. configuracion de empresa y datos maestros
+2. definicion geografica de zonas y rutas plantilla
+3. generacion semanal de jornadas y paradas
+4. solicitud previa de litros al cliente cuando aplica
+5. ejecucion diaria de la ruta en calle
+6. medicion posterior en nave y consolidacion economica de la recogida
+7. registro de ventas a compradores
+8. generacion de facturas PDF
+9. calculo de costes, ingresos y beneficio neto
 
-- la planificacion geografica de recogidas
-- la ejecucion diaria por trabajador y ruta
-- la estimacion previa de litros cuando el cliente debe responder
-- la medicion final en nave
-- la diferencia entre coste operativo e ingreso por venta
-- la trazabilidad de las operaciones y su reflejo en estadisticas
+Por tanto, GreenPath no se limita a almacenar recogidas: articula una cadena completa de planificacion, ejecucion, trazabilidad y analitica economica.
 
-El objetivo del producto no es solo "guardar recogidas", sino dar soporte al ciclo completo del negocio:
+## 3. Contexto y problema de negocio
 
-1. preparar la operacion
-2. ejecutar la recogida
-3. consolidar litros e importes
-4. vender el residuo recuperado
-5. medir rentabilidad real
+El negocio al que da soporte GreenPath presenta varios retos funcionales simultaneos:
 
-## 3. Alcance funcional actual
+- los clientes se distribuyen geograficamente y deben agruparse por zonas
+- las rutas no son fijas cada dia, sino que se generan a partir de una plantilla y de reglas semanales
+- la cantidad real de aceite no siempre se conoce antes de la visita
+- parte de la operacion sucede en calle y parte en nave
+- el coste de recogida no es identico al ingreso posterior por venta
+- la empresa necesita diferenciar entre operacion, economia y documentacion fiscal
+
+Sin una plataforma unificada, estas tareas suelen quedar dispersas entre hojas de calculo, mensajes informales, llamadas, mapas externos y documentos sueltos.
+
+GreenPath reduce esa fragmentacion mediante una unica plataforma capaz de conectar:
+
+- geografia
+- operacion diaria
+- historico de recogidas
+- configuracion fiscal
+- ventas y facturacion
+- estadisticas de negocio
+
+## 4. Objetivos funcionales del sistema
+
+Los objetivos funcionales principales de GreenPath son:
+
+- centralizar en una sola plataforma los datos maestros del negocio
+- permitir planificar rutas semanales a partir de zonas y frecuencia de clientes
+- soportar una ejecucion diaria clara, usable y orientada a movilidad
+- permitir al cliente informar litros antes de la recogida cuando sea necesario
+- consolidar litros medidos y deducciones en nave
+- diferenciar claramente entre coste operativo e ingreso comercial
+- emitir facturas PDF de venta con datos fiscales configurables
+- ofrecer visibilidad ejecutiva del estado operativo y economico del negocio
+
+## 5. Beneficios funcionales esperados
+
+### 5.1 Beneficios operativos
+
+- menos trabajo manual en la generacion de rutas
+- menos incertidumbre en la preparacion diaria
+- mejor trazabilidad sobre que se recogio, cuando y por quien
+- menor dependencia de herramientas externas desconectadas entre si
+
+### 5.2 Beneficios economicos
+
+- mejor visibilidad del coste real de las recogidas
+- diferenciacion entre recogidas que computan y las que no
+- registro estructurado de ventas
+- calculo del beneficio neto del negocio
+
+### 5.3 Beneficios de gestion
+
+- datos fiscales de empresa editables sin tocar codigo
+- historico funcional por cliente, trabajador y recogida
+- documentacion de venta descargable y regenerable
+- base mas solida para auditar, defender o evolucionar el sistema
+
+## 6. Alcance funcional actual
 
 Actualmente GreenPath cubre las siguientes areas:
 
@@ -61,14 +108,15 @@ Actualmente GreenPath cubre las siguientes areas:
 - autoestimacion con Celery cuando el cliente no responde a tiempo
 - registro de recogidas, medicion en nave y deducciones
 - control economico basico de recogidas mediante precio por litro
-- bandera de recogida facturable o no facturable
+- marca de recogida facturable o no facturable
 - gestion interna de compradores
 - gestion de ventas
 - generacion de facturas PDF de venta
 - configuracion fiscal y bancaria por empresa
-- dashboard y estadisticas operativas/economicas
+- dashboard y estadisticas operativas y economicas
+- perfil de usuario y cambio de contrasena
 
-## 4. Fuera de alcance actual
+## 7. Fuera de alcance actual
 
 Aunque la plataforma cubre una parte amplia del proceso, hay elementos que hoy no forman parte del alcance funcional cerrado:
 
@@ -80,17 +128,17 @@ Aunque la plataforma cubre una parte amplia del proceso, hay elementos que hoy n
 - logica de retornos al hub por sobrecarga durante la ejecucion
 - simulacion avanzada de optimizacion con restricciones complejas
 - auditoria legal avanzada con versionado documental completo
+- facturacion recurrente o por lotes
+- motor avanzado de planificacion con multiples criterios empresariales configurables
 
-## 5. Principios funcionales del sistema
+## 8. Principios funcionales del sistema
 
-El sistema se apoya en varios principios de funcionamiento:
-
-### 5.1 Operacion por empresa
+### 8.1 Operacion por empresa
 
 La mayoria de entidades funcionales viven dentro del contexto de una empresa.
 Esto afecta a permisos, consultas, configuracion, rutas, compradores, ventas y estadisticas.
 
-### 5.2 Separacion entre planificacion y ejecucion
+### 8.2 Separacion entre planificacion y ejecucion
 
 GreenPath distingue claramente entre:
 
@@ -100,7 +148,7 @@ GreenPath distingue claramente entre:
 
 Esto permite regenerar planificacion sin confundirla con datos ya operados.
 
-### 5.3 Trazabilidad sobre automatismo
+### 8.3 Trazabilidad por encima del automatismo
 
 El sistema automatiza tareas como:
 
@@ -108,31 +156,68 @@ El sistema automatiza tareas como:
 - optimizacion con Google
 - creacion de solicitudes
 - autoestimacion de litros
+- generacion de factura PDF
 
-Pero preserva la trazabilidad de quien respondio, quien modifico y en que estado quedo cada registro.
+Pero preserva la trazabilidad de:
 
-### 5.4 Diferenciacion entre operacion y economia
+- quien respondio una solicitud
+- quien la cerro manualmente
+- quien registro una recogida
+- quien modifico los datos finales
+- que registros computan economicamente y cuales no
+
+### 8.4 Diferenciacion entre operacion y economia
 
 No toda recogida debe necesariamente computar en resultados economicos.
 Por eso existe la marca `billable` en `Collection`.
 
-### 5.5 Configuracion editable
+### 8.5 Configuracion editable
 
 Los valores operativos y fiscales relevantes no deben quedar fijos en codigo.
 La empresa puede ajustar desde la plataforma:
 
 - precio global por litro
 - hub operativo
-- datos fiscales
+- razon social y CIF
+- direccion fiscal
 - datos bancarios
 - codigo LER
 - pie de factura
 
-## 6. Actores del sistema
+### 8.6 Enfoque mobile-first en la operacion
 
-### 6.1 Owner
+Las pantallas de rutas y recogidas se usan en escenarios de movilidad.
+Por ello, una parte relevante del diseno funcional prioriza:
 
-Es el rol con control de gestion y supervision.
+- acciones claras
+- modales usables en movil
+- accesos rapidos
+- tablas adaptadas a tarjetas en pantallas pequenas
+
+## 9. Supuestos funcionales y dependencias
+
+El sistema parte de varios supuestos de negocio:
+
+- cada empresa trabaja con su propio conjunto de clientes, trabajadores, camiones, compradores y ventas
+- una ruta plantilla tiene un unico trabajador asignado en el modelo actual
+- una semana operativa se genera a partir de zonas y reglas de frecuencia
+- la empresa puede necesitar pedir litros al cliente antes de la recogida
+- la medicion final y las deducciones se consolidan posteriormente
+- las ventas representan ingresos y las recogidas confirmadas facturables representan coste
+
+Ademas, ciertas partes del flujo dependen de integraciones opcionales:
+
+- Google Maps Platform para geocodificacion y optimizacion
+- Gmail API para determinadas notificaciones por correo
+- Celery y Redis para tareas asincronas
+
+Cuando alguna de estas integraciones no esta disponible, el sistema debe degradar de forma controlada y continuar operando siempre que el caso de uso lo permita.
+
+## 10. Actores del sistema
+
+### 10.1 Owner
+
+Es el rol con capacidad de configuracion, supervision y control del negocio.
 Sus responsabilidades principales son:
 
 - crear y mantener datos maestros
@@ -145,7 +230,7 @@ Sus responsabilidades principales son:
 - configurar datos fiscales de la empresa
 - consultar estadisticas globales
 
-### 6.2 Worker
+### 10.2 Worker
 
 Es el rol orientado a la operacion diaria.
 Sus responsabilidades principales son:
@@ -157,17 +242,17 @@ Sus responsabilidades principales son:
 - consultar datos operativos de su empresa segun permisos
 - registrar manualmente litros de una solicitud cuando proceda
 
-### 6.3 Client
+### 10.3 Client
 
 Es el rol externo asociado a un cliente recogido por la empresa.
-Su experiencia esta limitada a:
+Su experiencia se limita a:
 
-- consultar su dashboard
-- ver sus solicitudes abiertas
+- consultar sus solicitudes abiertas
 - responder litros antes de la expiracion
 - consultar su historial de recogidas
+- consultar y actualizar su perfil
 
-### 6.4 Buyer
+### 10.4 Buyer
 
 El comprador no es un usuario del sistema.
 Es una entidad interna del negocio usada exclusivamente para:
@@ -176,9 +261,9 @@ Es una entidad interna del negocio usada exclusivamente para:
 - reutilizar esos datos al crear una venta
 - emitir facturas PDF con informacion coherente
 
-## 7. Matriz funcional de permisos
+## 11. Matriz funcional de permisos
 
-### 7.1 Owner
+### 11.1 Owner
 
 Puede acceder a:
 
@@ -204,12 +289,12 @@ Puede ejecutar acciones sensibles:
 - regenerar facturas PDF
 - modificar configuracion fiscal y operativa
 
-### 7.2 Worker
+### 11.2 Worker
 
 Puede acceder a:
 
-- dashboard operativo
-- rutas asignadas
+- rutas
+- ejecucion diaria
 - recogidas de su contexto
 - perfil propio
 
@@ -221,11 +306,10 @@ No puede acceder a:
 - generacion de semana
 - mantenimiento maestro reservado a owner
 
-### 7.3 Client
+### 11.3 Client
 
 Puede acceder a:
 
-- dashboard propio
 - solicitudes de recogida propias
 - historial de recogidas propio
 - perfil propio
@@ -237,15 +321,16 @@ No puede acceder a:
 - compradores
 - ventas
 - estadisticas globales
+- operacion interna de recogidas
 
-## 8. Entidades funcionales principales
+## 12. Mapa funcional de entidades
 
-### 8.1 Empresa
+### 12.1 Empresa
 
 Representa la entidad operadora.
 Agrupa el resto de informacion relevante del negocio.
 
-### 8.2 CompanySettings
+### 12.2 CompanySettings
 
 Recoge la configuracion global de la empresa.
 Hoy concentra:
@@ -258,7 +343,7 @@ Hoy concentra:
 
 Es una pieza transversal que afecta tanto a recogidas como a facturacion.
 
-### 8.3 CompanyHub
+### 12.3 CompanyHub
 
 Representa la base o nave desde la que se entiende la operacion de ruta.
 Se usa para:
@@ -266,29 +351,29 @@ Se usa para:
 - visualizar origen operativo
 - optimizar con Google Directions cuando existe localizacion valida
 
-### 8.4 Cliente
+### 12.4 Cliente
 
 Es el punto de recogida habitual.
 Guarda identidad, direccion, frecuencia de recogida y geolocalizacion.
 La localizacion es relevante para la inclusion automatica en rutas generadas.
 
-### 8.5 Trabajador
+### 12.5 Trabajador
 
 Representa al operario o conductor de la empresa.
 Se relaciona con una empresa y puede quedar asignado a una ruta.
 
-### 8.6 Camion
+### 12.6 Camion
 
 Representa el vehiculo operativo.
 Se puede asociar a un trabajador.
 Su capacidad puede influir como capacidad por defecto de una ruta diaria cuando aplica.
 
-### 8.7 Zona
+### 12.7 Zona
 
 Es un poligono geografico de cobertura.
 Las zonas se usan para seleccionar automaticamente clientes durante la generacion semanal.
 
-### 8.8 Ruta
+### 12.8 Ruta
 
 Es la plantilla operativa de una ruta.
 Define:
@@ -299,27 +384,27 @@ Define:
 - rango de vigencia
 - inicio y fin de semana operativa
 
-### 8.9 RouteZoneDay
+### 12.9 RouteZoneDay
 
 Relaciona una ruta con una o varias zonas en un dia concreto de semana.
 Es la base de la planificacion semanal automatica.
 
-### 8.10 RouteDay
+### 12.10 RouteDay
 
 Es la instancia diaria generada de una ruta plantilla para una fecha concreta.
-Tiene estado, capacidad diaria e hitos reales de inicio/fin.
+Tiene estado, capacidad diaria e hitos reales de inicio y fin.
 
-### 8.11 RouteDayClient
+### 12.11 RouteDayClient
 
 Es una parada concreta de cliente dentro de una jornada.
 Guarda el orden planificado de recogida.
 
-### 8.12 CollectionRequest
+### 12.12 CollectionRequest
 
 Es la solicitud de litros dirigida al cliente antes de la recogida.
 Permite pedir una estimacion o confirmacion previa y, si no llega respuesta, deja camino a la autoestimacion.
 
-### 8.13 Collection
+### 12.13 Collection
 
 Es la recogida ejecutada.
 Concentra:
@@ -336,12 +421,12 @@ Concentra:
 - estado operativo
 - marca de facturable
 
-### 8.14 Buyer
+### 12.14 Buyer
 
 Es el comprador interno para el modulo de ventas.
 Guarda sus datos fiscales y de contacto.
 
-### 8.15 Sale
+### 12.15 Sale
 
 Es la operacion de venta.
 Concentra:
@@ -357,9 +442,9 @@ Concentra:
 - total
 - PDF asociado
 
-## 9. Modulos funcionales
+## 13. Mapa funcional por modulo
 
-### 9.1 Modulo de clientes
+### 13.1 Modulo de clientes
 
 #### Objetivo
 
@@ -380,7 +465,7 @@ Mantener el maestro de puntos de recogida y su informacion operativa.
 - la frecuencia de recogida condiciona cuando vuelve a ser elegible en generacion semanal
 - el historial economico del cliente solo toma recogidas confirmadas y facturables
 
-### 9.2 Modulo de trabajadores
+### 13.2 Modulo de trabajadores
 
 #### Objetivo
 
@@ -388,7 +473,7 @@ Gestionar el personal operativo y su relacion con empresa, rutas y recogidas.
 
 #### Funcionalidades
 
-- alta, edicion y activacion/desactivacion
+- alta, edicion y activacion o desactivacion
 - consulta de historial de recogidas
 - asignacion a rutas
 - asociacion con camion cuando aplique
@@ -397,8 +482,10 @@ Gestionar el personal operativo y su relacion con empresa, rutas y recogidas.
 
 - un trabajador solo puede operar dentro de su empresa
 - los importes agregados del trabajador se calculan solo sobre recogidas confirmadas y facturables
+- desde el flujo normal del frontend solo se crean trabajadores operativos con rol `worker`
+- la creacion o mantenimiento de owners o administradores avanzados queda fuera del flujo operativo normal y se recomienda realizarla desde Django Admin
 
-### 9.3 Modulo de camiones
+### 13.3 Modulo de camiones
 
 #### Objetivo
 
@@ -415,7 +502,7 @@ Gestionar la flota de vehiculos del negocio.
 - un camion no debe cruzar empresas
 - la capacidad del camion puede usarse como referencia de capacidad por defecto de una ruta diaria
 
-### 9.4 Modulo de zonas
+### 13.4 Modulo de zonas
 
 #### Objetivo
 
@@ -432,7 +519,7 @@ Modelar la cobertura geografica de recogida.
 - las zonas deben ser coherentes geograficamente para que la seleccion espacial de clientes funcione correctamente
 - solapes y geometrias pobres degradan la planificacion automatica
 
-### 9.5 Modulo de rutas
+### 13.5 Modulo de rutas
 
 #### Objetivo
 
@@ -453,7 +540,7 @@ Planificar y supervisar la operacion semanal.
 - los dias visibles y configurables deben respetar `week_start` y `week_end`
 - el detalle de ruta se orienta a planificacion, no a operacion diaria completa
 
-### 9.6 Modulo de generacion semanal
+### 13.6 Modulo de generacion semanal
 
 #### Objetivo
 
@@ -484,7 +571,7 @@ Construir la semana operativa a partir de una ruta plantilla.
 - se respetan frecuencia, empresa, capacidad y limite maximo de clientes por dia
 - la optimizacion con Google es opcional y no bloquea la generacion si falla o falta API key
 
-### 9.7 Modulo de solicitudes de recogida
+### 13.7 Modulo de solicitudes de recogida
 
 #### Objetivo
 
@@ -513,7 +600,7 @@ Solicitar al cliente una estimacion o confirmacion previa de litros.
 - si no responde, el sistema puede autoestimar por historico o por capacidad del envase
 - owner y worker pueden resolver manualmente una solicitud
 
-### 9.8 Modulo de ejecucion de ruta
+### 13.8 Modulo de ejecucion de ruta
 
 #### Objetivo
 
@@ -535,7 +622,7 @@ Permitir que owner o worker operen la jornada diaria de forma controlada.
 - si no quedan pendientes, el cierre correcto es `COMPLETED`
 - si quedan pendientes, el cierre exige una decision explicita (`PARTIAL` o `CANCELED`)
 
-### 9.9 Modulo de recogidas
+### 13.9 Modulo de recogidas
 
 #### Objetivo
 
@@ -564,7 +651,7 @@ Registrar y consolidar el resultado real de una recogida.
 - una recogida no facturable sigue siendo visible y operativa, pero no entra en calculos economicos
 - solo las recogidas confirmadas y facturables impactan en costes, totales del cliente y totales del trabajador
 
-### 9.10 Modulo de compradores
+### 13.10 Modulo de compradores
 
 #### Objetivo
 
@@ -579,10 +666,10 @@ Mantener el maestro interno de destinatarios de factura de venta.
 #### Reglas de negocio
 
 - el comprador no accede a la plataforma
-- el CIF/NIF es unico por empresa
+- el CIF o NIF es unico por empresa
 - se expone direccion fiscal completa para facilitar facturacion
 
-### 9.11 Modulo de ventas
+### 13.11 Modulo de ventas
 
 #### Objetivo
 
@@ -607,7 +694,7 @@ Registrar operaciones de venta y reflejar los ingresos del negocio.
 - `sale_date` se sincroniza internamente con `invoice_date` para mantener compatibilidad del modelo
 - el PDF siempre representa el estado actual de la venta y la configuracion fiscal de la empresa
 
-### 9.12 Modulo de facturacion PDF
+### 13.12 Modulo de facturacion PDF
 
 #### Objetivo
 
@@ -619,7 +706,7 @@ Emitir un documento de factura coherente y descargable a partir de una venta.
 - regeneracion manual
 - descarga desde detalle de venta
 - uso de datos fiscales configurables
-- uso de plantilla HTML/CSS renderizada con WeasyPrint
+- uso de plantilla HTML y CSS renderizada con WeasyPrint
 
 #### Reglas de negocio
 
@@ -627,7 +714,7 @@ Emitir un documento de factura coherente y descargable a partir de una venta.
 - los datos del destinatario se toman del `Buyer`
 - el PDF no es un documento fijo en codigo: depende de la configuracion actual de empresa y de la venta
 
-### 9.13 Modulo de configuracion de empresa
+### 13.13 Modulo de configuracion de empresa
 
 #### Objetivo
 
@@ -648,7 +735,7 @@ Centralizar ajustes operativos y fiscales que afectan a varios procesos.
 - worker puede consultar segun endpoint, pero no modificar
 - los cambios impactan en nuevas recogidas y nuevas facturas
 
-### 9.14 Dashboard y estadisticas
+### 13.14 Modulo de estadisticas
 
 #### Objetivo
 
@@ -656,11 +743,11 @@ Ofrecer una vision sintetica del estado operativo y economico del negocio.
 
 #### Funcionalidades
 
-- KPIs globales por rol
+- KPIs globales para owner
 - actividad reciente
-- acceso rapido a rutas operativas
-- bloque economico para owner
 - comparativas de volumen comprado y vendido
+- resumen economico de costes, ingresos y beneficio
+- acceso rapido a rutas operativas desde owner
 
 #### Reglas de negocio
 
@@ -669,9 +756,27 @@ Ofrecer una vision sintetica del estado operativo y economico del negocio.
 - el ingreso viene de ventas registradas
 - el beneficio neto se calcula como ingresos menos costes
 
-## 10. Procesos funcionales de extremo a extremo
+### 13.15 Modulo de perfil
 
-### 10.1 Preparacion inicial del sistema
+#### Objetivo
+
+Permitir que cada usuario gestione sus datos basicos y su acceso.
+
+#### Funcionalidades
+
+- consulta de datos personales
+- actualizacion de email y telefono cuando aplica
+- cambio de contrasena
+- actualizacion de imagen en perfiles que lo soportan
+
+#### Reglas de negocio
+
+- cada usuario solo puede modificar su propio perfil
+- el contenido visible del perfil depende del rol y del tipo de perfil asociado
+
+## 14. Procesos funcionales de extremo a extremo
+
+### 14.1 Preparacion inicial del sistema
 
 1. Se crea la empresa y su owner.
 2. Se crean trabajadores y clientes.
@@ -686,7 +791,7 @@ Resultado esperado:
 
 - el sistema queda listo para generar semanas operativas y posteriormente emitir facturas de venta
 
-### 10.2 Generacion semanal operativa
+### 14.2 Generacion semanal operativa
 
 1. El owner selecciona una ruta.
 2. Elige una semana operativa.
@@ -704,7 +809,7 @@ Resultado esperado:
 14. Se agenda la autoestimacion futura.
 15. Se registra trazabilidad y se devuelve el resumen de la semana generada.
 
-### 10.3 Notificacion al cliente y respuesta previa
+### 14.3 Notificacion al cliente y respuesta previa
 
 1. Se crea la `CollectionRequest`.
 2. El sistema envia correo al cliente cuando la configuracion de Gmail esta disponible.
@@ -713,7 +818,7 @@ Resultado esperado:
 5. Si owner o worker intervienen, pasa a `MANUAL`.
 6. Si no llega respuesta a tiempo, Celery puede moverla a `AUTO_ESTIMATED`.
 
-### 10.4 Ejecucion diaria de ruta
+### 14.4 Ejecucion diaria de ruta
 
 1. Owner o worker entra en la pantalla `Realizar ruta`.
 2. Selecciona la jornada concreta.
@@ -725,7 +830,7 @@ Resultado esperado:
 8. Si quedan pendientes, debe decidir entre cierre parcial o cancelacion.
 9. Si no quedan pendientes, el dia termina como completado.
 
-### 10.5 Medicion y cierre economico en nave
+### 14.5 Medicion y cierre economico en nave
 
 1. Una recogida registrada en calle puede quedar pendiente de medicion.
 2. En nave se completan litros medidos, deducciones y motivo.
@@ -734,7 +839,7 @@ Resultado esperado:
 5. Se decide si la recogida es facturable o no.
 6. Solo si esta confirmada y facturable impacta en reporting economico.
 
-### 10.6 Venta y facturacion
+### 14.6 Venta y facturacion
 
 1. El owner mantiene previamente el maestro de compradores.
 2. El owner crea una venta.
@@ -744,9 +849,38 @@ Resultado esperado:
 6. La venta se suma al bloque de ingresos del negocio.
 7. El owner puede descargar o regenerar la factura cuando quiera.
 
-## 11. Reglas de negocio detalladas
+## 15. Ciclo de vida funcional de los datos
 
-### 11.1 Reglas de rutas y planificacion
+### 15.1 Ciclo de vida de una recogida planificada
+
+1. el cliente existe como maestro y tiene localizacion
+2. una ruta plantilla define zonas para un dia concreto
+3. la generacion semanal crea un `RouteDay`
+4. se crea una parada `RouteDayClient`
+5. se crea una `CollectionRequest`
+6. el cliente responde o el sistema autoestima la solicitud
+7. durante la ejecucion se registra la recogida
+8. posteriormente se mide y se confirma en nave
+9. si es facturable, entra en costes y estadisticas
+
+### 15.2 Ciclo de vida de una venta
+
+1. se registra o reutiliza un comprador
+2. se crea la venta con numero de factura y fecha de factura
+3. el backend recalcula importes
+4. se genera el PDF
+5. la venta pasa a computar como ingreso del negocio
+
+### 15.3 Ciclo de vida de la configuracion fiscal
+
+1. el owner actualiza datos fiscales y bancarios
+2. el sistema guarda la configuracion por empresa
+3. nuevas ventas y facturas consumen esos datos
+4. si cambia la configuracion y se regenera una factura, el PDF reflejara el estado vigente segun el flujo actual
+
+## 16. Reglas de negocio detalladas
+
+### 16.1 Reglas de rutas y planificacion
 
 - la semana operativa debe estar dentro del rango de la ruta
 - la generacion semanal es idempotente
@@ -758,14 +892,14 @@ Resultado esperado:
 - `max_clients_per_day` se respeta antes de cerrar el dia
 - `daily_capacity_liters` se aplica de forma estricta desde la primera parada
 
-### 11.2 Reglas de Google Directions
+### 16.2 Reglas de Google Directions
 
 - si no hay `GOOGLE_MAPS_API_KEY`, la generacion continua sin optimizacion
 - si la empresa no tiene hub geolocalizado, tampoco se optimiza
 - si la respuesta de Google es invalida, se conserva el orden actual
 - el sistema deja trazas en logs indicando si la optimizacion se aplico o no
 
-### 11.3 Reglas de solicitudes al cliente
+### 16.3 Reglas de solicitudes al cliente
 
 - el correo solo se envia si la integracion Gmail esta correctamente configurada
 - la fecha limite se calcula como inicio de jornada menos 36 horas
@@ -773,14 +907,14 @@ Resultado esperado:
 - si la solicitud ya no esta en estado admitido, la respuesta queda bloqueada
 - owner y worker pueden intervenir manualmente dentro de su empresa
 
-### 11.4 Reglas de recogidas
+### 16.4 Reglas de recogidas
 
 - una recogida cancelada no se trata como confirmada ni como coste
 - una recogida pendiente de medicion aun no consolida su impacto final
 - una recogida confirmada puede seguir marcada como no facturable
-- el historial de cliente y trabajador muestra tanto el estado operativo como la condicion de facturable/no facturable
+- el historial de cliente y trabajador muestra tanto el estado operativo como la condicion de facturable o no facturable
 
-### 11.5 Reglas de ventas y facturas
+### 16.5 Reglas de ventas y facturas
 
 - el numero de factura no se autogenera: lo define el owner
 - la unicidad se controla por empresa
@@ -788,7 +922,7 @@ Resultado esperado:
 - subtotal, IVA y total no se toman del frontend como valores finales de confianza
 - el backend recalcula importes para preservar coherencia
 
-### 11.6 Reglas de estadisticas
+### 16.6 Reglas de estadisticas
 
 - coste = suma de `Collection.total_price` de recogidas `CONFIRMED` y `billable=true`
 - ingreso = suma de `Sale.total`
@@ -796,9 +930,16 @@ Resultado esperado:
 - volumen comprado = litros netos de recogidas que computan
 - volumen vendido = cantidad registrada en ventas
 
-## 12. Estados funcionales y significado
+### 16.7 Reglas de seguridad funcional
 
-### 12.1 RouteDay
+- un cliente solo puede consultar y responder sus propias solicitudes
+- un cliente solo puede ver sus propias recogidas
+- un worker opera dentro del ambito de su empresa y sus permisos funcionales
+- compradores, ventas, configuracion y bloque economico quedan reservados a owner
+
+## 17. Estados funcionales y significado
+
+### 17.1 RouteDay
 
 - `PLANNED`: jornada planificada aun no iniciada
 - `IN_PROGRESS`: jornada iniciada y en curso
@@ -806,22 +947,22 @@ Resultado esperado:
 - `PARTIAL`: jornada cerrada con pendientes no ejecutadas
 - `CANCELED`: jornada cancelada
 
-### 12.2 CollectionRequest
+### 17.2 CollectionRequest
 
 - `PENDING`: pendiente de respuesta
 - `AUTO_ESTIMATED`: resuelta por autoestimacion
 - `ANSWERED`: respondida por el cliente
 - `MANUAL`: resuelta manualmente por owner o worker
 
-### 12.3 Collection
+### 17.3 Collection
 
 - `PENDING_MEASUREMENT`: operacion registrada pero pendiente de medicion final
 - `CONFIRMED`: operacion medida y consolidada
 - `CANCELED`: operacion anulada
 
-## 13. Experiencia por rol
+## 18. Experiencia funcional por rol
 
-### 13.1 Experiencia owner
+### 18.1 Experiencia owner
 
 El owner dispone de una experiencia de gestion completa.
 Su recorrido habitual es:
@@ -837,7 +978,7 @@ Su recorrido habitual es:
 - descargar facturas
 - revisar dashboard y estadisticas
 
-### 13.2 Experiencia worker
+### 18.2 Experiencia worker
 
 El worker se enfoca en operar.
 Su recorrido habitual es:
@@ -849,7 +990,7 @@ Su recorrido habitual es:
 - cerrar la jornada
 - revisar recogidas propias cuando proceda
 
-### 13.3 Experiencia client
+### 18.3 Experiencia client
 
 El cliente se enfoca en responder y consultar.
 Su recorrido habitual es:
@@ -858,10 +999,11 @@ Su recorrido habitual es:
 - consultar solicitudes pendientes
 - responder litros
 - revisar historico de recogidas
+- consultar y actualizar su perfil
 
-## 14. Integraciones externas
+## 19. Integraciones externas con impacto funcional
 
-### 14.1 Google Maps / Directions
+### 19.1 Google Maps and Directions
 
 Se utiliza para:
 
@@ -869,39 +1011,45 @@ Se utiliza para:
 - optimizacion provisional del orden de paradas
 - apertura de navegacion externa desde la operativa diaria
 
-### 14.2 Gmail API
+### 19.2 Gmail API
 
 Se utiliza para:
 
 - envio de credenciales iniciales
 - envio de notificaciones operativas al cliente sobre solicitudes de estimacion
 
-### 14.3 Celery y Redis
+### 19.3 Celery y Redis
 
 Se utilizan para:
 
 - programar autoestimaciones de solicitudes
 - ejecutar tareas diferidas relacionadas con vencimientos y notificaciones
 
-## 15. Requisitos no funcionales con impacto funcional
+### 19.4 WeasyPrint
 
-### 15.1 Multiempresa
+Se utiliza para:
+
+- generar las facturas PDF de venta a partir de plantillas HTML y CSS
+
+## 20. Requisitos no funcionales con impacto funcional
+
+### 20.1 Multiempresa
 
 La plataforma debe aislar datos por empresa y evitar cruces indebidos entre usuarios y registros.
 
-### 15.2 Responsive y uso en movilidad
+### 20.2 Responsive y uso en movilidad
 
 La parte de rutas y recogidas se ha trabajado con enfoque mobile-first porque worker y owner pueden operar desde movil durante la jornada.
 
-### 15.3 Tolerancia a integraciones opcionales
+### 20.3 Tolerancia a integraciones opcionales
 
 Si Google o Gmail no estan disponibles, el sistema debe degradar funcionalmente sin romper el flujo base siempre que el caso de uso lo permita.
 
-### 15.4 Mantenibilidad
+### 20.4 Mantenibilidad funcional
 
 Los valores de negocio que pueden variar se mueven a configuracion editable para reducir dependencia de cambios en codigo.
 
-## 16. Indicadores funcionales del negocio
+## 21. Indicadores funcionales del negocio
 
 Los indicadores mas relevantes que hoy soporta GreenPath son:
 
@@ -916,15 +1064,16 @@ Los indicadores mas relevantes que hoy soporta GreenPath son:
 - volumen comprado frente a volumen vendido
 - actividad reciente
 
-## 17. Riesgos y puntos de atencion funcional
+## 22. Riesgos y puntos de atencion funcional
 
 - calidad de las coordenadas del cliente: si la geocodificacion falla, el cliente puede quedar fuera de planificacion automatica
 - configuracion de zonas: zonas mal definidas generan planificaciones pobres o clientes no capturados
 - dependencias externas: Google y Gmail requieren credenciales validas
 - datos fiscales incompletos: una venta puede existir, pero la factura sera peor si la configuracion de empresa o comprador esta incompleta
 - decision sobre `billable`: afecta directamente a margenes y reporting
+- errores de operacion movil: una mala UX en campo afecta directamente al dato final
 
-## 18. Escenarios de error relevantes
+## 23. Escenarios de error relevantes
 
 - generacion semanal sobre semana fuera de rango
 - intento de regenerar una semana ya operada
@@ -932,8 +1081,9 @@ Los indicadores mas relevantes que hoy soporta GreenPath son:
 - recogida editada con datos de medicion inconsistentes
 - venta con numero de factura duplicado en la misma empresa
 - PDF no regenerable por falta de dependencias o datos invalidos
+- cliente sin localizacion valida para planificacion geografica
 
-## 19. Glosario
+## 24. Glosario
 
 - Hub: nave o punto base de salida de la empresa
 - Ruta plantilla: definicion base de una ruta reutilizable
@@ -946,21 +1096,9 @@ Los indicadores mas relevantes que hoy soporta GreenPath son:
 - Sale: operacion de venta registrada en sistema
 - Invoice PDF: factura de venta generada para una `Sale`
 
-## 20. Documentacion complementaria
+## 25. Requisitos funcionales resumidos
 
-Para ampliar este documento conviene consultar:
-
-- `README.md`
-- `docs/INDICE_DOCUMENTACION.md`
-- `docs/API.md`
-- `docs/ARQUITECTURA_TECNICA.md`
-- `docs/FRONTEND_PANTALLAS.md`
-- `docs/ROUTE_FLOW.md`
-- `docs/HISTORIAS_USUARIO.md`
-
-## 21. Requisitos funcionales resumidos
-
-### 21.1 Requisitos de operacion
+### 25.1 Requisitos de operacion
 
 - el owner debe poder crear y mantener clientes, trabajadores, camiones, zonas y rutas
 - el owner debe poder generar una semana operativa para una ruta plantilla
@@ -971,7 +1109,7 @@ Para ampliar este documento conviene consultar:
 - el worker debe poder iniciar, operar y finalizar la jornada diaria desde movil
 - el cierre de jornada debe distinguir entre cierre completo, parcial y cancelado segun la operacion real
 
-### 21.2 Requisitos de solicitud y estimacion
+### 25.2 Requisitos de solicitud y estimacion
 
 - el sistema debe crear una solicitud de estimacion asociada a cada parada planificada
 - el cliente debe poder responder litros antes del vencimiento
@@ -979,7 +1117,7 @@ Para ampliar este documento conviene consultar:
 - el sistema debe poder autoestimar cuando el cliente no responde dentro del plazo
 - toda resolucion debe dejar trazabilidad del origen de la respuesta
 
-### 21.3 Requisitos de recogidas
+### 25.3 Requisitos de recogidas
 
 - una recogida debe poder registrarse manualmente o desde una parada de ruta
 - una recogida debe poder quedar pendiente de medicion
@@ -987,7 +1125,7 @@ Para ampliar este documento conviene consultar:
 - una recogida debe poder marcarse como facturable o no facturable
 - solo las recogidas confirmadas y facturables deben entrar en el resumen economico
 
-### 21.4 Requisitos economicos
+### 25.4 Requisitos economicos
 
 - el owner debe poder registrar compradores internos
 - el owner debe poder registrar ventas con numero de factura manual
@@ -995,9 +1133,9 @@ Para ampliar este documento conviene consultar:
 - la empresa debe poder editar sus datos fiscales y bancarios
 - las estadisticas deben distinguir con claridad entre costes, ingresos y beneficio
 
-## 22. Casos de uso prioritarios
+## 26. Casos de uso prioritarios
 
-### 22.1 Caso de uso: generar semana operativa
+### 26.1 Caso de uso: generar semana operativa
 
 Actor principal:
 - owner
@@ -1011,7 +1149,7 @@ Resultado esperado:
 - se crean las paradas candidatas respetando reglas de frecuencia
 - se generan solicitudes para que el cliente informe litros o el sistema autoestime
 
-### 22.2 Caso de uso: ejecutar una ruta diaria
+### 26.2 Caso de uso: ejecutar una ruta diaria
 
 Actor principal:
 - worker
@@ -1026,7 +1164,7 @@ Resultado esperado:
 - registra recogidas o cancelaciones
 - finaliza la jornada dejando el estado correcto
 
-### 22.3 Caso de uso: medir una recogida en nave
+### 26.3 Caso de uso: medir una recogida en nave
 
 Actor principal:
 - owner o worker con permisos
@@ -1040,7 +1178,7 @@ Resultado esperado:
 - la recogida queda confirmada o cancelada
 - si es facturable, pasa a computar en resumen economico
 
-### 22.4 Caso de uso: registrar una venta y emitir factura
+### 26.4 Caso de uso: registrar una venta y emitir factura
 
 Actor principal:
 - owner
@@ -1055,7 +1193,7 @@ Resultado esperado:
 - se genera el PDF de factura
 - la venta pasa a computar como ingreso en estadisticas
 
-## 23. Criterios globales de aceptacion funcional
+## 27. Criterios globales de aceptacion funcional
 
 Para considerar el sistema funcionalmente coherente en una entrega, al menos debe cumplirse lo siguiente:
 
@@ -1064,13 +1202,13 @@ Para considerar el sistema funcionalmente coherente en una entrega, al menos deb
 - un cliente puede responder una solicitud antes de su expiracion
 - una recogida puede medirse, confirmarse y quedar correctamente reflejada en detalle e historico
 - una venta puede registrarse y emitir factura PDF con datos fiscales configurables
-- el dashboard y las estadisticas muestran separadamente operacion y economia
+- las estadisticas muestran separadamente operacion y economia
 - la experiencia movil permite operar rutas y recogidas sin depender de escritorio
 - los modulos economicos y de configuracion quedan restringidos a owner
 
-## 24. Matriz resumida de modulos por rol
+## 28. Matriz resumida de modulos por rol
 
-### 24.1 Owner
+### 28.1 Owner
 
 Puede operar funcionalmente sobre:
 
@@ -1094,11 +1232,10 @@ Puede ejecutar acciones criticas como:
 - medir y confirmar recogidas
 - generar y regenerar facturas PDF
 
-### 24.2 Worker
+### 28.2 Worker
 
 Puede operar funcionalmente sobre:
 
-- dashboard operativo
 - rutas asignadas o visibles segun permisos
 - ejecucion de jornada
 - registro de recogidas desde ruta
@@ -1112,11 +1249,10 @@ No deberia operar sobre:
 - configuracion fiscal
 - generacion semanal de rutas
 
-### 24.3 Client
+### 28.3 Client
 
 Puede operar funcionalmente sobre:
 
-- dashboard propio
 - solicitudes abiertas
 - respuesta de litros
 - historico de recogidas
@@ -1129,3 +1265,19 @@ No deberia operar sobre:
 - configuracion
 - estadisticas globales
 - bloque economico interno
+
+## 29. Documentacion complementaria
+
+Para ampliar este documento conviene consultar:
+
+- `README.md`
+- `docs/INDICE_DOCUMENTACION.md`
+- `docs/API.md`
+- `docs/ARQUITECTURA_TECNICA.md`
+- `docs/FRONTEND_PANTALLAS.md`
+- `docs/ROUTE_FLOW.md`
+- `docs/REQUISITOS.md`
+- `docs/CASOS_DE_USO.md`
+- `docs/MANUAL_USUARIO.md`
+- `docs/DESPLIEGUE_Y_OPERACION.md`
+- `docs/BIBLIOGRAFIA_Y_FUENTES.md`

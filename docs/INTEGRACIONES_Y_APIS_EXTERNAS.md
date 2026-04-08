@@ -1,6 +1,6 @@
 # Integraciones y APIs Externas GreenPath
 
-Fecha de revision: 2026-03-27
+Fecha de revision: 2026-04-08
 
 ## 1. Objetivo del documento
 
@@ -219,7 +219,56 @@ Desde la perspectiva del TFG, estas integraciones aportan valor porque demuestra
 - coordinacion entre backend, frontend y procesos asincronos
 - generacion documental con calidad suficiente para un caso de uso real
 
-## 10. Documentos relacionados
+## 10. Coste, cuotas y control operativo
+
+Desde el punto de vista de proyecto, las integraciones no son solo una cuestion tecnica, sino tambien operativa.
+
+### 10.1 Google Maps Platform
+
+Aspectos a vigilar:
+
+- consumo de cuota
+- coste asociado al uso de Directions y Geocoding
+- restriccion de la API key por entorno o dominio
+
+### 10.2 Gmail API
+
+Aspectos a vigilar:
+
+- validez del token OAuth
+- revocacion manual de credenciales
+- dependencia de la cuenta emisora
+
+### 10.3 WeasyPrint
+
+Aspectos a vigilar:
+
+- presencia de dependencias del sistema en la imagen Docker
+- consistencia de la plantilla HTML/CSS
+- correcto almacenamiento y regeneracion del PDF
+
+## 11. Seguridad de integraciones y custodia de secretos
+
+Las integraciones utilizadas por GreenPath implican custodiar informacion sensible.
+Por ello se recomienda:
+
+- no versionar secretos ni tokens en el repositorio
+- utilizar `.env` o mecanismos equivalentes por entorno
+- rotar credenciales expuestas o sospechosas
+- restringir el acceso a claves de Google
+- conservar copia segura y privada del cliente OAuth de Gmail
+
+## 12. Criterios de eleccion de integraciones
+
+Las integraciones elegidas responden a criterios concretos:
+
+- Google Maps aporta geocodificacion y optimizacion realista para un caso de uso logistico
+- Gmail API permite un canal formal de notificacion sin depender de envio local improvisado
+- WeasyPrint permite facturas PDF mantenibles a partir de HTML y CSS versionables
+
+Estas elecciones se consideran razonables para un TFG porque aportan valor funcional visible sin exigir una infraestructura desproporcionada.
+
+## 13. Documentos relacionados
 
 Para ampliar esta informacion conviene consultar tambien:
 
@@ -227,3 +276,5 @@ Para ampliar esta informacion conviene consultar tambien:
 - `docs/ARQUITECTURA_TECNICA.md`
 - `docs/ROUTE_FLOW.md`
 - `docs/MEMORIA_FUNCIONAL_TFG.md`
+- `docs/DESPLIEGUE_Y_OPERACION.md`
+- `docs/BIBLIOGRAFIA_Y_FUENTES.md`

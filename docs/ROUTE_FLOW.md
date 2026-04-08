@@ -1,6 +1,6 @@
 # Route Flow - Flujo de Rutas GreenPath
 
-Fecha de revision: 2026-03-22
+Fecha de revision: 2026-04-08
 
 ## 1. Objetivo del documento
 
@@ -408,9 +408,50 @@ La vista `operational-overview` admite `week_start_date=YYYY-MM-DD` para cargar 
 - cada parada puede terminar en recogida real
 - la recogida medida y facturable impacta en estadisticas economicas
 
-## 22. Referencias relacionadas
+## 22. Observabilidad y control operativo del flujo
+
+Para diagnosticar incidencias en rutas conviene revisar:
+
+- logs de backend durante `generate-week`
+- logs de Google cuando la optimizacion no se aplica
+- tareas Celery asociadas a `CollectionRequest`
+- estado real de `RouteDay`, `RouteDayClient` y `Collection`
+
+Senales utiles de comprobacion:
+
+- numero de jornadas generadas
+- numero de paradas insertadas
+- existencia de solicitudes programadas
+- estado final correcto de la jornada tras `finish`
+
+## 23. Checklist de validacion manual del modulo
+
+Una validacion funcional minima del flujo de rutas deberia cubrir:
+
+- crear o editar una ruta plantilla
+- definir zonas por dia
+- generar una semana dentro de rango
+- comprobar que se crean jornadas y solicitudes
+- iniciar una jornada desde `RouteExecution`
+- registrar una parada
+- finalizar sin pendientes
+- finalizar con pendientes obligando a decidir
+- revisar que una parada cancelada no bloquee un cierre completo si ya no quedan pendientes reales
+
+## 24. Evolucion prevista del modulo
+
+Las lineas de evolucion mas razonables del modulo de rutas son:
+
+- planificacion mas avanzada por multiples criterios
+- soporte mas rico para asignacion trabajador-camion
+- reglas de carga y retorno a hub mas sofisticadas
+- monitorizacion mas profunda de colas y decisiones automaticas
+- pruebas end-to-end centradas en operacion movil
+
+## 25. Referencias relacionadas
 
 - `docs/FUNCIONAL.md`
 - `docs/API.md`
 - `docs/ARQUITECTURA_TECNICA.md`
 - `docs/FRONTEND_PANTALLAS.md`
+- `docs/DESPLIEGUE_Y_OPERACION.md`

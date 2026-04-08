@@ -1,6 +1,6 @@
 # Arquitectura Tecnica del Proyecto
 
-Fecha de revision: 2026-03-24
+Fecha de revision: 2026-04-08
 
 ## 1. Objetivo de esta documentacion
 
@@ -439,3 +439,59 @@ Por eso la estrategia recomendada sigue siendo mixta:
 
 - tests automaticos para regresiones frecuentes
 - validacion manual guiada para flujos GIS, PDF e integraciones externas
+
+## 22. Topologia logica de servicios
+
+En terminos de despliegue, GreenPath se organiza en varios servicios cooperativos:
+
+- frontend para la interfaz web
+- backend para API y reglas de negocio
+- PostgreSQL/PostGIS para persistencia
+- Redis para mensajeria y tareas
+- Celery Worker para ejecucion asincrona
+- Celery Beat para programacion
+- Flower para observabilidad de colas
+
+Esta separacion permite desacoplar responsabilidades y explicar con claridad que piezas son imprescindibles para la operacion base y cuales actuan como soporte.
+
+## 23. Gobierno del dato y consistencia
+
+La arquitectura persigue consistencia funcional en varios puntos:
+
+- aislamiento de datos por empresa
+- recalculo backend de importes sensibles
+- preservacion de trazabilidad al regenerar semanas
+- proteccion de jornadas ya operadas
+- distincion entre dato operativo y dato economico
+
+Ejemplos claros de esta filosofia:
+
+- `Sale` recalcula subtotal, IVA y total en backend
+- `Collection` separa estado operativo y marca `billable`
+- `generate-week` protege dias ya ejecutados
+- `CollectionRequest` mantiene autoria y scheduling
+
+## 24. Relacion con despliegue y operacion
+
+La arquitectura tecnica no termina en el codigo.
+Su explotacion real depende de:
+
+- variables de entorno correctas
+- dependencias del sistema para WeasyPrint
+- credenciales validas de Google y Gmail cuando se usan
+- arranque coordinado de servicios Docker
+- carga consistente de fixtures de demo cuando procede
+
+La parte operativa detallada se desarrolla en:
+
+- `docs/DESPLIEGUE_Y_OPERACION.md`
+
+## 25. Relacion con la documentacion academica
+
+Para una defensa o entrega del TFG, esta arquitectura se complementa con:
+
+- `docs/FUNCIONAL.md` para la vision de negocio
+- `docs/REQUISITOS.md` para la formalizacion de necesidades
+- `docs/INTEGRACIONES_Y_APIS_EXTERNAS.md` para justificar dependencias externas
+- `docs/PLANIFICACION_Y_COSTES.md` para la dimension metodologica
+- `docs/UML_BD.md` para explicar el modelo de datos

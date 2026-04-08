@@ -1,8 +1,9 @@
 # Indice de Documentacion GreenPath
 
-Fecha de revision: 2026-03-24
+Fecha de revision: 2026-04-08
 
 Este documento sirve como mapa de lectura de la documentacion del proyecto.
+Actualmente la documentacion central del sistema se mantiene de forma unificada en la carpeta `docs/` del backend y cubre negocio, requisitos, arquitectura, API, frontend, testing, integraciones, planificacion, despliegue, manual de usuario, bibliografia y modelo de datos.
 
 ## 1. Por donde empezar
 
@@ -22,6 +23,9 @@ Si vienes nuevo al proyecto, el orden recomendado es:
 12. `docs/MANUAL_USUARIO.md`
 13. `docs/HISTORIAS_USUARIO.md`
 14. `docs/MEMORIA_FUNCIONAL_TFG.md`
+15. `docs/DESPLIEGUE_Y_OPERACION.md`
+16. `docs/BIBLIOGRAFIA_Y_FUENTES.md`
+17. `docs/UML_BD.md`
 
 ## 2. Descripcion de cada documento
 
@@ -114,6 +118,29 @@ Explica:
 - valoracion de costes
 - riesgos y desviaciones
 
+### `docs/DESPLIEGUE_Y_OPERACION.md`
+
+Documento orientado a explotacion y soporte.
+Explica:
+
+- estructura de servicios
+- variables de entorno
+- puesta en marcha
+- operacion diaria
+- observabilidad
+- backup y recuperacion
+- checklist de defensa o demo
+
+### `docs/BIBLIOGRAFIA_Y_FUENTES.md`
+
+Documento de apoyo academico.
+Explica:
+
+- fuentes oficiales del stack
+- referencias de integraciones externas
+- fuentes para testing y PDF
+- base bibliografica del TFG
+
 ### `docs/TESTING.md`
 
 Documento operativo de testing.
@@ -171,6 +198,16 @@ Es util para:
 - explicar el valor del sistema mas alla de la API y el codigo
 - enlazar de forma coherente la parte funcional, tecnica y de planificacion
 
+### `docs/UML_BD.md`
+
+Diagrama UML de base de datos.
+Es util para:
+
+- entender entidades y relaciones
+- revisar cardinalidades
+- apoyar explicaciones tecnicas y academicas
+- visualizar el modelo persistente del sistema
+
 ## 3. Recomendacion para defensa o entrega
 
 Si el objetivo es presentar el proyecto de forma profesional:
@@ -178,7 +215,9 @@ Si el objetivo es presentar el proyecto de forma profesional:
 - usa `docs/FUNCIONAL.md` como base de explicacion del negocio
 - utiliza `docs/REQUISITOS.md` para justificar el catalogo formal de requisitos
 - utiliza `docs/INTEGRACIONES_Y_APIS_EXTERNAS.md` para justificar APIs y dependencias externas
+- utiliza `docs/DESPLIEGUE_Y_OPERACION.md` para justificar puesta en marcha, operacion y continuidad
 - utiliza `docs/PLANIFICACION_Y_COSTES.md` para justificar metodologia, estimaciones y costes
+- utiliza `docs/BIBLIOGRAFIA_Y_FUENTES.md` para apoyar bibliografia y referencias
 - apoya la parte tecnica con `docs/ARQUITECTURA_TECNICA.md`
 - utiliza `docs/API.md` para justificar contratos y endpoints
 - utiliza `docs/FRONTEND_PANTALLAS.md` para demostrar cobertura funcional del front
@@ -186,6 +225,7 @@ Si el objetivo es presentar el proyecto de forma profesional:
 - utiliza `docs/CASOS_DE_USO.md` para explicar secuencias funcionales de actores
 - utiliza `docs/MANUAL_USUARIO.md` como anexo de uso
 - utiliza `docs/MEMORIA_FUNCIONAL_TFG.md` como hilo academico de sintesis
+- utiliza `docs/UML_BD.md` para apoyar la explicacion del modelo de datos
 
 ## 4. Lectura segun objetivo
 
@@ -199,6 +239,9 @@ Lee en este orden:
 4. `docs/CASOS_DE_USO.md`
 5. `docs/HISTORIAS_USUARIO.md`
 6. `docs/MEMORIA_FUNCIONAL_TFG.md`
+7. `docs/DESPLIEGUE_Y_OPERACION.md`
+8. `docs/BIBLIOGRAFIA_Y_FUENTES.md`
+9. `docs/UML_BD.md`
 
 ### Si tu objetivo es entrar a desarrollar backend
 
@@ -213,6 +256,8 @@ Lee en este orden:
 7. `docs/TESTING.md`
 8. `docs/ROUTE_FLOW.md`
 9. `docs/CASOS_DE_USO.md`
+10. `docs/DESPLIEGUE_Y_OPERACION.md`
+11. `docs/UML_BD.md`
 
 ### Si tu objetivo es entrar a desarrollar frontend
 
@@ -227,6 +272,8 @@ Lee en este orden:
 7. `docs/TESTING.md`
 8. `docs/ROUTE_FLOW.md`
 9. `docs/MANUAL_USUARIO.md`
+10. `docs/DESPLIEGUE_Y_OPERACION.md`
+11. `docs/UML_BD.md`
 
 ### Si tu objetivo es preparar entrega o defensa
 
@@ -242,3 +289,6 @@ Lee en este orden:
 8. `docs/TESTING.md`
 9. `docs/CASOS_DE_USO.md`
 10. `docs/MANUAL_USUARIO.md`
+11. `docs/DESPLIEGUE_Y_OPERACION.md`
+12. `docs/BIBLIOGRAFIA_Y_FUENTES.md`
+13. `docs/UML_BD.md`

@@ -209,8 +209,10 @@ Consulta `apps/user/fixtures/README.md` para el detalle.
 - `docs/FUNCIONAL.md`: especificacion funcional completa del sistema
 - `docs/REQUISITOS.md`: catalogo formal de requisitos de negocio, funcionales y no funcionales
 - `docs/INTEGRACIONES_Y_APIS_EXTERNAS.md`: APIs externas, configuracion y riesgos de integracion
+- `docs/DESPLIEGUE_Y_OPERACION.md`: puesta en marcha, operacion, soporte y continuidad
 - `docs/PLANIFICACION_Y_COSTES.md`: metodologia, estimaciones, planificacion y costes
 - `docs/MEMORIA_FUNCIONAL_TFG.md`: version orientada a memoria/defensa academica
+- `docs/BIBLIOGRAFIA_Y_FUENTES.md`: fuentes tecnicas y referencias para memoria y defensa
 - `docs/CASOS_DE_USO.md`: secuencias funcionales por actor
 - `docs/MANUAL_USUARIO.md`: manual de uso por rol y recomendaciones
 - `docs/API.md`: endpoints, payloads y reglas de API
@@ -219,6 +221,7 @@ Consulta `apps/user/fixtures/README.md` para el detalle.
 - `docs/TESTING.md`: estrategia, ejecucion y cobertura actual de tests
 - `docs/ROUTE_FLOW.md`: detalle del flujo de rutas y su operacion
 - `docs/HISTORIAS_USUARIO.md`: backlog funcional y criterios de aceptacion
+- `docs/UML_BD.md`: diagrama UML del modelo de datos y relaciones principales
 
 ## 12. Recomendacion de lectura
 
@@ -237,6 +240,7 @@ Si alguien se incorpora al proyecto, el orden recomendado es:
 11. `docs/API.md`
 12. `docs/FRONTEND_PANTALLAS.md`
 13. `docs/TESTING.md`
+14. `docs/UML_BD.md`
 
 ## 13. Estado y siguientes mejoras naturales
 
@@ -338,7 +342,7 @@ npm run test
 
 Si el entorno local da problemas con `node_modules`, la ejecucion en contenedor temporal de Node suele ser la via mas estable.
 
-### Snapshot de cobertura a fecha 2026-03-24
+### Snapshot de cobertura a fecha 2026-04-05
 
 - backend: `25` tests verdes
 - frontend: `17` tests verdes

@@ -1,6 +1,6 @@
 # Organizacion, Planificacion y Costes GreenPath
 
-Fecha de revision: 2026-03-27
+Fecha de revision: 2026-04-08
 
 ## 1. Objetivo del documento
 
@@ -210,13 +210,13 @@ Esta distribucion refleja varias ideas importantes:
 
 ## 10. Estadisticas e indicadores del proyecto
 
-### 10.1 Snapshot estructural a fecha 2026-03-27
+### 10.1 Snapshot estructural a fecha 2026-04-05
 
 | Indicador | Valor |
 | --- | ---: |
 | Apps backend de dominio | 9 |
 | Modulos o paginas principales en frontend | 14 |
-| Documentos centralizados en `docs/` | 12 |
+| Documentos centralizados en `docs/` | 14 |
 | Fixtures JSON de demo | 13 |
 | Integraciones externas principales | 3 |
 | Tests backend documentados | 25 |
@@ -230,6 +230,7 @@ Estos datos sirven para justificar la entidad real del proyecto:
 - no se trata de una unica app monolitica, sino de un sistema modular
 - el frontend tiene una cobertura funcional amplia por modulos
 - existe un paquete documental centralizado y mantenido
+- ese paquete documental ya no se limita a descripcion tecnica: incluye requisitos, casos de uso, manual de usuario, testing, integraciones y planificacion
 - hay base de datos demo y testing automatizado en ambas capas
 
 ### 10.3 Indicadores de complejidad funcional
@@ -349,3 +350,13 @@ Si se prepara una memoria final en PDF, este documento puede alimentar directame
 - riesgos y desviaciones
 
 De esta forma, la memoria del TFG gana cuerpo academico sin sobrecargar el documento funcional principal ni la memoria de sintesis.
+
+## 16. Relacion con el paquete documental del proyecto
+
+La utilidad de este documento aumenta cuando se lee junto a:
+
+- `docs/FUNCIONAL.md`, para entender el valor de negocio de lo planificado
+- `docs/REQUISITOS.md`, para conectar esfuerzo con alcance y prioridad
+- `docs/TESTING.md`, para vincular planificacion y validacion
+- `docs/DESPLIEGUE_Y_OPERACION.md`, para justificar el esfuerzo de puesta en marcha y soporte
+- `docs/MEMORIA_FUNCIONAL_TFG.md`, para llevar estas ideas a una redaccion mas academica

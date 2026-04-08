@@ -1,6 +1,6 @@
 # API GreenPath (Backend Django)
 
-Fecha de revision: 2026-03-22
+Fecha de revision: 2026-04-05
 
 ## 1. Objetivo de este documento
 
@@ -162,6 +162,11 @@ Actions:
 
 Filtros soportados:
 - `name`, `surname`, `phone`, `dni`, `role`, `disabled`, `search`
+
+Reglas relevantes:
+- `POST /workers/` crea siempre trabajadores operativos normales con `role=worker`
+- el flujo API usado por frontend no debe utilizarse para crear `owner`
+- `PUT/PATCH /workers/{id}/` no se considera via valida para cambiar `role` o `company`
 
 ### 6.3 Clients (`/clients/`)
 

@@ -1,6 +1,6 @@
 # Guia de Testing GreenPath
 
-Fecha de revision: 2026-03-24
+Fecha de revision: 2026-04-05
 
 ## 1. Objetivo del documento
 

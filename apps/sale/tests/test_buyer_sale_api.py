@@ -1,3 +1,4 @@
+from datetime import date
 from decimal import Decimal
 from unittest.mock import patch
 
@@ -34,8 +35,7 @@ class BuyerAndSaleApiTests(BackendTestMixin, TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data["company_name"], self.company.name)
 
-    @patch("apps.sale.api.serializers.sale_serializers.generate_sale_invoice_pdf")
-    def test_owner_can_create_sale_with_manual_invoice_number(self, generate_pdf_mock):
+    def test_owner_can_create_sale_with_manual_invoice_number(self):
         buyer = self.create_buyer(self.company, "Comprador Venta", "B22222222")
 
         response = self.owner_client.post(
@@ -62,7 +62,35 @@ class BuyerAndSaleApiTests(BackendTestMixin, TestCase):
         self.assertEqual(sale.subtotal, Decimal("98.40"))
         self.assertEqual(sale.tax_amount, Decimal("20.66"))
         self.assertEqual(sale.total, Decimal("119.06"))
+        self.assertFalse(bool(sale.invoice_pdf))
+        self.assertIsNone(sale.invoice_generated_at)
+
+    @patch("apps.sale.api.viewsets.sale_viewset.generate_sale_invoice_pdf")
+    def test_download_invoice_generates_pdf_on_demand_without_storing_file(self, generate_pdf_mock):
+        buyer = self.create_buyer(self.company, "Comprador PDF", "B33333333")
+        sale = Sale.objects.create(
+            company=self.company,
+            buyer=buyer,
+            invoice_number="005/2026",
+            invoice_date=date(2026, 3, 25),
+            product_description="Venta puntual de aceite",
+            quantity=Decimal("50.00"),
+            unit="L",
+            unit_price=Decimal("1.10"),
+            tax_rate=Decimal("21.00"),
+            currency="EUR",
+        )
+        generate_pdf_mock.return_value = (b"%PDF-demo", "FACTURA_005-2026.pdf")
+
+        response = self.owner_client.get(f"/sales/{sale.id}/invoice/download/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/pdf")
+        self.assertIn('filename="FACTURA_005-2026.pdf"', response["Content-Disposition"])
         generate_pdf_mock.assert_called_once_with(sale)
+        sale.refresh_from_db()
+        self.assertFalse(bool(sale.invoice_pdf))
+        self.assertIsNone(sale.invoice_generated_at)
 
     def test_worker_cannot_access_buyers(self):
         response = self.worker_client.get("/buyers/")

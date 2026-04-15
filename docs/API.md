@@ -505,30 +505,16 @@ Reglas:
 - `invoice_date` es la unica fecha visible y funcional del modulo.
 - internamente `sale_date` se sincroniza con `invoice_date` para mantener compatibilidad del modelo.
 - `subtotal`, `tax_amount` y `total` se recalculan en backend.
-- cada venta puede regenerar su factura PDF.
+- el PDF no se almacena: se genera bajo demanda cuando se descarga o se valida.
 
 #### `GET /sales/{id}/invoice/download/`
 
 Descarga el PDF de factura.
 
 Comportamiento:
-- si la venta no tiene PDF generado, backend intenta generarlo en ese momento
-- si sigue sin existir, devuelve `404`
-
-#### `POST /sales/{id}/invoice/regenerate/`
-
-Regenera el PDF de una venta.
-
-Response 200:
-```json
-{
-  "message": "Factura regenerada correctamente.",
-  "sale": {
-    "id": 2003,
-    "invoice_number": "004/2026"
-  }
-}
-```
+- backend construye el PDF en memoria en cada solicitud
+- no persiste el fichero en almacenamiento
+- devuelve un adjunto `application/pdf`
 
 #### `GET /sales/economic-summary/`
 

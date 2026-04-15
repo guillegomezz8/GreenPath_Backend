@@ -1,8 +1,6 @@
 from django import forms
 from django.contrib import admin
 from django.core.exceptions import ValidationError
-from django.utils.html import format_html
-
 from apps.sale.models import Buyer, Sale
 
 
@@ -89,7 +87,7 @@ class SaleAdmin(admin.ModelAdmin):
     list_select_related = ("company", "buyer")
     ordering = ("-invoice_date", "-id")
     date_hierarchy = "invoice_date"
-    readonly_fields = ("subtotal", "tax_amount", "total", "invoice_generated_at", "invoice_pdf_link")
+    readonly_fields = ("subtotal", "tax_amount", "total")
     fieldsets = (
         ("Factura", {
             "fields": ("company", "buyer", "manual_invoice_number", "invoice_date", "currency"),
@@ -100,16 +98,10 @@ class SaleAdmin(admin.ModelAdmin):
         ("Totales calculados", {
             "fields": ("subtotal", "tax_amount", "total"),
         }),
-        ("PDF y trazabilidad", {
-            "fields": ("invoice_pdf", "invoice_pdf_link", "invoice_generated_at", "disabled"),
+        ("Estado", {
+            "fields": ("disabled",),
         }),
         ("Notas", {
             "fields": ("notes",),
         }),
     )
-
-    @admin.display(description="Factura PDF")
-    def invoice_pdf_link(self, obj):
-        if not obj.invoice_pdf:
-            return "Sin PDF"
-        return format_html('<a href="{}" target="_blank">Abrir factura</a>', obj.invoice_pdf.url)

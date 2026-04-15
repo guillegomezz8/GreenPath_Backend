@@ -292,17 +292,17 @@ Cada caso de uso se expresa con:
 3. selecciona comprador
 4. introduce numero de factura, fecha de factura, concepto, cantidad, unidad y precio
 5. el sistema recalcula subtotal, impuesto y total
-6. el sistema genera el PDF
-7. la venta queda disponible en listado, detalle y descarga documental
+6. la venta queda disponible en listado, detalle y descarga documental
+7. el PDF se renderiza en el momento de la descarga
 
 **Flujos alternativos:**
 
 - si el numero de factura ya existe en la empresa, el sistema rechaza la operacion
-- si el PDF falla por problema de entorno, la venta puede requerir regeneracion posterior
+- si el PDF falla por problema de entorno, la descarga devuelve error y la venta sigue existiendo
 
 **Resultado esperado:**
 
-- venta registrada y documento PDF disponible
+- venta registrada y documento PDF disponible bajo demanda
 
 ### CU-010. Consultar estadisticas
 

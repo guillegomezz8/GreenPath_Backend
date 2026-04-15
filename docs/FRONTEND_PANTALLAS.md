@@ -530,7 +530,7 @@ Notas:
 - solo visible para owner
 - `invoice_number` manual
 - `invoice_date` como fecha funcional unica
-- detalle con descarga y regeneracion de factura
+- detalle con descarga directa de factura bajo demanda
 
 ## 16. Modulo de configuracion de empresa
 
@@ -635,7 +635,6 @@ Zonas donde la responsividad es especialmente critica:
 - CRUD `buyers`
 - CRUD `sales`
 - `GET /sales/{id}/invoice/download/`
-- `POST /sales/{id}/invoice/regenerate/`
 - `GET /sales/economic-summary/`
 
 ## 20. Resumen del estado actual del frontend

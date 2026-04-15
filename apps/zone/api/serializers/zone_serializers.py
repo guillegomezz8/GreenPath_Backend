@@ -1,7 +1,8 @@
 from rest_framework import serializers
 
 from apps.base.logger import configure_logging
-from apps.route.models import Zone
+from apps.user.models.client import Client
+from apps.zone.models import Zone
 
 from django.contrib.gis.geos import Polygon, GEOSException
 
@@ -10,11 +11,62 @@ import logging
 
 configure_logging()
 
+class ZoneClientSummarySerializer(serializers.ModelSerializer):
+    frequency = serializers.CharField(source="get_frequency_display", read_only=True)
+    latitude = serializers.SerializerMethodField()
+    longitude = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Client
+        fields = ["id", "name", "address", "city", "postal_code", "frequency", "latitude", "longitude"]
+
+    def get_latitude(self, obj):
+        if not obj.location:
+            return None
+        return obj.location.y
+
+    def get_longitude(self, obj):
+        if not obj.location:
+            return None
+        return obj.location.x
+
 
 class ZoneSerializer(serializers.ModelSerializer):
+    clients_count = serializers.SerializerMethodField()
+    clients = serializers.SerializerMethodField()
+
     class Meta:
         model = Zone
-        fields = ['id', 'name', 'polygon']
+        fields = ['id', 'name', 'polygon', 'clients_count', 'clients']
+
+    def _get_clients_queryset(self, obj):
+        cache_name = "_zone_clients_cache"
+        cache = self.context.setdefault(cache_name, {})
+        if obj.id in cache:
+            return cache[obj.id]
+
+        request = self.context.get("request")
+        queryset = Client.objects.filter(
+            disabled=False,
+            location__isnull=False,
+            location__within=obj.polygon,
+        ).order_by("name")
+
+        if request and not (request.user.is_staff or request.user.is_superuser):
+            if hasattr(request.user, "worker_profile"):
+                queryset = queryset.filter(companies=request.user.worker_profile.company)
+            else:
+                queryset = queryset.none()
+
+        cache[obj.id] = queryset.distinct()
+        return cache[obj.id]
+
+    def get_clients_count(self, obj):
+        return self._get_clients_queryset(obj).count()
+
+    def get_clients(self, obj):
+        queryset = self._get_clients_queryset(obj)
+        return ZoneClientSummarySerializer(queryset, many=True).data
 
 
 class CreateZoneSerializer(serializers.Serializer):

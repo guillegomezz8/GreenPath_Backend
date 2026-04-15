@@ -1,6 +1,6 @@
 # Memoria Funcional TFG - GreenPath
 
-Fecha de revision: 2026-04-08
+Fecha de revision: 2026-04-14
 
 ## 1. Introduccion
 
@@ -133,6 +133,7 @@ El alcance actual del sistema incluye:
 - solicitudes de estimacion al cliente (`CollectionRequest`)
 - autoestimacion asincrona con Celery
 - ejecucion diaria de la ruta desde interfaz responsive
+- control operativo simplificado por capacidad con tramos y retorno implicito al hub
 - recogidas con medicion posterior y control de `billable`
 - compradores internos (`Buyer`)
 - ventas (`Sale`)
@@ -216,6 +217,9 @@ Durante el proyecto se han consolidado varias decisiones tecnicas y funcionales 
 
 - separacion por apps de dominio en backend
 - separacion entre `RouteDetail` y `RouteExecution` en frontend
+- uso de una `v1` de tramos operativos por capacidad sin nuevas entidades persistentes
+- alineacion entre mapa operativo y navegacion externa a partir de un mismo `operational_plan`
+- calculo de frecuencia y elegibilidad semanal dentro de la empresa de la ruta
 - uso de una sola fecha operativa en ventas: `invoice_date`
 - numero de factura manual y unico por empresa
 - precio por litro configurable a nivel de empresa
@@ -244,9 +248,9 @@ A fecha de esta revision, el sistema cubre el flujo principal del negocio y disp
 - soporte para operacion diaria y bloque economico
 - testing automatizado modular
 
-### 7.1 Snapshot de testing actual a fecha 2026-04-05
+### 7.1 Snapshot de testing actual a fecha 2026-04-14
 
-- backend: 25 tests automatizados
+- backend: 31 tests automatizados
 - frontend: 17 tests automatizados
 
 El detalle de estrategia, estructura y comandos se encuentra en `docs/TESTING.md`.

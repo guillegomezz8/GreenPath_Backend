@@ -1,6 +1,6 @@
 # Integraciones y APIs Externas GreenPath
 
-Fecha de revision: 2026-04-08
+Fecha de revision: 2026-04-14
 
 ## 1. Objetivo del documento
 
@@ -81,6 +81,14 @@ Impacto funcional:
 #### Navegacion operativa
 
 Desde la pantalla `RouteExecution`, el usuario puede abrir un enlace de navegacion externa basado en las coordenadas del hub y de las paradas. En movil se intenta favorecer la apertura de la app de Google Maps si esta instalada.
+
+En la version actual, esta navegacion ya no se exporta como una simple cadena lineal de clientes. La URL se construye a partir del `operational_plan` del dia, por lo que:
+
+- origen = hub
+- destino = hub
+- si la capacidad prevista obliga a dividir la jornada, el hub aparece tambien entre segmentos como waypoint intermedio
+
+Esto permite que Google Maps refleje mejor el recorrido real esperado de una jornada con varias cargas o varios retornos operativos a nave.
 
 ### 4.3 Configuracion necesaria
 

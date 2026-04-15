@@ -18,6 +18,7 @@ from apps.base.literals import (
     ROUTE_ZONE_WEEKDAY_INVALID,
 )
 from apps.base.logger import configure_logging
+from apps.base.literals import MAX_CLIENTS_PER_DAY
 from apps.route.models import Route, RouteDay, RouteDayClient
 from apps.user.api.serializers.client_serializers import ClientSerializer
 from apps.zone.models import Zone
@@ -27,9 +28,20 @@ configure_logging()
 
 
 class RouteSerializer(serializers.ModelSerializer):
+    company_name = serializers.SerializerMethodField()
+
     class Meta:
         model = Route
         exclude = ('modified_date', 'deleted_date', 'created_date')
+
+    def get_company_name(self, obj):
+        try:
+            if obj.company_id and obj.company:
+                return obj.company.name
+            return ""
+        except Exception as e:
+            logging.error(f"[route_serializers - get_company_name] Error obteniendo nombre de empresa para ruta {obj.id}: {str(e)}")
+            return ""
 
 
 class CreateRouteSerializer(serializers.ModelSerializer):
@@ -155,7 +167,7 @@ class RouteDaySerializer(serializers.ModelSerializer):
 
 class GenerateWeeklyZoneRoutesInputSerializer(serializers.Serializer):
     zone_config = serializers.DictField(child=serializers.ListField(child=serializers.CharField(max_length=100)), help_text='Configuracion de zonas por dia. Clave: dia de semana (0-6), Valor: lista de zonas')
-    max_clients_per_day = serializers.IntegerField(default=25, min_value=1, max_value=50, help_text='Maximo numero de clientes por dia')
+    max_clients_per_day = serializers.IntegerField(default=MAX_CLIENTS_PER_DAY, min_value=1, max_value=50, help_text='Maximo numero de clientes por dia')
 
     def validate_zone_config(self, value):
         for key in value.keys():
@@ -171,7 +183,7 @@ class GenerateWeeklyZoneRoutesInputSerializer(serializers.Serializer):
 class GenerateDailyZoneRouteInputSerializer(serializers.Serializer):
     date = serializers.DateField(help_text='Fecha para la ruta (formato: YYYY-MM-DD)')
     zones = serializers.ListField(child=serializers.CharField(max_length=100), help_text='Lista de zonas para incluir en la ruta')
-    max_clients = serializers.IntegerField(default=25, min_value=1, max_value=50, help_text='Maximo numero de clientes para esta ruta')
+    max_clients = serializers.IntegerField(default=MAX_CLIENTS_PER_DAY, min_value=1, max_value=50, help_text='Maximo numero de clientes para esta ruta')
 
     def validate_date(self, value):
         if value < date.today():
@@ -188,7 +200,7 @@ class GenerateWeekSerializer(serializers.Serializer):
     week_start_date = serializers.DateField()
     regenerate = serializers.BooleanField(default=False, required=False)
     auto_estimate_without_contact = serializers.BooleanField(default=False, required=False)
-    max_clients_per_day = serializers.IntegerField(required=False, min_value=1, max_value=100, default=10)
+    max_clients_per_day = serializers.IntegerField(required=False, min_value=1, max_value=100, default=MAX_CLIENTS_PER_DAY)
     daily_capacity_liters = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=Decimal('0.00'), required=False, allow_null=True)
     days = GenerateWeekDayCapacitySerializer(many=True, required=False, allow_empty=False)
 

@@ -1,6 +1,6 @@
 # Guia de Pantallas Frontend GreenPath
 
-Fecha de revision: 2026-04-05
+Fecha de revision: 2026-04-14
 
 ## 1. Objetivo del documento
 
@@ -158,6 +158,7 @@ Ser la puerta de entrada operativa del producto.
 - los contadores se pliegan en movil
 - la actividad reciente prioriza estados operativos claros
 - owner dispone de accesos rapidos a rutas operativas
+- las badges largas de estado se adaptan a multilinea en movil para evitar recortes
 
 ## 7. Modulo de clientes
 
@@ -380,6 +381,9 @@ Notas clave:
 - pensada con foco en movil
 - separada del detalle para reducir sobrecarga visual
 - integra modales de registrar recogida y finalizar jornada
+- fija por defecto la semana operativa actual
+- consume `operational_plan` de forma interna para sugerir la siguiente parada y construir la navegacion
+- el mapa dibuja retornos al hub cuando la jornada exige varias cargas, sin exponer tarjetas tecnicas de `tramo`
 
 ### 11.6 Componentes relevantes del modulo
 
@@ -571,6 +575,8 @@ Contenido actual:
 - ingresos por ventas
 - beneficio neto
 - volumen comprado vs vendido
+- leyenda visual de colores por grafica
+- scroll horizontal controlado en charts estrechos
 
 ## 18. Responsive y criterios de UX
 
@@ -588,6 +594,8 @@ Zonas donde la responsividad es especialmente critica:
 - `GenerateWeekDialog`
 - formularios de ventas y recogidas
 - dashboard en movil
+- estadisticas en movil
+- badges de estados largos y bloques de actividad reciente
 
 ## 19. Endpoints principales usados por el frontend
 
@@ -720,6 +728,9 @@ El frontend ya no depende solo de revision visual manual. Existe una base de tes
   - edicion sin degradar perfiles ni enviar campos no permitidos
 - `buyers`
   - estado vacio sin duplicidad de mensajes
+- `dashboard`
+  - contadores plegables en movil
+  - badges largas adaptadas para estados tipo `Pendiente de medicion`
 - `sales`
   - formulario con numero de factura manual y fecha operativa unica
   - detalle sin textos legacy retirados
@@ -734,6 +745,7 @@ El frontend ya no depende solo de revision visual manual. Existe una base de tes
   - secciones en formato dropdown
 - `stats`
   - resumen economico owner y ausencia de boton `Recargar`
+  - leyendas visuales y ajuste de graficas para movil
 - `trucks`
   - estado vacio del listado
 - `profile`
@@ -745,5 +757,6 @@ El frontend ya no depende solo de revision visual manual. Existe una base de tes
 - `collectionZones`
 - pantallas de login social
 - flujo visual completo de ejecucion de ruta sobre mapa
+- validacion responsive final en movil real
 
 No porque no sean importantes, sino porque concentran mas comportamiento visual, GIS o integracion externa y conviene cubrirlos con una mezcla de test automatizado y validacion manual guiada.

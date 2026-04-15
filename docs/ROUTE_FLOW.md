@@ -1,6 +1,6 @@
 # Route Flow - Flujo de Rutas GreenPath
 
-Fecha de revision: 2026-04-08
+Fecha de revision: 2026-04-14
 
 ## 1. Objetivo del documento
 
@@ -170,6 +170,12 @@ Si una nueva parada hace superar el total planificado del dia, no se inserta.
 
 El backend respeta `max_clients_per_day` antes de seguir anadiendo clientes al `RouteDay`.
 
+Criterio operativo actual:
+
+- el valor funcional por defecto del sistema es `10` clientes por jornada
+- ese limite se aplica junto con `daily_capacity_liters`
+- si una jornada alcanza el tope de clientes aunque todavia quede capacidad, no se siguen insertando mas paradas en ese dia
+
 ## 9. Seleccion de clientes para cada jornada
 
 La generacion de paradas se hace en `generate_route_day_clients(...)`.
@@ -228,7 +234,50 @@ La optimizacion no se aplica si:
 
 En todos esos casos se conserva el orden existente y el flujo no se rompe.
 
-## 12. CollectionRequest y automatizacion asociada
+## 12. Capacidad, litros previstos y tramos operativos
+
+La version actual del sistema incorpora una `v1` de control operativo por capacidad diaria sin introducir nuevas entidades persistentes para subviajes o descargas intermedias.
+
+### Principio funcional
+
+Una jornada (`RouteDay`) sigue siendo una unica unidad operativa, pero internamente puede dividirse en varios `tramos operativos` si la suma de litros previstos obliga a volver al hub antes de continuar.
+
+### Datos usados para calcular la carga prevista de una parada
+
+El backend resuelve la carga prevista de cada parada siguiendo este orden:
+
+1. `CollectionRequest.final_liters` si existe
+2. `CollectionRequest.estimated_liters` si existe
+3. calculo por envases (`container_type` + `container_number`)
+4. `0.00` si no hay informacion suficiente
+
+### Regla de corte por capacidad
+
+Si al anadir la siguiente parada la carga prevista acumulada supera `RouteDay.daily_capacity_liters`, el sistema:
+
+- cierra el tramo actual
+- inserta una vuelta implicita al hub
+- abre un nuevo tramo para continuar con las paradas restantes
+
+### Consecuencia funcional
+
+Esto permite reflejar internamente:
+
+- cuantos bloques reales de trabajo tiene el dia
+- cuantas veces se volveria a nave
+- que parada deberia proponerse como siguiente
+- cuando la navegacion debe insertar retornos intermedios al hub
+
+### Alcance de esta `v1`
+
+Esta `v1`:
+
+- representa el retorno al hub a nivel de plan operativo y navegacion
+- expone esa informacion al frontend
+- no crea todavia entidades persistentes del tipo `RouteTrip`, `Unload` o `ReturnToHub`
+- no registra eventos reales de descarga en base de datos
+
+## 13. CollectionRequest y automatizacion asociada
 
 Cada parada generada puede crear o actualizar una `CollectionRequest`.
 
@@ -249,7 +298,7 @@ Si una solicitud ya tenia una task programada y se recalcula, la task anterior s
 
 Cuando la solicitud es nueva, se puede lanzar notificacion por email al cliente.
 
-## 13. Flujo de respuesta del cliente
+## 14. Flujo de respuesta del cliente
 
 El cliente puede interactuar con su solicitud mediante:
 
@@ -270,7 +319,7 @@ Reglas:
 - owner o worker pueden fijar litros manualmente
 - si no hay respuesta a tiempo, Celery puede autoestimar
 
-## 14. Ejecucion operativa de una jornada
+## 15. Ejecucion operativa de una jornada
 
 Una vez generada la semana, la operacion diaria se concentra en estos endpoints:
 
@@ -278,8 +327,36 @@ Una vez generada la semana, la operacion diaria se concentra en estos endpoints:
 - `POST /routes/{id}/route-days/{route_day_id}/finish/`
 - `POST /routes/{id}/route-days/{route_day_id}/stops/{route_day_client_id}/complete/`
 - `GET /routes/{id}/route-days/{route_day_id}/google-navigation/`
+- `GET /routes/{id}/operational-overview/`
 
-## 15. Reglas de `start`, `complete` y `finish`
+### Datos operativos que consume el frontend
+
+El `operational-overview` devuelve ahora, ademas del listado de paradas, un bloque `operational_plan` por cada `RouteDay`.
+
+Ese bloque incluye, entre otros, los siguientes datos:
+
+- `capacity_liters`
+- `planned_load_liters`
+- `registered_load_liters`
+- `segments_count`
+- `returns_to_hub_count`
+- `requires_hub_return`
+- `active_segment_number`
+- `active_segment_route_day_client_id`
+- `active_segment_current_load_liters`
+- `active_segment_remaining_capacity_liters`
+- `segments[]`
+
+### Uso funcional en frontend
+
+La pantalla `RouteExecution` utiliza este bloque para:
+
+- proponer por defecto la siguiente parada pendiente correcta
+- construir el recorrido del dia en mapa
+- exportar una navegacion coherente con retornos al hub cuando la capacidad lo exige
+- simplificar la UX operativa sin exponer al usuario tarjetas tecnicas de `tramo`, `segmento` o metrica interna innecesaria
+
+## 16. Reglas de `start`, `complete` y `finish`
 
 ### `start`
 
@@ -296,6 +373,15 @@ Una vez generada la semana, la operacion diaria se concentra en estos endpoints:
 - actualiza la solicitud asociada cuando procede
 - usa precio global de empresa por defecto si existe
 
+#### Importante en la `v1` de tramos
+
+La parada registrada:
+
+- si esta cancelada, cuenta como gestionada pero no suma carga operativa del tramo
+- si queda registrada como recogida, suma su carga prevista al tramo correspondiente
+
+La medicion final no se usa para operar la ruta en calle, porque esa fase pertenece al trabajo posterior en nave.
+
 ### `finish`
 
 - solo desde `IN_PROGRESS`
@@ -303,7 +389,28 @@ Una vez generada la semana, la operacion diaria se concentra en estos endpoints:
 - si quedan pendientes: exige decision entre `PARTIAL` o `CANCELED`
 - una parada cancelada cuenta como procesada y no impide cerrar como `COMPLETED` si no quedan pendientes reales
 
-## 16. Relacion con `Collection`
+## 17. Exportacion de navegacion y retorno al hub
+
+El endpoint `google-navigation` ya no exporta una simple secuencia lineal de clientes.
+
+Ahora construye la URL a partir del mismo `operational_plan` usado por el frontend, de forma que:
+
+- el origen es el hub
+- el destino es el hub
+- entre tramos se inserta el hub como waypoint intermedio
+
+Consecuencia:
+
+- si el dia cabe en una sola carga, se exporta una sola secuencia
+- si el dia requiere varios tramos, Google recibe un recorrido con retornos intermedios a nave
+
+Esto mantiene alineados:
+
+- planificacion
+- ejecucion visual
+- navegacion externa
+
+## 18. Relacion con `Collection`
 
 Al operar una parada, el sistema crea o actualiza la recogida real.
 
@@ -323,7 +430,7 @@ Solo las recogidas:
 
 computan en los costes y en el resumen economico global.
 
-## 17. Frontend asociado al flujo de rutas
+## 19. Frontend asociado al flujo de rutas
 
 ### `RouteDetail`
 
@@ -351,6 +458,7 @@ Responsabilidad:
 - iniciar/finalizar jornada
 - seleccionar parada activa
 - registrar recogida
+- fijar por defecto la semana operativa actual de la ruta
 
 ### Componentes clave
 
@@ -358,7 +466,7 @@ Responsabilidad:
 - `RouteDayMap`
 - `RouteActionButton`
 
-## 18. Responsive y UX del modulo de rutas
+## 20. Responsive y UX del modulo de rutas
 
 El modulo de rutas es uno de los mas sensibles en movilidad, por eso se han tomado varias decisiones especificas:
 
@@ -368,8 +476,9 @@ El modulo de rutas es uno de los mas sensibles en movilidad, por eso se han toma
 - acciones primarias a ancho completo en movil
 - contadores plegables en listados
 - chips o selectores compactos para jornadas y estados
+- simplificacion deliberada de la pantalla operativa para no mostrar tecnicismos internos de segmentacion
 
-## 19. Filtros principales del modulo
+## 21. Filtros principales del modulo
 
 ### Filtro de rutas
 
@@ -390,7 +499,7 @@ Busqueda sobre:
 
 La vista `operational-overview` admite `week_start_date=YYYY-MM-DD` para cargar una semana concreta.
 
-## 20. Riesgos y puntos de atencion
+## 22. Riesgos y puntos de atencion
 
 - clientes sin geolocalizacion no entran en planificacion automatica
 - zonas mal definidas reducen calidad de la generacion
@@ -398,17 +507,18 @@ La vista `operational-overview` admite `week_start_date=YYYY-MM-DD` para cargar 
 - regenerar semanas ya operadas esta bloqueado para proteger trazabilidad
 - la capacidad diaria debe entenderse como restriccion operativa, no como simple campo informativo
 
-## 21. Resumen ejecutivo del flujo
+## 23. Resumen ejecutivo del flujo
 
 - el owner configura ruta, zonas y capacidades
 - el sistema genera jornadas y paradas
 - Google puede optimizar el orden
 - se crean solicitudes al cliente con expiracion automatica
 - owner o worker ejecutan la jornada diaria
+- la navegacion diaria siempre parte del hub y termina en el hub; si la capacidad obliga, inserta retornos intermedios a nave
 - cada parada puede terminar en recogida real
 - la recogida medida y facturable impacta en estadisticas economicas
 
-## 22. Observabilidad y control operativo del flujo
+## 24. Observabilidad y control operativo del flujo
 
 Para diagnosticar incidencias en rutas conviene revisar:
 
@@ -424,7 +534,7 @@ Senales utiles de comprobacion:
 - existencia de solicitudes programadas
 - estado final correcto de la jornada tras `finish`
 
-## 23. Checklist de validacion manual del modulo
+## 25. Checklist de validacion manual del modulo
 
 Una validacion funcional minima del flujo de rutas deberia cubrir:
 
@@ -438,7 +548,7 @@ Una validacion funcional minima del flujo de rutas deberia cubrir:
 - finalizar con pendientes obligando a decidir
 - revisar que una parada cancelada no bloquee un cierre completo si ya no quedan pendientes reales
 
-## 24. Evolucion prevista del modulo
+## 26. Evolucion prevista del modulo
 
 Las lineas de evolucion mas razonables del modulo de rutas son:
 
@@ -448,7 +558,7 @@ Las lineas de evolucion mas razonables del modulo de rutas son:
 - monitorizacion mas profunda de colas y decisiones automaticas
 - pruebas end-to-end centradas en operacion movil
 
-## 25. Referencias relacionadas
+## 27. Referencias relacionadas
 
 - `docs/FUNCIONAL.md`
 - `docs/API.md`

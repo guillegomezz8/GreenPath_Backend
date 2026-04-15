@@ -1,7 +1,7 @@
 # Documento Funcional GreenPath
 
-Fecha de revision: 2026-04-05
-Version funcional: 1.2
+Fecha de revision: 2026-04-14
+Version funcional: 1.4
 
 ## 1. Proposito del documento
 
@@ -104,6 +104,7 @@ Actualmente GreenPath cubre las siguientes areas:
 - configuracion de rutas plantilla y zonas por dia
 - generacion semanal de rutas operativas
 - ejecucion diaria de paradas y cierre de jornada
+- control operativo simplificado por capacidad con retorno implicito al hub
 - solicitudes de estimacion de litros al cliente
 - autoestimacion con Celery cuando el cliente no responde a tiempo
 - registro de recogidas, medicion en nave y deducciones
@@ -125,7 +126,7 @@ Aunque la plataforma cubre una parte amplia del proceso, hay elementos que hoy n
 - firma electronica de facturas
 - portal de compradores
 - reparto multi-vehiculo automatico para una misma ruta
-- logica de retornos al hub por sobrecarga durante la ejecucion
+- persistencia avanzada de subviajes, descargas y retornos reales al hub durante una jornada
 - simulacion avanzada de optimizacion con restricciones complejas
 - auditoria legal avanzada con versionado documental completo
 - facturacion recurrente o por lotes
@@ -194,6 +195,20 @@ Por ello, una parte relevante del diseno funcional prioriza:
 - accesos rapidos
 - tablas adaptadas a tarjetas en pantallas pequenas
 
+### 8.7 Control operativo por capacidad en version simplificada
+
+GreenPath incorpora una `v1` de control operativo por capacidad diaria.
+
+En esta version:
+
+- la jornada diaria sigue siendo una unica entidad funcional
+- el sistema puede dividirla internamente en varios bloques de trabajo por capacidad
+- si la carga prevista supera la capacidad diaria, se comunica que la ruta debe volver a nave antes de continuar
+- esta division se usa en la vista operativa y en la exportacion de navegacion
+- la segmentacion queda como logica interna de soporte y no como un elemento tecnico que deba exponerse en bruto al usuario final
+
+Este enfoque cubre la necesidad principal del negocio sin introducir todavia nuevas entidades persistentes para viajes, descargas o retornos reales.
+
 ## 9. Supuestos funcionales y dependencias
 
 El sistema parte de varios supuestos de negocio:
@@ -203,6 +218,8 @@ El sistema parte de varios supuestos de negocio:
 - una semana operativa se genera a partir de zonas y reglas de frecuencia
 - la empresa puede necesitar pedir litros al cliente antes de la recogida
 - la medicion final y las deducciones se consolidan posteriormente
+- la operacion en calle trabaja con carga prevista, no con medicion final consolidada
+- una misma jornada puede implicar varios tramos y retornos a nave si la capacidad prevista se supera
 - las ventas representan ingresos y las recogidas confirmadas facturables representan coste
 
 Ademas, ciertas partes del flujo dependen de integraciones opcionales:
@@ -569,6 +586,7 @@ Construir la semana operativa a partir de una ruta plantilla.
 - `regenerate=true` solo se permite si toda la semana sigue siendo editable
 - si `regenerate=false`, los dias ya operados se preservan
 - se respetan frecuencia, empresa, capacidad y limite maximo de clientes por dia
+- el criterio funcional actual usa `10` clientes por jornada como valor por defecto
 - la optimizacion con Google es opcional y no bloquea la generacion si falla o falta API key
 
 ### 13.7 Modulo de solicitudes de recogida
@@ -614,6 +632,7 @@ Permitir que owner o worker operen la jornada diaria de forma controlada.
 - registrar parada
 - finalizar jornada
 - decidir cierre parcial o cancelacion si quedan pendientes
+- fijar por defecto la semana operativa actual en la experiencia de ejecucion
 
 #### Reglas de negocio
 
@@ -809,6 +828,12 @@ Resultado esperado:
 14. Se agenda la autoestimacion futura.
 15. Se registra trazabilidad y se devuelve el resumen de la semana generada.
 
+Durante esta fase, el sistema deja preparada tambien la base operativa de la ejecucion:
+
+- calcula una carga prevista por parada
+- detecta si la jornada cabe en un solo bloque o en varios retornos al hub
+- deja lista la informacion necesaria para representar futuros retornos al hub
+
 ### 14.3 Notificacion al cliente y respuesta previa
 
 1. Se crea la `CollectionRequest`.
@@ -823,12 +848,15 @@ Resultado esperado:
 1. Owner o worker entra en la pantalla `Realizar ruta`.
 2. Selecciona la jornada concreta.
 3. Inicia la jornada.
-4. Consulta el orden de parada y el mapa.
-5. Registra cada parada con tipo y numero de envases.
-6. El sistema crea o actualiza la `Collection` asociada.
-7. Al final del dia, el usuario intenta finalizar.
-8. Si quedan pendientes, debe decidir entre cierre parcial o cancelacion.
-9. Si no quedan pendientes, el dia termina como completado.
+4. Consulta el orden de parada, el mapa y la siguiente parada sugerida.
+5. El sistema mantiene internamente la logica de capacidad y retornos al hub cuando aplica.
+6. Propone por defecto la siguiente parada pendiente correcta.
+7. Registra cada parada con tipo y numero de envases.
+8. El sistema crea o actualiza la `Collection` asociada.
+9. Si una parada se cancela, queda gestionada pero no suma carga operativa.
+10. Al final del dia, el usuario intenta finalizar.
+11. Si quedan pendientes, debe decidir entre cierre parcial o cancelacion.
+12. Si no quedan pendientes, el dia termina como completado.
 
 ### 14.5 Medicion y cierre economico en nave
 
@@ -1108,6 +1136,7 @@ Los indicadores mas relevantes que hoy soporta GreenPath son:
 - el sistema debe poder optimizar el orden de una jornada con Google cuando la integracion este disponible
 - el worker debe poder iniciar, operar y finalizar la jornada diaria desde movil
 - el cierre de jornada debe distinguir entre cierre completo, parcial y cancelado segun la operacion real
+- la navegacion exportada debe salir del hub y volver al hub al cierre de la jornada
 
 ### 25.2 Requisitos de solicitud y estimacion
 
@@ -1124,6 +1153,8 @@ Los indicadores mas relevantes que hoy soporta GreenPath son:
 - una recogida debe poder incorporar deducciones y motivo de deduccion
 - una recogida debe poder marcarse como facturable o no facturable
 - solo las recogidas confirmadas y facturables deben entrar en el resumen economico
+- la operacion de ruta debe poder sugerir la siguiente parada pendiente correcta segun el plan operativo interno
+- el sistema debe poder representar retornos al hub cuando la capacidad prevista diaria lo exija
 
 ### 25.4 Requisitos economicos
 

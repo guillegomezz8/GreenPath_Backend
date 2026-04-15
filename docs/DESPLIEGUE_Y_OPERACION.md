@@ -1,6 +1,6 @@
 # Despliegue y Operacion GreenPath
 
-Fecha de revision: 2026-04-08
+Fecha de revision: 2026-04-14
 
 ## 1. Objetivo del documento
 
@@ -140,6 +140,13 @@ Por ello, para defensa conviene disponer de:
 
 - `GOOGLE_MAPS_API_KEY`
 
+Notas operativas:
+
+- se usa para geocodificacion de clientes
+- se usa para optimizacion de paradas en `generate-week`
+- se usa para exportar navegacion externa desde ejecucion de ruta
+- si la clave falta o falla, la operacion principal sigue disponible con fallback secuencial
+
 ## 5.4 Variables de Gmail API
 
 - `GMAIL_FROM`
@@ -202,6 +209,7 @@ python manage.py loaddata \
 - login owner correcto
 - dashboard visible
 - listado de rutas accesible
+- `operational-overview` accesible para al menos una ruta
 - venta de prueba visible
 - factura PDF descargable
 
@@ -213,6 +221,7 @@ Desde la perspectiva de negocio, la operacion cotidiana se apoya en:
 - generacion semanal de rutas
 - supervision de solicitudes de recogida
 - ejecucion de jornadas
+- control de tramos y retornos operativos al hub cuando la capacidad lo exige
 - medicion y cierre de recogidas
 - registro de ventas y descarga de facturas
 - revision de estadisticas

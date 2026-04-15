@@ -1,6 +1,6 @@
 # API GreenPath (Backend Django)
 
-Fecha de revision: 2026-04-05
+Fecha de revision: 2026-04-14
 
 ## 1. Objetivo de este documento
 
@@ -284,6 +284,19 @@ Filtros soportados:
 - query param opcional `week_start_date=YYYY-MM-DD` para cargar una semana concreta.
 - devuelve `route.hub` con `id`, `name` y `location {lat, lng}` si la empresa tiene hub geolocalizado.
 - devuelve `client_location {lat, lng}` en cada parada para pintar el mapa operativo del frontend.
+- devuelve `operational_plan` por cada `RouteDay` con:
+  - `capacity_liters`
+  - `planned_load_liters`
+  - `registered_load_liters`
+  - `segments_count`
+  - `returns_to_hub_count`
+  - `requires_hub_return`
+  - `active_segment_number`
+  - `active_segment_route_day_client_id`
+  - `active_segment_current_load_liters`
+  - `active_segment_remaining_capacity_liters`
+  - `segments[]`
+- estos campos sirven de soporte para mapa, sugerencia de siguiente parada y navegacion; la UI actual no expone literalmente tarjetas tecnicas de `tramo` al usuario
 
 #### `POST /routes/{id}/generate-week/`
 Genera/actualiza los `RouteDay` de una semana y sus paradas (`RouteDayClient`), optimiza orden con Google Directions y crea/programa `CollectionRequest`.
@@ -297,6 +310,7 @@ Reglas:
 - Si la semana contiene dias no editables o con trazabilidad operativa previa, devuelve `400`.
 - Si `regenerate=false`, los `RouteDay` ya operados se preservan y no se modifican.
 - La capacidad diaria se respeta de forma estricta: no se crea una parada si hace que el total planificado supere `daily_capacity_liters`.
+- el criterio funcional actual aplica tambien un maximo por defecto de `10` clientes por jornada.
 - Si ya existe una generacion en curso para misma ruta+semana, devuelve `409`.
 
 Request modo A:
@@ -596,7 +610,8 @@ Interpretacion:
 7. Optimiza orden con Google Directions:
 - origen: `CompanyHub.location`
 - waypoints: clientes
-- sin retornos al hub en esta fase
+- si la capacidad obliga a segmentar la jornada, inserta el hub entre segmentos al exportar navegacion
+- la navegacion exportada empieza en el hub y termina tambien en el hub
 8. Reescribe `order` en `RouteDayClient`.
 9. Crea/actualiza `CollectionRequest` por parada:
 - `expires_at = inicio_route_day - 36 horas`

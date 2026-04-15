@@ -1,6 +1,6 @@
 # Guia de Testing GreenPath
 
-Fecha de revision: 2026-04-05
+Fecha de revision: 2026-04-14
 
 ## 1. Objetivo del documento
 
@@ -172,6 +172,9 @@ La suite backend valida hoy, al menos, estos bloques:
 - creacion de `RouteDay`
 - creacion de `RouteDayClient`
 - creacion de `CollectionRequest`
+- frecuencia y planificacion por empresa sin mezclar historico ajeno
+- calculo de `operational_plan` por capacidad diaria
+- exportacion de Google Maps con retornos al hub entre tramos cuando aplica
 - cierre de jornada con decision obligatoria si hay pendientes
 
 ### 5.8 Sale
@@ -213,6 +216,8 @@ La suite frontend valida hoy estos puntos:
 ### 6.6 Routes
 
 - `GenerateWeekDialog` oculta o muestra `Regenerar paradas existentes` segun el contexto semanal
+- `RouteExecution` fija la semana operativa actual por defecto
+- la UX operativa no expone tarjetas tecnicas de tramo aunque mantenga logica interna de capacidad
 
 ### 6.7 Settings
 
@@ -224,6 +229,8 @@ La suite frontend valida hoy estos puntos:
 
 - `Stats` muestra resumen economico owner
 - `Stats` no muestra el antiguo boton de recarga
+- `Stats` incorpora leyendas visuales por color
+- `Stats` mantiene scroll horizontal controlado en charts estrechos
 
 ### 6.9 Trucks
 
@@ -237,7 +244,7 @@ La suite frontend valida hoy estos puntos:
 
 Snapshot validado en esta revision:
 
-- backend: `25` tests verdes
+- backend: `31` tests verdes
 - frontend: `17` tests verdes
 
 Estas cifras no representan cobertura total de lineas, sino volumen de escenarios utiles ya protegidos.
@@ -342,7 +349,7 @@ Si se quiere seguir ampliando cobertura, el orden mas rentable seria:
 
 1. `dashboard`
 2. `collectionZones`
-3. flujos de `RouteExecution`
+3. flujos completos de `RouteExecution` con mapa y cierre parcial/cancelado
 4. pruebas mas profundas de PDF/factura
 5. pruebas E2E de rutas y ventas
 

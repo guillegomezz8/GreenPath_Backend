@@ -4,7 +4,6 @@ from rest_framework import serializers
 
 from apps.base.logger import configure_logging
 from apps.sale.models import Sale
-from apps.sale.utils import generate_sale_invoice_pdf
 
 configure_logging()
 
@@ -13,18 +12,10 @@ class SaleSerializer(serializers.ModelSerializer):
     buyer_name = serializers.CharField(source="buyer.fiscal_name", read_only=True)
     buyer_tax_id = serializers.CharField(source="buyer.tax_id", read_only=True)
     company_name = serializers.CharField(source="company.name", read_only=True)
-    invoice_pdf_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Sale
-        exclude = ("created_date", "modified_date", "deleted_date", "sale_date")
-
-    def get_invoice_pdf_url(self, obj):
-        if not obj.invoice_pdf:
-            return None
-        request = self.context.get("request")
-        url = obj.invoice_pdf.url
-        return request.build_absolute_uri(url) if request else url
+        exclude = ("created_date", "modified_date", "deleted_date", "sale_date", "invoice_pdf", "invoice_generated_at")
 
 
 class SaleBaseWriteSerializer(serializers.ModelSerializer):
@@ -79,7 +70,6 @@ class CreateSaleSerializer(SaleBaseWriteSerializer):
             company = self.context["company"]
             sale = Sale(company=company, **validated_data)
             sale.save()
-            generate_sale_invoice_pdf(sale)
             return sale
         except Exception as e:
             logging.error(f"[sale_serializers - create] Error creando venta: {str(e)}")
@@ -92,7 +82,6 @@ class UpdateSaleSerializer(SaleBaseWriteSerializer):
             for attr, value in validated_data.items():
                 setattr(instance, attr, value)
             instance.save()
-            generate_sale_invoice_pdf(instance)
             return instance
         except Exception as e:
             logging.error(f"[sale_serializers - update] Error actualizando venta {instance.id}: {str(e)}")

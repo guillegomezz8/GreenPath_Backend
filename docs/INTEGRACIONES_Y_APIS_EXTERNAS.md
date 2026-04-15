@@ -253,7 +253,7 @@ Aspectos a vigilar:
 
 - presencia de dependencias del sistema en la imagen Docker
 - consistencia de la plantilla HTML/CSS
-- correcto almacenamiento y regeneracion del PDF
+- correcta generacion bajo demanda del PDF
 
 ## 11. Seguridad de integraciones y custodia de secretos
 

@@ -197,7 +197,7 @@ Para facilitar la lectura, los requisitos se clasifican con los siguientes prefi
 | RF-057 | Una venta debe almacenar numero de factura, fecha de factura, concepto, cantidad, unidad y precio unitario. |
 | RF-058 | El sistema debe recalcular subtotal, impuesto y total de la venta. |
 | RF-059 | El sistema debe generar un PDF de factura para cada venta. |
-| RF-060 | El sistema debe permitir descargar y regenerar la factura PDF. |
+| RF-060 | El sistema debe permitir descargar la factura PDF generandola bajo demanda con los datos vigentes. |
 
 ### 6.10 Configuracion y estadisticas
 

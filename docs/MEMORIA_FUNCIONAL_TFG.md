@@ -137,7 +137,7 @@ El alcance actual del sistema incluye:
 - recogidas con medicion posterior y control de `billable`
 - compradores internos (`Buyer`)
 - ventas (`Sale`)
-- generacion y regeneracion de facturas PDF
+- generacion bajo demanda de facturas PDF
 - configuracion fiscal y operativa por empresa
 - dashboard y estadisticas
 

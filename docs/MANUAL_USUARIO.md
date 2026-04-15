@@ -182,7 +182,6 @@ Desde el modulo de ventas, el owner puede:
 - consultar detalle
 - editar ventas
 - descargar factura PDF
-- regenerar la factura si es necesario
 
 Para crear una venta, debe indicar:
 

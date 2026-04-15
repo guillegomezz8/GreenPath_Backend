@@ -1,14 +1,11 @@
-import io
 import logging
 import math
 import re
 from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
 
-from django.core.files.base import ContentFile
 from django.db import models, transaction
 from django.template.loader import render_to_string
-from django.utils import timezone
 
 from apps.base.enums import CollectionStatus
 from apps.base.logger import configure_logging
@@ -102,13 +99,12 @@ def _get_empty_rows(product_description):
     return range(row_count)
 
 
-def _invoice_file_name(sale):
+def _invoice_download_name(sale):
     invoice_number = (sale.invoice_number or "").strip()
-    invoice_year = sale.invoice_year or sale.invoice_date.year
     cleaned_number = re.sub(r"[^A-Za-z0-9]+", "-", invoice_number).strip("-")
     if not cleaned_number:
         cleaned_number = f"sale-{sale.id or 'draft'}"
-    return f"{invoice_year}/FACTURA_{cleaned_number}.pdf"
+    return f"FACTURA_{cleaned_number}.pdf"
 
 
 def _invoice_template_context(sale, settings_obj):
@@ -208,15 +204,9 @@ def generate_sale_invoice_pdf(sale):
         "sale/invoice.html",
         _invoice_template_context(sale, settings_obj),
     )
-    buffer = io.BytesIO()
-    HTML(string=html_content, base_url=str(Path(__file__).resolve().parents[2])).write_pdf(buffer)
-    buffer.seek(0)
-
-    filename = _invoice_file_name(sale)
-    sale.invoice_pdf.save(filename, ContentFile(buffer.getvalue()), save=False)
-    sale.invoice_generated_at = timezone.now()
-    sale.save(update_fields=["invoice_pdf", "invoice_generated_at", "modified_date"])
-    return sale
+    pdf_content = HTML(string=html_content, base_url=str(Path(__file__).resolve().parents[2])).write_pdf()
+    filename = _invoice_download_name(sale)
+    return pdf_content, filename
 
 
 def company_collection_cost_queryset(company):

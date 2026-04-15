@@ -141,7 +141,7 @@ Responsabilidades:
 - `CompanySettings`
 - `Buyer`
 - `Sale`
-- `invoice_pdf`
+- factura PDF renderizada bajo demanda
 
 ## 6. Flujo tecnico de generacion semanal
 
@@ -247,8 +247,8 @@ Elementos clave:
 2. el backend valida `invoice_number` y `invoice_date`
 3. recalcula `subtotal`, `tax_amount` y `total`
 4. sincroniza `sale_date` con `invoice_date`
-5. genera o regenera el PDF con WeasyPrint
-6. expone descarga via endpoint dedicado
+5. renderiza el PDF con WeasyPrint solo cuando se solicita
+6. expone descarga via endpoint dedicado sin persistir el fichero
 
 ## 11. Frontend y organizacion de pantallas
 

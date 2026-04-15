@@ -1,3 +1,4 @@
+import io
 import logging
 
 from django.db.models import Q, Sum
@@ -11,7 +12,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.base.logger import configure_logging
-from apps.base.literals import DETAILS, INTERNAL_ERROR, MESSAGE
+from apps.base.literals import DETAILS, INTERNAL_ERROR
 from apps.base.permissions import IsOwnerUser
 from apps.company.utils import resolve_user_company
 from apps.sale.api.serializers.sale_serializers import (
@@ -135,26 +136,10 @@ class SaleViewSet(viewsets.ModelViewSet):
     def download_invoice(self, request, pk=None):
         try:
             sale = self.get_object()
-            if not sale.invoice_pdf:
-                generate_sale_invoice_pdf(sale)
-                sale.refresh_from_db()
-            if not sale.invoice_pdf:
-                return Response({DETAILS: "Factura PDF no disponible."}, status=status.HTTP_404_NOT_FOUND)
-            return FileResponse(sale.invoice_pdf.open("rb"), as_attachment=True, filename=sale.invoice_pdf.name.split("/")[-1])
+            pdf_content, filename = generate_sale_invoice_pdf(sale)
+            return FileResponse(io.BytesIO(pdf_content), as_attachment=True, filename=filename, content_type="application/pdf")
         except Exception as e:
             logging.error(f"[sale_viewset - download_invoice] Error descargando factura de venta {pk}: {str(e)}")
-            return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    @action(detail=True, methods=["post"], url_path="invoice/regenerate")
-    def regenerate_invoice(self, request, pk=None):
-        try:
-            sale = self.get_object()
-            generate_sale_invoice_pdf(sale)
-            sale.refresh_from_db()
-            serializer = self.get_serializer(sale)
-            return Response({MESSAGE: "Factura regenerada correctamente.", "sale": serializer.data}, status=status.HTTP_200_OK)
-        except Exception as e:
-            logging.error(f"[sale_viewset - regenerate_invoice] Error regenerando factura de venta {pk}: {str(e)}")
             return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=False, methods=["get"], url_path="economic-summary")

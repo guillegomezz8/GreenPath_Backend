@@ -39,7 +39,7 @@ Notas:
 
 - `11-company-settings.json` ya incluye datos fiscales demo para emitir facturas de venta desde el primer arranque.
 - `12-buyers.json` crea compradores internos de ejemplo para el modulo de ventas.
-- `13-sales.json` crea ventas demo con numero de factura manual y PDF regenerable desde la API o el frontend.
+- `13-sales.json` crea ventas demo con numero de factura manual y PDF descargable bajo demanda desde la API o el frontend.
 
 - `06-collections.json` ahora prioriza recogidas recientes (febrero-abril 2026), con mayoria de bidones, algunos casos pendientes/cancelados y litros confirmados coherentes para alimentar estimaciones.
 - `08-truck.json` se reduce a dos furgonetas operativas de demo.

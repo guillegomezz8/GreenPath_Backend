@@ -226,8 +226,8 @@ class Sale {
   +invoice_year: int
   +invoice_sequence: int
   +invoice_number: string
-  +invoice_pdf: file
-  +invoice_generated_at: datetime
+  +invoice_pdf: file [legacy/no operativo]
+  +invoice_generated_at: datetime [legacy/no operativo]
   +notes: text
 }
 
@@ -466,7 +466,7 @@ class Sale {
   +tax_rate: decimal
   +tax_amount: decimal
   +total: decimal
-  +invoice_pdf: file
+  +invoice_pdf: file [legacy/no operativo]
 }
 
 Company "1" --> "0..*" Buyer : buyers

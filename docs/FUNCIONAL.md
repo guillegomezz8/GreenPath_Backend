@@ -702,7 +702,7 @@ Registrar operaciones de venta y reflejar los ingresos del negocio.
 - fecha de factura
 - descripcion, cantidad, unidad y precio unitario
 - calculo automatico de subtotal, IVA y total
-- descarga y regeneracion de PDF
+- descarga de PDF bajo demanda
 
 #### Reglas de negocio
 
@@ -722,7 +722,7 @@ Emitir un documento de factura coherente y descargable a partir de una venta.
 #### Funcionalidades
 
 - generacion automatica del PDF
-- regeneracion manual
+- descarga directa con renderizado actualizado
 - descarga desde detalle de venta
 - uso de datos fiscales configurables
 - uso de plantilla HTML y CSS renderizada con WeasyPrint
@@ -873,9 +873,9 @@ Durante esta fase, el sistema deja preparada tambien la base operativa de la eje
 2. El owner crea una venta.
 3. Introduce comprador, numero de factura, fecha de factura y concepto.
 4. El backend calcula subtotal, IVA y total.
-5. Se genera el PDF.
+5. El PDF queda disponible para generacion bajo demanda.
 6. La venta se suma al bloque de ingresos del negocio.
-7. El owner puede descargar o regenerar la factura cuando quiera.
+7. El owner puede descargar o validar la factura cuando quiera.
 
 ## 15. Ciclo de vida funcional de los datos
 
@@ -896,7 +896,7 @@ Durante esta fase, el sistema deja preparada tambien la base operativa de la eje
 1. se registra o reutiliza un comprador
 2. se crea la venta con numero de factura y fecha de factura
 3. el backend recalcula importes
-4. se genera el PDF
+4. el PDF se renderiza cuando el owner lo descarga
 5. la venta pasa a computar como ingreso del negocio
 
 ### 15.3 Ciclo de vida de la configuracion fiscal
@@ -904,7 +904,7 @@ Durante esta fase, el sistema deja preparada tambien la base operativa de la eje
 1. el owner actualiza datos fiscales y bancarios
 2. el sistema guarda la configuracion por empresa
 3. nuevas ventas y facturas consumen esos datos
-4. si cambia la configuracion y se regenera una factura, el PDF reflejara el estado vigente segun el flujo actual
+4. si cambia la configuracion y se vuelve a descargar una factura, el PDF reflejara el estado vigente segun el flujo actual
 
 ## 16. Reglas de negocio detalladas
 
@@ -1221,7 +1221,7 @@ Precondiciones:
 Resultado esperado:
 - se crea una venta
 - se asigna el numero de factura indicado por negocio
-- se genera el PDF de factura
+- el PDF de factura se construye en el momento de descarga
 - la venta pasa a computar como ingreso en estadisticas
 
 ## 27. Criterios globales de aceptacion funcional

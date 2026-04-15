@@ -10,11 +10,11 @@
       "name": "Cliente de Ejemplo",
       "phone": "954770321",
       "cif": "B12345678",
-      "address": "C/ Rumba, 8",
+      "address": "C/ Imagen, 8",
       "city": "Sevilla",
-      "postal_code": "41002",
-      "country": "España",
-      "location": "SRID=4326;POINT (-5.9940 37.3985)",
+      "postal_code": "41003",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.9925 37.3925)",
       "frequency": "WEEKLY"
     }
   },
@@ -29,11 +29,11 @@
       "name": "Taberna El Tapeo",
       "phone": "954111222",
       "cif": "B11223344",
-      "address": "C/ Betis, 18",
+      "address": "C/ Rioja, 14",
       "city": "Sevilla",
-      "postal_code": "41010",
-      "country": "España",
-      "location": "SRID=4326;POINT (-6.0040 37.3775)",
+      "postal_code": "41001",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-6.0000 37.3890)",
       "frequency": "WEEKLY"
     }
   },
@@ -48,11 +48,11 @@
       "name": "Cervecería Triana",
       "phone": "954112233",
       "cif": "B22334455",
-      "address": "C/ San Jacinto, 22",
+      "address": "C/ Larana, 6",
       "city": "Sevilla",
-      "postal_code": "41010",
-      "country": "España",
-      "location": "SRID=4326;POINT (-6.0025 37.3780)",
+      "postal_code": "41003",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.9950 37.3932)",
       "frequency": "WEEKLY"
     }
   },
@@ -67,11 +67,11 @@
       "name": "La Bodeguilla del Centro",
       "phone": "954556677",
       "cif": "B33445566",
-      "address": "C/ Feria, 45",
+      "address": "C/ Recaredo, 12",
       "city": "Sevilla",
       "postal_code": "41003",
-      "country": "España",
-      "location": "SRID=4326;POINT (-5.9899 37.3998)",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.9865 37.3895)",
       "frequency": "2_WEEKS"
     }
   },
@@ -86,11 +86,11 @@
       "name": "Bar Cafetín Sierpes",
       "phone": "655778899",
       "cif": "B44556677",
-      "address": "C/ Sierpes, 10",
+      "address": "C/ San Pablo, 22",
       "city": "Sevilla",
-      "postal_code": "41004",
-      "country": "España",
-      "location": "SRID=4326;POINT (-5.9954 37.3872)",
+      "postal_code": "41001",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.9990 37.3880)",
       "frequency": "WEEKLY"
     }
   },
@@ -105,11 +105,11 @@
       "name": "Taberna El Cortijo",
       "phone": "954334455",
       "cif": "B55667788",
-      "address": "C/ Asunción, 22",
-      "city": "Sevilla",
-      "postal_code": "41011",
-      "country": "España",
-      "location": "SRID=4326;POINT (-6.0079 37.3736)",
+      "address": "C/ Santa Maria de Gracia, 3",
+      "city": "Camas",
+      "postal_code": "41900",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-6.0340 37.4050)",
       "frequency": "4_WEEKS"
     }
   },
@@ -124,11 +124,11 @@
       "name": "Bar Pescador",
       "phone": "954998877",
       "cif": "B66778899",
-      "address": "C/ San Esteban, 12",
-      "city": "Sevilla",
-      "postal_code": "41003",
-      "country": "España",
-      "location": "SRID=4326;POINT (-5.9915 37.3930)",
+      "address": "Av. Dolores Ibarruri, 12",
+      "city": "Camas",
+      "postal_code": "41900",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-6.0390 37.4070)",
       "frequency": "2_WEEKS"
     }
   },
@@ -143,11 +143,11 @@
       "name": "El Rincón de la Plaza",
       "phone": "954321123",
       "cif": "B77889900",
-      "address": "Plaza del Salvador, 3",
-      "city": "Sevilla",
-      "postal_code": "41002",
-      "country": "España",
-      "location": "SRID=4326;POINT (-5.9928 37.3938)",
+      "address": "C/ Jose Payan, 7",
+      "city": "Camas",
+      "postal_code": "41900",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-6.0450 37.4095)",
       "frequency": "WEEKLY"
     }
   },
@@ -162,11 +162,11 @@
       "name": "Kiosko Alameda Bar",
       "phone": "954332211",
       "cif": "B88990011",
-      "address": "Alameda de Hércules, 50",
-      "city": "Sevilla",
-      "postal_code": "41002",
-      "country": "España",
-      "location": "SRID=4326;POINT (-5.9958 37.4009)",
+      "address": "C/ Poeta Munoz San Roman, 15",
+      "city": "Camas",
+      "postal_code": "41900",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-6.0325 37.4120)",
       "frequency": "4_WEEKS"
     }
   },
@@ -181,11 +181,11 @@
       "name": "Pollería-Bar El Torneo",
       "phone": "954221133",
       "cif": "B99001122",
-      "address": "C/ Torneo, 95",
-      "city": "Sevilla",
-      "postal_code": "41002",
-      "country": "España",
-      "location": "SRID=4326;POINT (-6.0002 37.4035)",
+      "address": "C/ Paco de Lucia, 9",
+      "city": "Camas",
+      "postal_code": "41900",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-6.0410 37.4145)",
       "frequency": "3_WEEKS"
     }
   },
@@ -200,11 +200,11 @@
       "name": "Bar El Punto",
       "phone": "954000111",
       "cif": "B00112233",
-      "address": "C/ Amor de Dios, 23",
-      "city": "Sevilla",
-      "postal_code": "41002",
-      "country": "España",
-      "location": "SRID=4326;POINT (-5.9943 37.3980)",
+      "address": "Av. de Espana, 55",
+      "city": "Dos Hermanas",
+      "postal_code": "41701",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.9240 37.2860)",
       "frequency": "WEEKLY"
     }
   },
@@ -219,11 +219,11 @@
       "name": "Heladería-Bar La Flor",
       "phone": "954111333",
       "cif": "B00223344",
-      "address": "C/ Adriano, 15",
-      "city": "Sevilla",
-      "postal_code": "41001",
-      "country": "España",
-      "location": "SRID=4326;POINT (-6.0021 37.3841)",
+      "address": "C/ Real Utrera, 101",
+      "city": "Dos Hermanas",
+      "postal_code": "41702",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.9170 37.2910)",
       "frequency": "4_WEEKS"
     }
   },
@@ -238,11 +238,11 @@
       "name": "Bar 24h Nervión",
       "phone": "954112211",
       "cif": "B00334455",
-      "address": "Av. Menéndez Pelayo, 56",
-      "city": "Sevilla",
-      "postal_code": "41004",
-      "country": "España",
-      "location": "SRID=4326;POINT (-5.9856 37.3801)",
+      "address": "C/ Antonia Diaz, 8",
+      "city": "Dos Hermanas",
+      "postal_code": "41701",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.9205 37.2845)",
       "frequency": "2_WEEKS"
     }
   },
@@ -257,11 +257,11 @@
       "name": "Taberna Santa Clara",
       "phone": "954778800",
       "cif": "B00445566",
-      "address": "C/ Santa Clara, 10",
-      "city": "Sevilla",
-      "postal_code": "41002",
-      "country": "España",
-      "location": "SRID=4326;POINT (-5.9949 37.4031)",
+      "address": "C/ Parroco Antonio Prado, 17",
+      "city": "Dos Hermanas",
+      "postal_code": "41701",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.9135 37.2880)",
       "frequency": "WEEKLY"
     }
   },
@@ -276,11 +276,11 @@
       "name": "Bar Triana Clasico",
       "phone": "954112244",
       "cif": "B00556677",
-      "address": "C/ Castilla, 80",
-      "city": "Sevilla",
-      "postal_code": "41010",
-      "country": "España",
-      "location": "SRID=4326;POINT (-6.0107 37.3770)",
+      "address": "Av. Cristobal Colon, 23",
+      "city": "Dos Hermanas",
+      "postal_code": "41701",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.9075 37.2940)",
       "frequency": "2_WEEKS"
     }
   },
@@ -295,11 +295,11 @@
       "name": "Freiduría-Bar La Alameda",
       "phone": "955603210",
       "cif": "B10000016",
-      "address": "C/ Feria, 2",
-      "city": "Sevilla",
-      "postal_code": "41003",
-      "country": "España",
-      "location": "SRID=4326;POINT (-5.9890 37.3970)",
+      "address": "C/ Mairena, 14",
+      "city": "Alcala de Guadaira",
+      "postal_code": "41500",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.8440 37.3390)",
       "frequency": "WEEKLY"
     }
   },
@@ -314,11 +314,11 @@
       "name": "Churrería El Salvador",
       "phone": "955766554",
       "cif": "B10000017",
-      "address": "C/ San Luis, 5",
-      "city": "Sevilla",
-      "postal_code": "41003",
-      "country": "España",
-      "location": "SRID=4326;POINT (-5.9885 37.3960)",
+      "address": "Av. Santa Lucia, 18",
+      "city": "Alcala de Guadaira",
+      "postal_code": "41500",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.8390 37.3430)",
       "frequency": "WEEKLY"
     }
   },
@@ -333,11 +333,11 @@
       "name": "Bar-Comedor El Prado",
       "phone": "955780012",
       "cif": "B10000018",
-      "address": "C/ San Sebastián, 10",
-      "city": "Sevilla",
-      "postal_code": "41001",
-      "country": "España",
-      "location": "SRID=4326;POINT (-5.9960 37.3865)",
+      "address": "C/ Silos, 77",
+      "city": "Alcala de Guadaira",
+      "postal_code": "41500",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.8365 37.3415)",
       "frequency": "3_WEEKS"
     }
   },
@@ -352,11 +352,11 @@
       "name": "Bar Cocina Aljarafe",
       "phone": "955790321",
       "cif": "B10000019",
-      "address": "C/ San Vicente, 12",
-      "city": "Sevilla",
-      "postal_code": "41002",
-      "country": "España",
-      "location": "SRID=4326;POINT (-6.0015 37.3978)",
+      "address": "C/ General Prim, 9",
+      "city": "Alcala de Guadaira",
+      "postal_code": "41500",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.8325 37.3370)",
       "frequency": "4_WEEKS"
     }
   },
@@ -371,11 +371,11 @@
       "name": "Restobar Puerta Carmona",
       "phone": "654000020",
       "cif": "B10000020",
-      "address": "Plaza de Carmen Benítez, 4",
-      "city": "Sevilla",
-      "postal_code": "41003",
-      "country": "España",
-      "location": "SRID=4326;POINT (-5.9825 37.3898)",
+      "address": "C/ Nuestra Senora del Aguila, 5",
+      "city": "Alcala de Guadaira",
+      "postal_code": "41500",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.8280 37.3455)",
       "frequency": "2_WEEKS"
     }
   },
@@ -390,11 +390,11 @@
       "name": "Bar Los Remedios",
       "phone": "954000021",
       "cif": "B10000021",
-      "address": "Av. República Argentina, 35",
-      "city": "Sevilla",
-      "postal_code": "41011",
-      "country": "España",
-      "location": "SRID=4326;POINT (-6.0055 37.3788)",
+      "address": "C/ Madrid, 11",
+      "city": "La Rinconada",
+      "postal_code": "41300",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.9340 37.4870)",
       "frequency": "WEEKLY"
     }
   },
@@ -409,11 +409,11 @@
       "name": "Bar Hotel Doña Inés (Cocina)",
       "phone": "954000022",
       "cif": "B10000022",
-      "address": "C/ San Vicente, 52",
-      "city": "Sevilla",
-      "postal_code": "41002",
-      "country": "España",
-      "location": "SRID=4326;POINT (-6.0020 37.3975)",
+      "address": "Av. de la Union, 7",
+      "city": "La Rinconada",
+      "postal_code": "41309",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.9470 37.4985)",
       "frequency": "2_WEEKS"
     }
   },
@@ -428,11 +428,11 @@
       "name": "Pizzería-Bar Il Forno",
       "phone": "954000023",
       "cif": "B10000023",
-      "address": "Av. Luis Montoto, 140",
-      "city": "Sevilla",
-      "postal_code": "41005",
-      "country": "España",
-      "location": "SRID=4326;POINT (-5.9688 37.3836)",
+      "address": "C/ Cordoba, 3",
+      "city": "La Rinconada",
+      "postal_code": "41300",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.9400 37.4910)",
       "frequency": "3_WEEKS"
     }
   },
@@ -447,11 +447,11 @@
       "name": "Asador-Bar El Barranco",
       "phone": "954000024",
       "cif": "B10000024",
-      "address": "C/ Radio Sevilla, 7",
-      "city": "Sevilla",
-      "postal_code": "41020",
-      "country": "España",
-      "location": "SRID=4326;POINT (-5.9365 37.4010)",
+      "address": "C/ Cultura, 22",
+      "city": "La Rinconada",
+      "postal_code": "41309",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.9310 37.5050)",
       "frequency": "3_WEEKS"
     }
   },
@@ -466,11 +466,11 @@
       "name": "Bar Manolo Macarena",
       "phone": "954000025",
       "cif": "B10000025",
-      "address": "C/ Feria de Abril, 3",
-      "city": "Sevilla",
-      "postal_code": "41009",
-      "country": "España",
-      "location": "SRID=4326;POINT (-5.9850 37.3950)",
+      "address": "C/ Cristo del Perdon, 10",
+      "city": "La Rinconada",
+      "postal_code": "41300",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.9385 37.5120)",
       "frequency": "WEEKLY"
     }
   },
@@ -485,11 +485,11 @@
       "name": "Bar La Alcoba",
       "phone": "954000026",
       "cif": "B10000026",
-      "address": "C/ Alemanes, 6",
-      "city": "Sevilla",
-      "postal_code": "41004",
-      "country": "España",
-      "location": "SRID=4326;POINT (-5.9930 37.3900)",
+      "address": "Plaza de Andalucia, 2",
+      "city": "San Juan de Aznalfarache",
+      "postal_code": "41920",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-6.0290 37.3585)",
       "frequency": "2_WEEKS"
     }
   },
@@ -501,14 +501,14 @@
       "companies": [
         1
       ],
-      "name": "Bar Sevilla Centro",
+      "name": "Cafeteria Altozano",
       "phone": "954000027",
       "cif": "B10000027",
-      "address": "C/ Zaragoza, 14",
-      "city": "Sevilla",
-      "postal_code": "41001",
-      "country": "España",
-      "location": "SRID=4326;POINT (-6.0028 37.3845)",
+      "address": "Av. de Palomares, 21",
+      "city": "San Juan de Aznalfarache",
+      "postal_code": "41920",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-6.0242 37.3562)",
       "frequency": "WEEKLY"
     }
   },
@@ -520,14 +520,14 @@
       "companies": [
         1
       ],
-      "name": "La Tapería del Arenal",
+      "name": "Meson San Juan",
       "phone": "954000028",
       "cif": "B10000028",
-      "address": "C/ Adriano, 2",
-      "city": "Sevilla",
-      "postal_code": "41001",
-      "country": "España",
-      "location": "SRID=4326;POINT (-6.0035 37.3862)",
+      "address": "C/ Lepanto, 6",
+      "city": "San Juan de Aznalfarache",
+      "postal_code": "41920",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-6.0198 37.3604)",
       "frequency": "2_WEEKS"
     }
   },
@@ -539,14 +539,14 @@
       "companies": [
         1
       ],
-      "name": "Bar El Corral",
+      "name": "Bar El Corral de San Juan",
       "phone": "954000029",
       "cif": "B10000029",
-      "address": "C/ San Eloy, 9",
-      "city": "Sevilla",
-      "postal_code": "41003",
-      "country": "España",
-      "location": "SRID=4326;POINT (-5.9920 37.3955)",
+      "address": "C/ Sevilla, 18",
+      "city": "San Juan de Aznalfarache",
+      "postal_code": "41920",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-6.0162 37.3558)",
       "frequency": "3_WEEKS"
     }
   },
@@ -558,14 +558,14 @@
       "companies": [
         1
       ],
-      "name": "Bar La Taberna de Enmedio",
+      "name": "Taberna El Monumento",
       "phone": "954000030",
       "cif": "B10000030",
-      "address": "C/ Relator, 21",
-      "city": "Sevilla",
-      "postal_code": "41003",
-      "country": "España",
-      "location": "SRID=4326;POINT (-5.9910 37.3950)",
+      "address": "C/ Real, 44",
+      "city": "San Juan de Aznalfarache",
+      "postal_code": "41920",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-6.0135 37.3518)",
       "frequency": "2_WEEKS"
     }
   },
@@ -577,14 +577,14 @@
       "companies": [
         1
       ],
-      "name": "Bar Plaza Nueva",
+      "name": "Ciudad Expo Bar",
       "phone": "954000031",
       "cif": "B10000031",
-      "address": "Plaza Nueva, 1",
-      "city": "Sevilla",
-      "postal_code": "41001",
-      "country": "España",
-      "location": "SRID=4326;POINT (-5.9925 37.3878)",
+      "address": "Av. de los Descubrimientos, 4",
+      "city": "Mairena del Aljarafe",
+      "postal_code": "41927",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-6.0570 37.3448)",
       "frequency": "WEEKLY"
     }
   },
@@ -596,14 +596,14 @@
       "companies": [
         1
       ],
-      "name": "Bar Mercado Feria",
+      "name": "Mercado Cavaleri",
       "phone": "954000032",
       "cif": "B10000032",
-      "address": "C/ Feria, 60",
-      "city": "Sevilla",
-      "postal_code": "41003",
-      "country": "España",
-      "location": "SRID=4326;POINT (-5.9880 37.3985)",
+      "address": "C/ Nueva, 16",
+      "city": "Mairena del Aljarafe",
+      "postal_code": "41927",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-6.0462 37.3418)",
       "frequency": "2_WEEKS"
     }
   },
@@ -615,14 +615,14 @@
       "companies": [
         1
       ],
-      "name": "Bar Callejón del Agua",
+      "name": "Bulevar Aljarafe",
       "phone": "954000033",
       "cif": "B10000033",
-      "address": "C/ Agua, 4",
-      "city": "Sevilla",
-      "postal_code": "41002",
-      "country": "España",
-      "location": "SRID=4326;POINT (-5.9970 37.3910)",
+      "address": "C/ Exposicion, 9",
+      "city": "Mairena del Aljarafe",
+      "postal_code": "41927",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-6.0405 37.3388)",
       "frequency": "3_WEEKS"
     }
   },
@@ -637,11 +637,11 @@
       "name": "Bar El Buhío",
       "phone": "954000034",
       "cif": "B10000034",
-      "address": "C/ Joaquín Guichot, 8",
-      "city": "Sevilla",
-      "postal_code": "41004",
-      "country": "España",
-      "location": "SRID=4326;POINT (-5.9985 37.3890)",
+      "address": "C/ Artesania, 12",
+      "city": "Mairena del Aljarafe",
+      "postal_code": "41927",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-6.0510 37.3330)",
       "frequency": "2_WEEKS"
     }
   },
@@ -653,15 +653,680 @@
       "companies": [
         1
       ],
-      "name": "Bar La Esquina de Sevilla",
+      "name": "Esquina de Mairena",
       "phone": "954000035",
       "cif": "B10000035",
-      "address": "C/ San Fernando, 28",
+      "address": "Av. del Jardinillo, 20",
+      "city": "Mairena del Aljarafe",
+      "postal_code": "41927",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-6.0364 37.3473)",
+      "frequency": "WEEKLY"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 36,
+    "fields": {
+      "user": 39,
+      "companies": [
+        1
+      ],
+      "name": "Taberna Alfalfa Uno",
+      "phone": "955100000",
+      "cif": "B00000036",
+      "address": "C/ Alfalfa, 11",
       "city": "Sevilla",
       "postal_code": "41004",
-      "country": "España",
-      "location": "SRID=4326;POINT (-5.9945 37.3882)",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.9920 37.3912)",
       "frequency": "WEEKLY"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 37,
+    "fields": {
+      "user": 40,
+      "companies": [
+        1
+      ],
+      "name": "Bar Encarnacion Norte",
+      "phone": "955100000",
+      "cif": "B00000037",
+      "address": "C/ Puente y Pellon, 14",
+      "city": "Sevilla",
+      "postal_code": "41004",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.9942 37.3939)",
+      "frequency": "2_WEEKS"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 38,
+    "fields": {
+      "user": 41,
+      "companies": [
+        1
+      ],
+      "name": "Casa Fritura San Lorenzo",
+      "phone": "955100000",
+      "cif": "B00000038",
+      "address": "C/ Eslava, 3",
+      "city": "Sevilla",
+      "postal_code": "41002",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-6.0025 37.3948)",
+      "frequency": "3_WEEKS"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 39,
+    "fields": {
+      "user": 42,
+      "companies": [
+        1
+      ],
+      "name": "Meson Giralda Centro",
+      "phone": "955100000",
+      "cif": "B00000039",
+      "address": "C/ Mateos Gago, 9",
+      "city": "Sevilla",
+      "postal_code": "41004",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.9929 37.3869)",
+      "frequency": "WEEKLY"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 40,
+    "fields": {
+      "user": 43,
+      "companies": [
+        1
+      ],
+      "name": "Bodega Arenal 24",
+      "phone": "955100000",
+      "cif": "B00000040",
+      "address": "C/ Dos de Mayo, 20",
+      "city": "Sevilla",
+      "postal_code": "41001",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-6.0007 37.3866)",
+      "frequency": "4_WEEKS"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 41,
+    "fields": {
+      "user": 44,
+      "companies": [
+        1
+      ],
+      "name": "Bar Ruta Camas",
+      "phone": "955100000",
+      "cif": "B00000041",
+      "address": "C/ Juan Agustin Palomar, 6",
+      "city": "Camas",
+      "postal_code": "41900",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-6.0285 37.4040)",
+      "frequency": "WEEKLY"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 42,
+    "fields": {
+      "user": 45,
+      "companies": [
+        1
+      ],
+      "name": "Freiduria Camas Centro",
+      "phone": "955100000",
+      "cif": "B00000042",
+      "address": "C/ Blanca Paloma, 4",
+      "city": "Camas",
+      "postal_code": "41900",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-6.0362 37.4018)",
+      "frequency": "2_WEEKS"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 43,
+    "fields": {
+      "user": 46,
+      "companies": [
+        1
+      ],
+      "name": "Taberna Mirador Camas",
+      "phone": "955100000",
+      "cif": "B00000043",
+      "address": "C/ Turia, 12",
+      "city": "Camas",
+      "postal_code": "41900",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-6.0492 37.4112)",
+      "frequency": "3_WEEKS"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 44,
+    "fields": {
+      "user": 47,
+      "companies": [
+        1
+      ],
+      "name": "Patio del Aljarafe Camas",
+      "phone": "955100000",
+      "cif": "B00000044",
+      "address": "C/ Valdes Leal, 2",
+      "city": "Camas",
+      "postal_code": "41900",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-6.0268 37.4155)",
+      "frequency": "WEEKLY"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 45,
+    "fields": {
+      "user": 48,
+      "companies": [
+        1
+      ],
+      "name": "Bulevar Camas Gastro",
+      "phone": "955100000",
+      "cif": "B00000045",
+      "address": "Av. Clara Campoamor, 10",
+      "city": "Camas",
+      "postal_code": "41900",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-6.0505 37.4048)",
+      "frequency": "4_WEEKS"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 46,
+    "fields": {
+      "user": 49,
+      "companies": [
+        1
+      ],
+      "name": "Mercado Dos Hermanas Tapas",
+      "phone": "955100000",
+      "cif": "B00000046",
+      "address": "Plaza del Arenal, 7",
+      "city": "Dos Hermanas",
+      "postal_code": "41701",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.9255 37.2825)",
+      "frequency": "WEEKLY"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 47,
+    "fields": {
+      "user": 50,
+      "companies": [
+        1
+      ],
+      "name": "Bar Rio Grande DH",
+      "phone": "955100000",
+      "cif": "B00000047",
+      "address": "Av. de Andalucia, 15",
+      "city": "Dos Hermanas",
+      "postal_code": "41701",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.9188 37.2968)",
+      "frequency": "2_WEEKS"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 48,
+    "fields": {
+      "user": 51,
+      "companies": [
+        1
+      ],
+      "name": "Taberna Centro Nazarena",
+      "phone": "955100000",
+      "cif": "B00000048",
+      "address": "C/ Nuestra Senora de Valme, 18",
+      "city": "Dos Hermanas",
+      "postal_code": "41701",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.9118 37.2918)",
+      "frequency": "3_WEEKS"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 49,
+    "fields": {
+      "user": 52,
+      "companies": [
+        1
+      ],
+      "name": "Estacion Bistro DH",
+      "phone": "955100000",
+      "cif": "B00000049",
+      "address": "C/ Doctor Fleming, 11",
+      "city": "Dos Hermanas",
+      "postal_code": "41702",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.9042 37.2870)",
+      "frequency": "WEEKLY"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 50,
+    "fields": {
+      "user": 53,
+      "companies": [
+        1
+      ],
+      "name": "Laguna Gastrobar DH",
+      "phone": "955100000",
+      "cif": "B00000050",
+      "address": "C/ Gustav Eiffel, 5",
+      "city": "Dos Hermanas",
+      "postal_code": "41703",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.9360 37.3015)",
+      "frequency": "4_WEEKS"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 51,
+    "fields": {
+      "user": 54,
+      "companies": [
+        1
+      ],
+      "name": "Bar Alcala Centro",
+      "phone": "955100000",
+      "cif": "B00000051",
+      "address": "C/ Perez Galdos, 13",
+      "city": "Alcala de Guadaira",
+      "postal_code": "41500",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.8378 37.3388)",
+      "frequency": "WEEKLY"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 52,
+    "fields": {
+      "user": 55,
+      "companies": [
+        1
+      ],
+      "name": "Meson Castillo Alcala",
+      "phone": "955100000",
+      "cif": "B00000052",
+      "address": "C/ Herreros, 6",
+      "city": "Alcala de Guadaira",
+      "postal_code": "41500",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.8305 37.3480)",
+      "frequency": "2_WEEKS"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 53,
+    "fields": {
+      "user": 56,
+      "companies": [
+        1
+      ],
+      "name": "La Ribera Cocina",
+      "phone": "955100000",
+      "cif": "B00000053",
+      "address": "Av. Tren de los Panaderos, 20",
+      "city": "Alcala de Guadaira",
+      "postal_code": "41500",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.8488 37.3442)",
+      "frequency": "3_WEEKS"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 54,
+    "fields": {
+      "user": 57,
+      "companies": [
+        1
+      ],
+      "name": "Panadero Tap Room",
+      "phone": "955100000",
+      "cif": "B00000054",
+      "address": "C/ San Francisco, 22",
+      "city": "Alcala de Guadaira",
+      "postal_code": "41500",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.8422 37.3355)",
+      "frequency": "WEEKLY"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 55,
+    "fields": {
+      "user": 58,
+      "companies": [
+        1
+      ],
+      "name": "Taberna La Oliva Alcala",
+      "phone": "955100000",
+      "cif": "B00000055",
+      "address": "C/ Arahal, 8",
+      "city": "Alcala de Guadaira",
+      "postal_code": "41500",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.8265 37.3328)",
+      "frequency": "4_WEEKS"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 56,
+    "fields": {
+      "user": 59,
+      "companies": [
+        1
+      ],
+      "name": "Bar Estacion Rinconada",
+      "phone": "955100000",
+      "cif": "B00000056",
+      "address": "C/ San Jose, 4",
+      "city": "La Rinconada",
+      "postal_code": "41300",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.9425 37.4860)",
+      "frequency": "WEEKLY"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 57,
+    "fields": {
+      "user": 60,
+      "companies": [
+        1
+      ],
+      "name": "Centro Tapas Rinconada",
+      "phone": "955100000",
+      "cif": "B00000057",
+      "address": "C/ Granada, 12",
+      "city": "La Rinconada",
+      "postal_code": "41300",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.9355 37.4942)",
+      "frequency": "2_WEEKS"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 58,
+    "fields": {
+      "user": 61,
+      "companies": [
+        1
+      ],
+      "name": "Parque Norte Bar",
+      "phone": "955100000",
+      "cif": "B00000058",
+      "address": "C/ Madrid, 30",
+      "city": "La Rinconada",
+      "postal_code": "41309",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.9288 37.5012)",
+      "frequency": "3_WEEKS"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 59,
+    "fields": {
+      "user": 62,
+      "companies": [
+        1
+      ],
+      "name": "Feria Vieja Rinconada",
+      "phone": "955100000",
+      "cif": "B00000059",
+      "address": "C/ Manuel de Falla, 18",
+      "city": "La Rinconada",
+      "postal_code": "41309",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.9502 37.5075)",
+      "frequency": "WEEKLY"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 60,
+    "fields": {
+      "user": 63,
+      "companies": [
+        1
+      ],
+      "name": "Anden Gastro Rinconada",
+      "phone": "955100000",
+      "cif": "B00000060",
+      "address": "C/ Huelva, 9",
+      "city": "La Rinconada",
+      "postal_code": "41300",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-5.9446 37.5168)",
+      "frequency": "4_WEEKS"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 61,
+    "fields": {
+      "user": 64,
+      "companies": [
+        1
+      ],
+      "name": "Plaza Alta Tapas",
+      "phone": "955100000",
+      "cif": "B00000061",
+      "address": "Plaza de la Constitucion, 3",
+      "city": "San Juan de Aznalfarache",
+      "postal_code": "41920",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-6.0225 37.3592)",
+      "frequency": "WEEKLY"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 62,
+    "fields": {
+      "user": 65,
+      "companies": [
+        1
+      ],
+      "name": "Ribera del Guadalquivir",
+      "phone": "955100000",
+      "cif": "B00000062",
+      "address": "C/ Real, 19",
+      "city": "San Juan de Aznalfarache",
+      "postal_code": "41920",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-6.0108 37.3581)",
+      "frequency": "2_WEEKS"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 63,
+    "fields": {
+      "user": 66,
+      "companies": [
+        1
+      ],
+      "name": "Mirador de San Juan",
+      "phone": "955100000",
+      "cif": "B00000063",
+      "address": "C/ Toledo, 7",
+      "city": "San Juan de Aznalfarache",
+      "postal_code": "41920",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-6.0258 37.3496)",
+      "frequency": "3_WEEKS"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 64,
+    "fields": {
+      "user": 67,
+      "companies": [
+        1
+      ],
+      "name": "Bocados Metro San Juan",
+      "phone": "955100000",
+      "cif": "B00000064",
+      "address": "Av. 28 de Febrero, 9",
+      "city": "San Juan de Aznalfarache",
+      "postal_code": "41920",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-6.0185 37.3486)",
+      "frequency": "WEEKLY"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 65,
+    "fields": {
+      "user": 68,
+      "companies": [
+        1
+      ],
+      "name": "Terraza Guadalquivir",
+      "phone": "955100000",
+      "cif": "B00000065",
+      "address": "C/ Santander, 5",
+      "city": "San Juan de Aznalfarache",
+      "postal_code": "41920",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-6.0078 37.3628)",
+      "frequency": "4_WEEKS"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 66,
+    "fields": {
+      "user": 69,
+      "companies": [
+        1
+      ],
+      "name": "Cavaleri Food Bar",
+      "phone": "955100000",
+      "cif": "B00000066",
+      "address": "Av. de las Civilizaciones, 19",
+      "city": "Mairena del Aljarafe",
+      "postal_code": "41927",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-6.0488 37.3452)",
+      "frequency": "WEEKLY"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 67,
+    "fields": {
+      "user": 70,
+      "companies": [
+        1
+      ],
+      "name": "Ciudad Expo Kitchen",
+      "phone": "955100000",
+      "cif": "B00000067",
+      "address": "C/ Horizonte, 6",
+      "city": "Mairena del Aljarafe",
+      "postal_code": "41927",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-6.0615 37.3408)",
+      "frequency": "2_WEEKS"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 68,
+    "fields": {
+      "user": 71,
+      "companies": [
+        1
+      ],
+      "name": "Aljarafe Market Bar",
+      "phone": "955100000",
+      "cif": "B00000068",
+      "address": "C/ Innovacion, 11",
+      "city": "Mairena del Aljarafe",
+      "postal_code": "41927",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-6.0412 37.3505)",
+      "frequency": "3_WEEKS"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 69,
+    "fields": {
+      "user": 72,
+      "companies": [
+        1
+      ],
+      "name": "Jaral Bistro",
+      "phone": "955100000",
+      "cif": "B00000069",
+      "address": "C/ Hermanas Mirabal, 8",
+      "city": "Mairena del Aljarafe",
+      "postal_code": "41927",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-6.0552 37.3322)",
+      "frequency": "WEEKLY"
+    }
+  },
+  {
+    "model": "user.client",
+    "pk": 70,
+    "fields": {
+      "user": 73,
+      "companies": [
+        1
+      ],
+      "name": "Tejar del Aljarafe",
+      "phone": "955100000",
+      "cif": "B00000070",
+      "address": "C/ Atenea, 14",
+      "city": "Mairena del Aljarafe",
+      "postal_code": "41927",
+      "country": "Espana",
+      "location": "SRID=4326;POINT (-6.0368 37.3392)",
+      "frequency": "4_WEEKS"
     }
   }
 ]

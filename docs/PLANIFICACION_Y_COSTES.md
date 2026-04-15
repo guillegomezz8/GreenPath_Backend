@@ -1,6 +1,6 @@
 # Organizacion, Planificacion y Costes GreenPath
 
-Fecha de revision: 2026-04-08
+Fecha de revision: 2026-04-14
 
 ## 1. Objetivo del documento
 
@@ -210,16 +210,16 @@ Esta distribucion refleja varias ideas importantes:
 
 ## 10. Estadisticas e indicadores del proyecto
 
-### 10.1 Snapshot estructural a fecha 2026-04-05
+### 10.1 Snapshot estructural a fecha 2026-04-14
 
 | Indicador | Valor |
 | --- | ---: |
 | Apps backend de dominio | 9 |
 | Modulos o paginas principales en frontend | 14 |
-| Documentos centralizados en `docs/` | 14 |
+| Documentos centralizados en `docs/` | 17 |
 | Fixtures JSON de demo | 13 |
 | Integraciones externas principales | 3 |
-| Tests backend documentados | 25 |
+| Tests backend documentados | 31 |
 | Tests frontend documentados | 17 |
 | Archivos de test frontend detectados | 12 |
 
@@ -230,6 +230,7 @@ Estos datos sirven para justificar la entidad real del proyecto:
 - no se trata de una unica app monolitica, sino de un sistema modular
 - el frontend tiene una cobertura funcional amplia por modulos
 - existe un paquete documental centralizado y mantenido
+- el flujo de rutas ha requerido una documentacion especializada por su complejidad operativa y movil
 - ese paquete documental ya no se limita a descripcion tecnica: incluye requisitos, casos de uso, manual de usuario, testing, integraciones y planificacion
 - hay base de datos demo y testing automatizado en ambas capas
 

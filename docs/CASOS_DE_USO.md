@@ -1,6 +1,6 @@
 # Casos de Uso GreenPath
 
-Fecha de revision: 2026-04-08
+Fecha de revision: 2026-04-14
 
 ## 1. Objetivo del documento
 
@@ -158,6 +158,7 @@ Cada caso de uso se expresa con:
 8. el sistema crea paradas (`RouteDayClient`)
 9. el sistema optimiza el orden si la integracion esta disponible
 10. el sistema crea solicitudes de estimacion
+11. el sistema deja preparado el plan operativo por capacidad para la ejecucion posterior
 
 **Flujos alternativos:**
 
@@ -168,6 +169,39 @@ Cada caso de uso se expresa con:
 **Resultado esperado:**
 
 - la semana queda generada y visible en la interfaz
+
+### CU-005B. Ejecutar jornada con retorno implicito al hub
+
+**Actor principal:** Worker
+
+**Objetivo:** operar una jornada diaria entendiendo cuando la capacidad obliga a volver a nave antes de continuar.
+
+**Precondiciones:**
+
+- existe un `RouteDay` generado
+- el usuario tiene permisos sobre esa ruta
+- la empresa dispone de hub si quiere navegacion completa con retorno
+
+**Flujo principal:**
+
+1. el worker abre `RouteExecution`
+2. selecciona una jornada operativa
+3. el sistema muestra la siguiente parada sugerida, el mapa operativo y el contexto de retorno al hub cuando aplica
+4. el usuario inicia la jornada si todavia no esta en curso
+5. registra las paradas pendientes siguiendo la sugerencia operativa del sistema
+6. si la jornada requiere mas de un tramo, el sistema comunica que tocara volver a nave antes de continuar
+7. el usuario abre la navegacion externa si la necesita
+8. cuando ya no quedan pendientes, finaliza la jornada
+
+**Flujos alternativos:**
+
+- si no existe hub, la jornada sigue siendo operable pero la navegacion externa puede no estar disponible
+- si una parada se cancela, cuenta como gestionada pero no suma carga operativa
+- si quedan pendientes al cerrar, el sistema exige decision entre `PARTIAL` y `CANCELED`
+
+**Resultado esperado:**
+
+- la operacion diaria refleja mejor la realidad de carga y retorno del vehiculo sin requerir una tabla extra de subviajes
 
 ### CU-006. Resolver manualmente una solicitud de recogida
 

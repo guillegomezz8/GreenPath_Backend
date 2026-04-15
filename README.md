@@ -52,7 +52,10 @@ No es solo una API de CRUD. El sistema combina operacion, automatizacion, trazab
 - generacion semanal con `generate-week`
 - control de `regenerate` y proteccion de dias ya operados
 - limite por capacidad diaria y por maximo de clientes por dia
+- criterio actual de planificacion con tope funcional de `10` clientes por jornada
 - optimizacion opcional con Google Directions
+- plan operativo interno por capacidad cuando la carga prevista obliga a volver al hub
+- navegacion exportada que siempre sale del hub y vuelve al hub al cierre de la jornada
 - ejecucion diaria con inicio, registro de parada y cierre de jornada
 
 ### 4.2 Solicitudes al cliente
@@ -129,6 +132,7 @@ Se utiliza para:
 - geocodificar direcciones de clientes
 - optimizar el orden de paradas en la generacion semanal
 - abrir navegacion desde la pantalla de ejecucion de ruta
+- exportar una navegacion alineada con el `operational_plan` y con retornos intermedios al hub cuando la capacidad lo exige
 
 ### 7.2 Gmail API
 
@@ -202,6 +206,13 @@ python manage.py loaddata \
 ```
 
 Consulta `apps/user/fixtures/README.md` para el detalle.
+
+Notas del dataset de demo actual:
+
+- 2 vehiculos operativos de ejemplo
+- clientes repartidos por zonas reales sin solapes funcionales entre municipios
+- recogidas recientes concentradas en fechas cercanas para probar generacion y estadisticas
+- ventas de ejemplo ajustadas para mantener coherencia entre volumen comprado confirmado/facturable y volumen vendido
 
 ## 11. Mapa de documentacion
 
@@ -342,9 +353,9 @@ npm run test
 
 Si el entorno local da problemas con `node_modules`, la ejecucion en contenedor temporal de Node suele ser la via mas estable.
 
-### Snapshot de cobertura a fecha 2026-04-05
+### Snapshot de cobertura a fecha 2026-04-14
 
-- backend: `25` tests verdes
-- frontend: `17` tests verdes
+- backend: `31` tests automatizados documentados
+- frontend: `17` tests automatizados documentados
 
 No sustituyen a una suite E2E completa, pero ya cubren reglas de negocio y UX que antes solo estaban protegidas por revision manual.

@@ -1,43 +1,43 @@
 [
-    {
-        "model": "user.user",
-        "pk": 1,
-        "fields": {
-            "email": "admin@example.com",
-            "username": "admin",
-            "is_staff": true,
-            "is_superuser": true,
-            "is_active": true
-        }
-    },
-    {
-        "model": "user.user",
-        "pk": 2,
-        "fields": {
-            "email": "worker@example.com",
-            "username": "worker",
-            "is_active": true
-        }
-    },
-    {
-        "model": "user.user",
-        "pk": 3,
-        "fields": {
-            "email": "owner@example.com",
-            "username": "owner",
-            "is_active": true
-        }
-    },
-    {
-        "model": "user.user",
-        "pk": 4,
-        "fields": {
-            "email": "client@example.com",
-            "username": "client",
-            "is_active": true
-        }
-    },
-    {
+  {
+    "model": "user.user",
+    "pk": 1,
+    "fields": {
+      "email": "admin@example.com",
+      "username": "admin",
+      "is_staff": true,
+      "is_superuser": true,
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 2,
+    "fields": {
+      "email": "worker@example.com",
+      "username": "worker",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 3,
+    "fields": {
+      "email": "owner@example.com",
+      "username": "owner",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 4,
+    "fields": {
+      "email": "client@example.com",
+      "username": "client",
+      "is_active": true
+    }
+  },
+  {
     "model": "user.user",
     "pk": 5,
     "fields": {
@@ -307,6 +307,321 @@
     "fields": {
       "email": "bar-la-esquina-de-sevilla@example.com",
       "username": "bar-la-esquina-de-sevilla"
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 39,
+    "fields": {
+      "email": "sevilla-alfalfa-1@example.com",
+      "username": "sevilla-alfalfa-1",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 40,
+    "fields": {
+      "email": "sevilla-encarnacion-1@example.com",
+      "username": "sevilla-encarnacion-1",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 41,
+    "fields": {
+      "email": "sevilla-sanlorenzo-1@example.com",
+      "username": "sevilla-sanlorenzo-1",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 42,
+    "fields": {
+      "email": "sevilla-catedral-1@example.com",
+      "username": "sevilla-catedral-1",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 43,
+    "fields": {
+      "email": "sevilla-arenal-1@example.com",
+      "username": "sevilla-arenal-1",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 44,
+    "fields": {
+      "email": "camas-ruta-1@example.com",
+      "username": "camas-ruta-1",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 45,
+    "fields": {
+      "email": "camas-centro-1@example.com",
+      "username": "camas-centro-1",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 46,
+    "fields": {
+      "email": "camas-mirada-1@example.com",
+      "username": "camas-mirada-1",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 47,
+    "fields": {
+      "email": "camas-patio-1@example.com",
+      "username": "camas-patio-1",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 48,
+    "fields": {
+      "email": "camas-bulevar-1@example.com",
+      "username": "camas-bulevar-1",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 49,
+    "fields": {
+      "email": "doshermanas-mercado-1@example.com",
+      "username": "doshermanas-mercado-1",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 50,
+    "fields": {
+      "email": "doshermanas-rio-1@example.com",
+      "username": "doshermanas-rio-1",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 51,
+    "fields": {
+      "email": "doshermanas-centro-1@example.com",
+      "username": "doshermanas-centro-1",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 52,
+    "fields": {
+      "email": "doshermanas-estacion-1@example.com",
+      "username": "doshermanas-estacion-1",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 53,
+    "fields": {
+      "email": "doshermanas-laguna-1@example.com",
+      "username": "doshermanas-laguna-1",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 54,
+    "fields": {
+      "email": "alcala-centro-1@example.com",
+      "username": "alcala-centro-1",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 55,
+    "fields": {
+      "email": "alcala-castillo-1@example.com",
+      "username": "alcala-castillo-1",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 56,
+    "fields": {
+      "email": "alcala-ribera-1@example.com",
+      "username": "alcala-ribera-1",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 57,
+    "fields": {
+      "email": "alcala-panadero-1@example.com",
+      "username": "alcala-panadero-1",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 58,
+    "fields": {
+      "email": "alcala-oliva-1@example.com",
+      "username": "alcala-oliva-1",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 59,
+    "fields": {
+      "email": "rinconada-estacion-1@example.com",
+      "username": "rinconada-estacion-1",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 60,
+    "fields": {
+      "email": "rinconada-centro-1@example.com",
+      "username": "rinconada-centro-1",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 61,
+    "fields": {
+      "email": "rinconada-parque-1@example.com",
+      "username": "rinconada-parque-1",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 62,
+    "fields": {
+      "email": "rinconada-feria-1@example.com",
+      "username": "rinconada-feria-1",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 63,
+    "fields": {
+      "email": "rinconada-anden-1@example.com",
+      "username": "rinconada-anden-1",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 64,
+    "fields": {
+      "email": "sanjuan-plaza-1@example.com",
+      "username": "sanjuan-plaza-1",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 65,
+    "fields": {
+      "email": "sanjuan-ribera-1@example.com",
+      "username": "sanjuan-ribera-1",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 66,
+    "fields": {
+      "email": "sanjuan-altos-1@example.com",
+      "username": "sanjuan-altos-1",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 67,
+    "fields": {
+      "email": "sanjuan-metro-1@example.com",
+      "username": "sanjuan-metro-1",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 68,
+    "fields": {
+      "email": "sanjuan-guadalquivir-1@example.com",
+      "username": "sanjuan-guadalquivir-1",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 69,
+    "fields": {
+      "email": "mairena-cavaleri-1@example.com",
+      "username": "mairena-cavaleri-1",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 70,
+    "fields": {
+      "email": "mairena-ciudadexpo-1@example.com",
+      "username": "mairena-ciudadexpo-1",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 71,
+    "fields": {
+      "email": "mairena-aljarafe-1@example.com",
+      "username": "mairena-aljarafe-1",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 72,
+    "fields": {
+      "email": "mairena-jaral-1@example.com",
+      "username": "mairena-jaral-1",
+      "is_active": true
+    }
+  },
+  {
+    "model": "user.user",
+    "pk": 73,
+    "fields": {
+      "email": "mairena-tejar-1@example.com",
+      "username": "mairena-tejar-1",
+      "is_active": true
     }
   }
 ]

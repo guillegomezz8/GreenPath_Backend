@@ -1,9 +1,16 @@
 # Indice de Documentacion GreenPath
 
-Fecha de revision: 2026-04-08
+Fecha de revision: 2026-04-14
 
 Este documento sirve como mapa de lectura de la documentacion del proyecto.
 Actualmente la documentacion central del sistema se mantiene de forma unificada en la carpeta `docs/` del backend y cubre negocio, requisitos, arquitectura, API, frontend, testing, integraciones, planificacion, despliegue, manual de usuario, bibliografia y modelo de datos.
+
+En la revision actual el paquete documental suma `17` documentos principales, con un reparto deliberado entre:
+
+- documentacion funcional y de negocio
+- documentacion tecnica y de integracion
+- documentacion academica y de planificacion
+- documentacion de uso, testing y soporte
 
 ## 1. Por donde empezar
 
@@ -182,6 +189,8 @@ Es el mejor lugar para revisar:
 - overview operativo
 - ejecucion diaria
 - reglas del modulo de rutas
+- tramos operativos por capacidad
+- retornos implicitos al hub y navegacion externa
 
 ### `docs/HISTORIAS_USUARIO.md`
 

@@ -1,6 +1,6 @@
 # Catalogo de Requisitos GreenPath
 
-Fecha de revision: 2026-03-27
+Fecha de revision: 2026-04-14
 
 ## 1. Objetivo del documento
 
@@ -171,6 +171,8 @@ Para facilitar la lectura, los requisitos se clasifican con los siguientes prefi
 | RF-043 | El sistema debe permitir finalizar una jornada con el estado que corresponda. |
 | RF-044 | El sistema debe poder abrir la navegacion de Google Maps desde la interfaz operativa. |
 | RF-045 | La vista de ejecucion debe mostrar mapa, orden de paradas y estado operativo. |
+| RF-045A | La vista de ejecucion debe sugerir la siguiente parada operativa correcta y presentar una interfaz simplificada para campo. |
+| RF-045B | Cuando la capacidad diaria obligue a dividir la jornada, el sistema debe poder reflejar el retorno implicito al hub tanto en la operacion visual como en la navegacion externa. |
 
 ### 6.8 Recogidas
 

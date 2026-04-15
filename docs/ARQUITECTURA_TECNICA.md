@@ -1,6 +1,6 @@
 # Arquitectura Tecnica del Proyecto
 
-Fecha de revision: 2026-04-08
+Fecha de revision: 2026-04-14
 
 ## 1. Objetivo de esta documentacion
 
@@ -103,6 +103,7 @@ Responsabilidades:
 - `RouteDayClient`
 - generacion semanal
 - ejecucion diaria
+- calculo de tramos operativos por capacidad
 - integracion con Google Directions
 
 ### 4.7 `apps/collection`
@@ -170,6 +171,36 @@ El backend ofrece acciones especificas para:
 - obtener enlace de navegacion
 
 Esto permite que el frontend tenga una pantalla operativa (`RouteExecution`) distinta del detalle de ruta (`RouteDetail`).
+
+### 7.1 `v1` de control por capacidad
+
+La version actual incorpora una capa tecnica intermedia entre planificacion y navegacion:
+
+- `build_route_day_operational_plan(route_day, ordered_clients=None)`
+
+Esta funcion:
+
+- resuelve la carga prevista de cada parada
+- divide la jornada en segmentos si se supera `daily_capacity_liters`
+- calcula tramo activo, carga registrada y capacidad restante
+- devuelve un bloque `operational_plan` reutilizable por API, frontend y exportacion de navegacion
+
+En el estado actual del producto, esa informacion se usa sobre todo como motor interno de decision:
+
+- sugerir la siguiente parada adecuada
+- construir el mapa operativo
+- insertar retornos al hub en la navegacion exportada
+
+La interfaz ya no necesita mostrar al usuario tarjetas tecnicas de `tramo` para aprovechar este calculo.
+
+### 7.2 Ventaja tecnica del enfoque actual
+
+La decision de no crear todavia tablas adicionales para viajes o descargas ofrece varias ventajas:
+
+- no rompe el modelo actual de `RouteDay`
+- evita migraciones y complejidad adicional en la `v1`
+- mantiene un unico criterio de segmentacion para backend y frontend
+- permite evolucion futura a una `v2` con persistencia real de tramos si el negocio la necesita
 
 ## 8. Flujo tecnico de solicitudes al cliente
 
@@ -240,6 +271,15 @@ Patrones destacables:
 - navegacion condicionada por rol
 - pantallas de detalle separadas de pantallas de operacion cuando el caso lo exige
 - componentes comunes para botones, filtros, contadores y estados vacios
+
+### 11.1 Ejecucion de rutas
+
+La pantalla `RouteExecution` y el componente `RouteDayMap` consumen el `operational_plan` para:
+
+- seleccionar por defecto la siguiente parada pendiente adecuada
+- mostrar el contexto operativo imprescindible sin sobrecargar la interfaz
+- representar visualmente retornos al hub en el mapa
+- mantener alineadas la experiencia visual y la URL de navegacion externa
 
 ## 12. Seguridad y permisos
 

@@ -37,3 +37,26 @@ class ZoneApiTests(BackendTestMixin, TestCase):
         )
 
         self.assertEqual(response.status_code, 403)
+
+    def test_owner_list_includes_clients_inside_zone(self):
+        zone = self.create_zone(name="Zona Clientes")
+        _, inside_client = self.create_client(
+            self.company,
+            username="inside-zone-client",
+            location=self.point_inside_default_polygon(),
+        )
+        self.create_client(
+            self.company,
+            username="outside-zone-client",
+            location=self.point_outside_default_polygon(),
+        )
+
+        response = self.owner_client.get("/zones/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["count"], 1)
+        zone_data = response.data["results"][0]
+        self.assertEqual(zone_data["name"], zone.name)
+        self.assertEqual(zone_data["clients_count"], 1)
+        self.assertEqual(len(zone_data["clients"]), 1)
+        self.assertEqual(zone_data["clients"][0]["id"], inside_client.id)

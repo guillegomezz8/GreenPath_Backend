@@ -1,6 +1,6 @@
 # Manual de Usuario GreenPath
 
-Fecha de revision: 2026-03-31
+Fecha de revision: 2026-04-14
 
 ## 1. Objetivo del documento
 
@@ -127,6 +127,18 @@ El sistema generara:
 - paradas (`RouteDayClient`)
 - solicitudes de estimacion
 
+Ademas, la planificacion deja preparado un contexto operativo por capacidad diaria para que la ejecucion pueda reflejar:
+
+- carga prevista del dia
+- necesidad de retorno intermedio al hub cuando proceda
+- propuesta de siguiente parada pendiente
+
+En el criterio funcional actual:
+
+- el sistema intenta no superar `10` clientes por jornada
+- tambien limita por `daily_capacity_liters`
+- la navegacion diaria siempre sale del hub y vuelve al hub al finalizar
+
 ### 4.8 Ejecucion de ruta
 
 Aunque el worker es quien normalmente opera la jornada, el owner tambien puede usar la vista de ejecucion. Desde esa pantalla puede:
@@ -135,6 +147,7 @@ Aunque el worker es quien normalmente opera la jornada, el owner tambien puede u
 - iniciar la jornada
 - consultar el mapa
 - abrir navegacion externa
+- seguir la parada pendiente sugerida por el sistema
 - registrar paradas
 - finalizar la jornada
 
@@ -238,8 +251,9 @@ El flujo habitual del worker es:
 2. entrar en `Realizar ruta`
 3. seleccionar la jornada
 4. iniciar la jornada
-5. registrar cada parada
-6. finalizar la jornada
+5. seguir la parada sugerida por la pantalla operativa
+6. registrar cada parada
+7. finalizar la jornada
 
 ### 5.4 Registro de una parada
 
@@ -249,6 +263,8 @@ Cuando el worker registra una parada, puede:
 - cancelar la parada
 
 La medicion economica final puede quedar pendiente para revision posterior por owner.
+
+Si la capacidad prevista del dia obliga a dividir la jornada, la pantalla operativa y la navegacion de Google reflejan que debe producirse un retorno al hub antes de continuar con el siguiente bloque.
 
 ### 5.5 Perfil
 
@@ -293,6 +309,7 @@ El client puede consultar el historico de recogidas asociadas a su cuenta, inclu
 - usar la pantalla de ejecucion de ruta en movil
 - no mezclar detalle de ruta con operacion diaria
 - registrar cancelaciones correctamente para no dejar pendientes falsos
+- seguir la parada activa sugerida y el recorrido del mapa antes de continuar
 
 ### 7.3 Para bloque economico
 
@@ -305,7 +322,9 @@ El client puede consultar el historico de recogidas asociadas a su cuenta, inclu
 | Situacion | Recomendacion |
 | --- | --- |
 | Un cliente no aparece en la semana generada | Revisar frecuencia, coordenadas, empresa y zonas del dia |
+| Un dia se queda con pocas paradas | Revisar frecuencia, zonas del weekday, capacidad diaria y tope funcional de clientes por jornada |
 | Una ruta no se optimiza con Google | Revisar clave API o asumir fallback secuencial |
+| La app indica retorno al hub durante una jornada | Significa que la carga prevista supera la capacidad del bloque actual y la operacion debe continuar en un nuevo retorno a nave |
 | Un correo no se envia | Revisar configuracion de Gmail API y logs |
 | Una recogida no computa en estadisticas | Revisar estado y casilla `Facturable` |
 | Una venta no genera PDF correctamente | Revisar datos fiscales y entorno de WeasyPrint |

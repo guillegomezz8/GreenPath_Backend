@@ -205,16 +205,24 @@ def _enqueue_collection_request_notification(collection_request):
 
 def _compute_auto_estimated_liters(collection_request):
     client_id = collection_request.route_day_client.client_id
+    company = collection_request.route_day_client.route_day.route.company
     historical_avg = (
-        Collection.objects
-        .filter(client_id=client_id)
-        .exclude(status=CollectionStatus.CANCELED)
+        _company_collection_history_queryset(company, client_ids=[client_id], statuses=[CollectionStatus.CONFIRMED])
         .aggregate(avg_liters=Avg("net_liters"))
         .get("avg_liters")
     )
 
     if historical_avg is not None:
         return Decimal(historical_avg).quantize(Decimal("0.01"))
+
+    estimated_avg = (
+        _company_collection_history_queryset(company, client_ids=[client_id])
+        .aggregate(avg_estimated_liters=Avg("estimated_liters"))
+        .get("avg_estimated_liters")
+    )
+    if estimated_avg is not None:
+        return Decimal(estimated_avg).quantize(Decimal("0.01"))
+
     if collection_request.container_number:
         computed = collection_request.compute_client_liters()
         if computed is not None:
@@ -222,17 +230,53 @@ def _compute_auto_estimated_liters(collection_request):
     return Decimal("60.00")
 
 
-def _default_planned_liters_for_client(client_id, avg_liters_by_client):
-    avg_liters = avg_liters_by_client.get(client_id)
-    if avg_liters is not None:
-        return Decimal(avg_liters).quantize(Decimal("0.01"))
-    return Decimal("60.00")
+def _company_collection_history_queryset(company, client_ids=None, statuses=None):
+    queryset = Collection.objects.filter(_collection_scope_for_company(company)).distinct()
+    if client_ids is not None:
+        queryset = queryset.filter(client_id__in=client_ids)
+    if statuses is not None:
+        queryset = queryset.filter(status__in=statuses)
+    else:
+        queryset = queryset.exclude(status=CollectionStatus.CANCELED)
+    return queryset
 
 
-def _collection_scope_for_company(company):
+def _planned_liters_by_client_for_company(company, client_ids):
+    confirmed_rows = (
+        _company_collection_history_queryset(company, client_ids=client_ids, statuses=[CollectionStatus.CONFIRMED])
+        .values("client_id")
+        .annotate(avg_liters=Avg("net_liters"))
+    )
+    confirmed_avg_by_client = {item["client_id"]: item["avg_liters"] for item in confirmed_rows}
+
+    estimated_rows = (
+        _company_collection_history_queryset(company, client_ids=client_ids)
+        .values("client_id")
+        .annotate(avg_estimated_liters=Avg("estimated_liters"))
+    )
+    estimated_avg_by_client = {item["client_id"]: item["avg_estimated_liters"] for item in estimated_rows}
+
+    planned_liters_by_client = {}
+    for client_id in client_ids:
+        confirmed_avg = confirmed_avg_by_client.get(client_id)
+        if confirmed_avg is not None:
+            planned_liters_by_client[client_id] = Decimal(confirmed_avg).quantize(Decimal("0.01"))
+            continue
+
+        estimated_avg = estimated_avg_by_client.get(client_id)
+        if estimated_avg is not None:
+            planned_liters_by_client[client_id] = Decimal(estimated_avg).quantize(Decimal("0.01"))
+            continue
+
+        planned_liters_by_client[client_id] = Decimal("60.00")
+
+    return planned_liters_by_client
+
+
+def _collection_scope_for_company(company, prefix=""):
     return (
-        Q(collections__route_day_client__route_day__route__company=company)
-        | Q(collections__route_day_client__isnull=True, collections__worker__company=company)
+        Q(**{f"{prefix}route_day_client__route_day__route__company": company})
+        | Q(**{f"{prefix}route_day_client__isnull": True, f"{prefix}worker__company": company})
     )
 
 
@@ -469,7 +513,7 @@ def generate_route_day_clients(route_day, regenerate=False, reserved_client_ids=
                     filter=(
                         Q(collections__collection_date__lt=route_day.date)
                         & ~Q(collections__status=CollectionStatus.CANCELED)
-                        & _collection_scope_for_company(route_day.route.company)
+                        & _collection_scope_for_company(route_day.route.company, prefix="collections__")
                     ),
                 )
             )
@@ -508,14 +552,7 @@ def generate_route_day_clients(route_day, regenerate=False, reserved_client_ids=
         )
 
         due_client_ids = [item.id for item in due_clients]
-        avg_liters_rows = (
-            Collection.objects
-            .filter(client_id__in=due_client_ids)
-            .exclude(status=CollectionStatus.CANCELED)
-            .values("client_id")
-            .annotate(avg_liters=Avg("net_liters"))
-        )
-        avg_liters_by_client = {item["client_id"]: item["avg_liters"] for item in avg_liters_rows}
+        planned_liters_by_client = _planned_liters_by_client_for_company(route_day.route.company, due_client_ids)
 
         current_rows = list(route_day.ordered_clients.select_related("collection_request").all().order_by("order"))
         existing_client_ids = set(item.client_id for item in current_rows)
@@ -535,7 +572,7 @@ def generate_route_day_clients(route_day, regenerate=False, reserved_client_ids=
             if max_clients_limit > 0 and (len(existing_client_ids) >= max_clients_limit):
                 break
 
-            planned_liters = _default_planned_liters_for_client(client.id, avg_liters_by_client)
+            planned_liters = planned_liters_by_client.get(client.id, Decimal("60.00"))
             if capacity_limit > 0 and (current_planned_liters + planned_liters > capacity_limit):
                 skipped_by_capacity += 1
                 continue
@@ -726,10 +763,121 @@ def _planned_stop_liters(row):
     return Decimal("0.00")
 
 
+def _latest_route_day_client_collection(row):
+    prefetched_objects = getattr(row, "_prefetched_objects_cache", {})
+    if "collections" in prefetched_objects:
+        row_collections = list(prefetched_objects["collections"])
+    else:
+        row_collections = list(row.collections.all())
+
+    if not row_collections:
+        return None
+    return max(row_collections, key=lambda item: item.id)
+
+
+def build_route_day_operational_plan(route_day, ordered_clients=None):
+    ordered_rows = list(ordered_clients) if ordered_clients is not None else list(
+        route_day.ordered_clients
+        .select_related("collection_request")
+        .prefetch_related("collections")
+        .order_by("order")
+    )
+    ordered_rows = sorted(ordered_rows, key=lambda item: item.order)
+
+    capacity_limit = Decimal(route_day.daily_capacity_liters or 0).quantize(Decimal("0.01"))
+    segments = []
+    current_segment = None
+    total_planned_liters = Decimal("0.00")
+    total_registered_non_canceled_liters = Decimal("0.00")
+
+    for row in ordered_rows:
+        stop_liters = _planned_stop_liters(row).quantize(Decimal("0.01"))
+        latest_collection = _latest_route_day_client_collection(row)
+        is_registered = latest_collection is not None
+        is_canceled = bool(latest_collection and latest_collection.status == CollectionStatus.CANCELED)
+
+        if (
+            current_segment
+            and capacity_limit > 0
+            and current_segment["planned_load_liters"] > 0
+            and current_segment["planned_load_liters"] + stop_liters > capacity_limit
+        ):
+            segments.append(current_segment)
+            current_segment = None
+
+        if current_segment is None:
+            current_segment = {
+                "number": len(segments) + 1,
+                "planned_load_liters": Decimal("0.00"),
+                "current_load_liters": Decimal("0.00"),
+                "planned_stops_count": 0,
+                "registered_stops": 0,
+                "completed_stops": 0,
+                "canceled_stops": 0,
+                "pending_stops": 0,
+                "first_pending_route_day_client_id": None,
+                "stop_route_day_client_ids": [],
+                "stop_orders": [],
+            }
+
+        current_segment["planned_load_liters"] += stop_liters
+        current_segment["planned_stops_count"] += 1
+        current_segment["stop_route_day_client_ids"].append(row.id)
+        current_segment["stop_orders"].append(row.order)
+
+        if is_registered:
+            current_segment["registered_stops"] += 1
+            if is_canceled:
+                current_segment["canceled_stops"] += 1
+            else:
+                current_segment["completed_stops"] += 1
+                current_segment["current_load_liters"] += stop_liters
+                total_registered_non_canceled_liters += stop_liters
+        else:
+            current_segment["pending_stops"] += 1
+            if current_segment["first_pending_route_day_client_id"] is None:
+                current_segment["first_pending_route_day_client_id"] = row.id
+
+        total_planned_liters += stop_liters
+
+    if current_segment:
+        segments.append(current_segment)
+
+    for segment in segments:
+        segment["planned_load_liters"] = segment["planned_load_liters"].quantize(Decimal("0.01"))
+        segment["current_load_liters"] = segment["current_load_liters"].quantize(Decimal("0.01"))
+        if capacity_limit > 0:
+            remaining_capacity = capacity_limit - segment["current_load_liters"]
+            if remaining_capacity < 0:
+                remaining_capacity = Decimal("0.00")
+            segment["remaining_capacity_liters"] = remaining_capacity.quantize(Decimal("0.01"))
+        else:
+            segment["remaining_capacity_liters"] = None
+
+    active_segment = next((segment for segment in segments if segment["pending_stops"] > 0), None)
+    if active_segment is None and segments:
+        active_segment = segments[-1]
+
+    return {
+        "capacity_liters": capacity_limit if capacity_limit > 0 else None,
+        "planned_load_liters": total_planned_liters.quantize(Decimal("0.01")),
+        "registered_load_liters": total_registered_non_canceled_liters.quantize(Decimal("0.01")),
+        "segments_count": len(segments),
+        "returns_to_hub_count": max(len(segments) - 1, 0),
+        "requires_hub_return": len(segments) > 1,
+        "active_segment_number": active_segment["number"] if active_segment else None,
+        "active_segment_route_day_client_id": active_segment["first_pending_route_day_client_id"] if active_segment else None,
+        "active_segment_current_load_liters": active_segment["current_load_liters"] if active_segment else Decimal("0.00"),
+        "active_segment_remaining_capacity_liters": active_segment["remaining_capacity_liters"] if active_segment else None,
+        "segments": segments,
+    }
+
+
 def get_route_day_google_navigation_url(route_day):
     route_day_clients = list(
         route_day.ordered_clients
         .select_related("client", "collection_request")
+        .prefetch_related("collections")
         .filter(client__location__isnull=False)
         .order_by("order")
     )
@@ -741,20 +889,31 @@ def get_route_day_google_navigation_url(route_day):
         raise ValueError(ROUTE_DAY_GOOGLE_HUB_REQUIRED)
 
     origin = f"{hub.location.y},{hub.location.x}"
+
+    operational_plan = build_route_day_operational_plan(route_day, ordered_clients=route_day_clients)
+    segment_ids = [segment["stop_route_day_client_ids"] for segment in operational_plan["segments"]]
+    route_day_clients_by_id = {item.id: item for item in route_day_clients}
+    segment_stop_points = []
+
+    for stop_ids in segment_ids:
+        segment_points = []
+        for stop_id in stop_ids:
+            row = route_day_clients_by_id.get(stop_id)
+            if not row:
+                continue
+            segment_points.append(f"{row.client.location.y},{row.client.location.x}")
+        if segment_points:
+            segment_stop_points.append(segment_points)
+
+    if not segment_stop_points:
+        raise ValueError(ROUTE_DAY_GOOGLE_NAVIGATION_EMPTY)
+
     destination = origin
-
-    capacity_limit = Decimal(route_day.daily_capacity_liters or 0)
-    current_load = Decimal("0.00")
     waypoint_points = []
-
-    for row in route_day_clients:
-        stop_liters = _planned_stop_liters(row)
-        if capacity_limit > 0 and current_load > 0 and current_load + stop_liters > capacity_limit:
+    for segment_index, segment_points in enumerate(segment_stop_points):
+        waypoint_points.extend(segment_points)
+        if segment_index < len(segment_stop_points) - 1:
             waypoint_points.append(origin)
-            current_load = Decimal("0.00")
-
-        waypoint_points.append(f"{row.client.location.y},{row.client.location.x}")
-        current_load += stop_liters
 
     waypoints = "|".join(waypoint_points)
 

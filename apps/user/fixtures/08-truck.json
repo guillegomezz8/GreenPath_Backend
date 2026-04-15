@@ -3,11 +3,11 @@
     "model": "truck.truck",
     "pk": 1,
     "fields": {
-      "registration_number": "1234-ABC",
+      "registration_number": "5321-MJH",
       "brand": "Mercedes-Benz",
-      "model": "Actros",
-      "year": 2020,
-      "capacity_liters": "18000.00",
+      "model": "Sprinter 519 CDI",
+      "year": 2022,
+      "capacity_liters": "3500.00",
       "status": "ACTIVE",
       "fuel": "DIESEL",
       "driver": 1,
@@ -18,57 +18,12 @@
     "model": "truck.truck",
     "pk": 2,
     "fields": {
-      "registration_number": "5678-DEF",
-      "brand": "Volvo",
-      "model": "FH16",
-      "year": 2022,
-      "capacity_liters": "20000.00",
-      "status": "IN_SERVICE",
-      "fuel": "DIESEL",
-      "driver": null,
-      "company": 1
-    }
-  },
-  {
-    "model": "truck.truck",
-    "pk": 3,
-    "fields": {
-      "registration_number": "9012-GHI",
-      "brand": "Scania",
-      "model": "R500",
+      "registration_number": "7418-LXS",
+      "brand": "Iveco",
+      "model": "Daily 35C15",
       "year": 2021,
-      "capacity_liters": "22000.00",
-      "status": "MAINTENANCE",
-      "fuel": "DIESEL",
-      "driver": null,
-      "company": 1
-    }
-  },
-  {
-    "model": "truck.truck",
-    "pk": 4,
-    "fields": {
-      "registration_number": "3456-JKL",
-      "brand": "MAN",
-      "model": "TGX",
-      "year": 2019,
-      "capacity_liters": "16000.00",
-      "status": "OUT_OF_SERVICE",
-      "fuel": "DIESEL",
-      "driver": null,
-      "company": 1
-    }
-  },
-  {
-    "model": "truck.truck",
-    "pk": 5,
-    "fields": {
-      "registration_number": "7890-MNO",
-      "brand": "DAF",
-      "model": "XF 530",
-      "year": 2023,
-      "capacity_liters": "24000.00",
-      "status": "ACTIVE",
+      "capacity_liters": "3000.00",
+      "status": "IN_SERVICE",
       "fuel": "DIESEL",
       "driver": null,
       "company": 1

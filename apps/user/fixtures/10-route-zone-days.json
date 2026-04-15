@@ -5,7 +5,9 @@
     "fields": {
       "route": 1,
       "weekday": 0,
-      "zones": [1, 2]
+      "zones": [
+        9
+      ]
     }
   },
   {
@@ -14,7 +16,9 @@
     "fields": {
       "route": 1,
       "weekday": 1,
-      "zones": [1]
+      "zones": [
+        5
+      ]
     }
   },
   {
@@ -23,7 +27,9 @@
     "fields": {
       "route": 1,
       "weekday": 2,
-      "zones": [1, 2]
+      "zones": [
+        6
+      ]
     }
   },
   {
@@ -32,7 +38,10 @@
     "fields": {
       "route": 1,
       "weekday": 3,
-      "zones": [2]
+      "zones": [
+        7,
+        8
+      ]
     }
   },
   {
@@ -41,7 +50,10 @@
     "fields": {
       "route": 1,
       "weekday": 4,
-      "zones": [1]
+      "zones": [
+        3,
+        4
+      ]
     }
   },
   {
@@ -50,7 +62,10 @@
     "fields": {
       "route": 2,
       "weekday": 5,
-      "zones": [6, 7]
+      "zones": [
+        9,
+        6
+      ]
     }
   },
   {
@@ -59,7 +74,11 @@
     "fields": {
       "route": 2,
       "weekday": 6,
-      "zones": [8]
+      "zones": [
+        5,
+        7,
+        8
+      ]
     }
   }
 ]

@@ -1,6 +1,6 @@
 # Historias de Usuario GreenPath
 
-Fecha de revision: 2026-04-08
+Fecha de revision: 2026-04-14
 
 ## 1. Convenciones
 
@@ -59,6 +59,15 @@ Criterios de aceptacion:
 1. `start` solo se permite en estados validos.
 2. Si hay paradas pendientes al finalizar, se exige decision (`PARTIAL` o `CANCELED`).
 3. Puedo abrir enlace de navegacion Google por dia.
+
+### US-OWN-005G (P1) Entender retornos al hub por capacidad
+
+Como Owner quiero que la operativa me indique cuando una jornada requiere volver a nave para supervisar mejor la ruta real.
+
+Criterios de aceptacion:
+1. El sistema calcula tramos operativos dentro de un `RouteDay`.
+2. El resumen operativo muestra numero de tramos y retornos previstos.
+3. La navegacion de Google incorpora el hub entre segmentos cuando la capacidad lo exige.
 
 ### US-OWN-005B (P1) Configurar precio global de empresa
 
@@ -143,6 +152,15 @@ Criterios de aceptacion:
 2. Existe barra de progreso por dia.
 3. El estado del dia es visible con badge.
 
+### US-WRK-005 (P1) Saber en que tramo estoy trabajando
+
+Como Worker quiero que la app me diga en que tramo estoy para entender si debo volver a nave antes de seguir recogiendo.
+
+Criterios de aceptacion:
+1. La pantalla operativa simplifica la informacion tecnica y prioriza la siguiente parada sugerida.
+2. El mapa y la navegacion reflejan cuando la jornada exige retorno al hub.
+3. La siguiente parada sugerida es coherente con el plan operativo interno mientras existan pendientes.
+
 ## 4. Historias Client
 
 ### US-CLI-001 (P0) Ver mis solicitudes de litros
@@ -201,6 +219,15 @@ Criterios de aceptacion:
 2. Si Google falla o falta API key, se mantiene orden actual.
 3. El flujo de generacion no se interrumpe por este fallo.
 
+### US-PLT-003B (P1) Alinear plan operativo y navegacion externa
+
+Como sistema quiero que mapa operativo y enlace Google usen el mismo criterio de segmentacion para no mostrar recorridos contradictorios.
+
+Criterios de aceptacion:
+1. El backend genera un `operational_plan` reutilizable.
+2. El frontend usa ese plan para resaltar tramos y parada activa.
+3. La URL de Google inserta el hub entre segmentos cuando la capacidad obliga a ello.
+
 ### US-PLT-004 (P1) Programacion automatica de solicitudes
 
 Como sistema quiero programar autoestimacion en `expires_at` para mantener continuidad operativa.
@@ -229,6 +256,7 @@ Criterios de aceptacion:
 1. Puedo iniciar dia, registrar paradas y finalizar sin cambiar a desktop.
 2. El detalle de parada muestra informacion minima necesaria (cliente, estado, limite, plan base).
 3. Los controles criticos son visibles y tocables con una mano.
+4. El usuario entiende rapidamente si esta en un tramo con retorno posterior a nave.
 
 ### US-UXM-002 (P1) Resumen rapido en pantalla pequena
 
@@ -312,6 +340,15 @@ Criterios de aceptacion:
 1. Puedo abrir enlace Google desde detalle de dia.
 2. Si falla enlace, recibo mensaje claro.
 3. El error no rompe la pantalla operativa.
+
+### US-OWN-015 (P2) Revisar capacidad diaria en contexto operativo
+
+Como Owner quiero ver capacidad, carga prevista y carga ya registrada para decidir si la planificacion diaria es razonable.
+
+Criterios de aceptacion:
+1. La jornada muestra `capacity_liters`.
+2. Se informa del contexto operativo de la jornada sin exponer tecnicismos internos innecesarios.
+3. La informacion visible distingue entre planificacion y ejecucion en curso.
 
 ### US-OWN-014 (P2) Vista ejecutiva de estados de semana
 

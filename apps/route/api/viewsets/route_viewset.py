@@ -48,6 +48,7 @@ from apps.route.utils import (
     get_operational_week_start,
     resolve_route_day_capacity_liters,
     resolve_route_default_capacity_liters,
+    build_route_day_operational_plan,
 )
 
 configure_logging()
@@ -393,6 +394,7 @@ class RouteViewSet(viewsets.ModelViewSet):
             route_days_payload = []
             for route_day in route_days_qs:
                 ordered_clients = route_day.ordered_clients.all().order_by('order')
+                operational_plan = build_route_day_operational_plan(route_day, ordered_clients=ordered_clients)
                 clients_payload = []
                 for row in ordered_clients:
                     request_obj = None
@@ -439,6 +441,7 @@ class RouteViewSet(viewsets.ModelViewSet):
                     'started_at': route_day.started_at,
                     'finished_at': route_day.finished_at,
                     'stops': len(clients_payload),
+                    'operational_plan': operational_plan,
                     'clients': clients_payload,
                 })
 

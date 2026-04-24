@@ -52,6 +52,7 @@
         .empresa-detalle {
             font-size: 9.5pt;
             line-height: 1.35;
+            overflow-wrap: anywhere;
         }
 
         .empresa-detalle .bold {
@@ -104,6 +105,7 @@
         .destinatario-info {
             font-size: 9.5pt;
             line-height: 1.35;
+            overflow-wrap: anywhere;
         }
 
         .destinatario-nombre {
@@ -209,8 +211,9 @@
                     <div class="empresa-nombre">{{ empresa_nombre }}</div>
                     <div class="empresa-detalle">
                         <div class="bold">{{ empresa_cif }}</div>
-                        <div class="bold">{{ empresa_direccion }}</div>
-                        <div class="bold">{{ empresa_ciudad }}</div>
+                        {% for line in company_address_lines %}
+                        <div class="bold">{{ line }}</div>
+                        {% endfor %}
                         <div>Telf. {{ empresa_telefono }}</div>
                         <div>email: {{ empresa_email }}</div>
                         {% if codigo_ler %}
@@ -235,8 +238,9 @@
                 <div class="destinatario-info">
                     <div class="destinatario-nombre">{{ cliente_nombre }}</div>
                     <div>{{ cliente_cif }}</div>
-                    <div>{{ cliente_direccion }}</div>
-                    <div>{{ cliente_ciudad }}</div>
+                    {% for line in buyer_address_lines %}
+                    <div>{{ line }}</div>
+                    {% endfor %}
                 </div>
             </div>
         </div>

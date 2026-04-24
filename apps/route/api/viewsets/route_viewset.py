@@ -5,6 +5,7 @@ from django_filters.rest_framework import DjangoFilterBackend, FilterSet, CharFi
 from django.db.models import Q
 from django.db import transaction
 from django.utils import timezone
+
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -16,11 +17,9 @@ from apps.base.literals import (
     ERROR_CREATING_ROUTE,
     ONLY_OWNERS_CAN_CREATE_ROUTES,
     DETAILS,
-    NOT_ROUTE_IN_RANGE,
     INTERNAL_ERROR,
     MESSAGE,
     DATE_NOT_VALID,
-    SUCCESFULY_GENERATE_ROUTES,
     WEEKLY_OPERATIONAL_ROUTE_GENERATED,
     ROUTE_ZONE_CONFIG_UPDATED,
     ROUTE_DAY_NOT_FOUND,
@@ -34,17 +33,16 @@ from apps.base.literals import (
 from apps.base.logger import configure_logging
 from apps.base.permissions import IsOwnerUser, IsRouteCompanyGenerator
 from apps.company.models import CompanyHub
-from apps.route.api.serializers.route_serializers import RouteSerializer, CreateRouteSerializer, UpdateRouteSerializer, PartialUpdateRouteSerializer, RouteDaySerializer, GenerateWeeklyZoneRoutesInputSerializer, GenerateDailyZoneRouteInputSerializer, GenerateWeekSerializer, RouteZoneConfigSerializer, CompleteRouteDayClientSerializer
+from apps.route.api.serializers.route_serializers import RouteSerializer, CreateRouteSerializer, UpdateRouteSerializer, PartialUpdateRouteSerializer, GenerateWeekSerializer, RouteZoneConfigSerializer, CompleteRouteDayClientSerializer
 from apps.route.api.serializers.route_serializers import FinishRouteDaySerializer
 from apps.collection.api.serializers.collection_serializers import CollectionSerializer
 from apps.route.models import Route, RouteZoneDay, RouteDay, RouteDayClient
 from apps.route.utils import (
-    generate_routes_for_date_range,
     generate_week_for_route,
     start_route_day as start_route_day_service,
     finish_route_day as finish_route_day_service,
     complete_route_day_client,
-    get_route_day_google_navigation_url,
+    get_route_day_google_navigation_urls,
     get_operational_week_start,
     resolve_route_day_capacity_liters,
     resolve_route_default_capacity_liters,
@@ -101,10 +99,6 @@ class RouteViewSet(viewsets.ModelViewSet):
             return UpdateRouteSerializer
         elif self.action == 'partial_update':
             return PartialUpdateRouteSerializer
-        elif self.action == 'generate_weekly_zone_routes':
-            return GenerateWeeklyZoneRoutesInputSerializer
-        elif self.action == 'generate_daily_zone_route':
-            return GenerateDailyZoneRouteInputSerializer
         elif self.action == 'generate_week':
             return GenerateWeekSerializer
         elif self.action == 'zone_config':
@@ -116,7 +110,7 @@ class RouteViewSet(viewsets.ModelViewSet):
         return RouteSerializer
 
     def get_permissions(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy', 'zone_config', 'generate_week', 'generate_range_routes']:
+        if self.action in ['create', 'update', 'partial_update', 'destroy', 'zone_config', 'generate_week']:
             self.permission_classes = [IsAuthenticated, IsOwnerUser]
         elif self.action in ['list', 'retrieve', 'operational_overview', 'start_route_day', 'finish_route_day', 'complete_stop', 'google_navigation']:
             self.permission_classes = [IsAuthenticated, IsRouteCompanyGenerator]
@@ -151,31 +145,6 @@ class RouteViewSet(viewsets.ModelViewSet):
         except Exception as e:
             logging.error(f'[route_viewset - perform_create] Error creando ruta: {str(e)}')
             raise Exception(f'{ERROR}: {ERROR_CREATING_ROUTE} - {str(e)}')
-
-    @action(detail=True, methods=['post'], url_path='generate-range-routes')
-    def generate_range_routes(self, request, pk=None):
-        try:
-            route = self.get_object()
-            start_date = request.data.get('start_date')
-            end_date = request.data.get('end_date')
-            zone_schedule = request.data.get('zone_schedule')
-            max_clients = request.data.get('max_clients', 25)
-
-            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
-            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
-            zone_schedule = {int(k): v for k, v in zone_schedule.items()}
-            route_days = generate_routes_for_date_range(route, start_date=start_date, end_date=end_date, zone_schedule=zone_schedule, max_clients=max_clients)
-            if not route_days:
-                return Response({DETAILS: NOT_ROUTE_IN_RANGE}, status=status.HTTP_204_NO_CONTENT)
-            serializer = RouteDaySerializer(route_days, many=True)
-            logging.info('[route_viewset - generate_range_routes] Rutas generadas correctamente')
-            return Response({MESSAGE: SUCCESFULY_GENERATE_ROUTES, 'routes': serializer.data}, status=status.HTTP_201_CREATED)
-        except (ValueError, TypeError, AttributeError) as e:
-            logging.error(f'[route_viewset - generate_range_routes] Datos de entrada no validos: {str(e)}')
-            return Response({DETAILS: DATE_NOT_VALID}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            logging.error(f'[route_viewset - generate_range_routes] Error al generar rutas para rango de fechas: {str(e)}')
-            return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=['post'], url_path='generate-week')
     def generate_week(self, request, pk=None):
@@ -351,9 +320,14 @@ class RouteViewSet(viewsets.ModelViewSet):
             if not route_day:
                 return Response({DETAILS: ROUTE_DAY_NOT_FOUND}, status=status.HTTP_404_NOT_FOUND)
 
-            navigation_url = get_route_day_google_navigation_url(route_day)
+            navigation_urls = get_route_day_google_navigation_urls(route_day)
             logging.info(f'[route_viewset - google_navigation] Navegacion Google generada para route_day {route_day.id}')
-            return Response({MESSAGE: ROUTE_DAY_GOOGLE_NAVIGATION_READY, 'url': navigation_url}, status=status.HTTP_200_OK)
+            return Response({
+                MESSAGE: ROUTE_DAY_GOOGLE_NAVIGATION_READY,
+                'url': navigation_urls[0],
+                'urls': navigation_urls,
+                'is_split': len(navigation_urls) > 1,
+            }, status=status.HTTP_200_OK)
         except ValueError as e:
             logging.warning(f'[route_viewset - google_navigation] Validacion generando navegacion route_day {route_day_id}: {str(e)}')
             return Response({DETAILS: str(e)}, status=status.HTTP_400_BAD_REQUEST)

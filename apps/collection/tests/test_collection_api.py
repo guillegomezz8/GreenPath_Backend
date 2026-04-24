@@ -1,10 +1,10 @@
-from datetime import timedelta
+from datetime import date, timedelta
 from decimal import Decimal
 
 from django.test import TestCase
 from django.utils import timezone
 
-from apps.base.enums import CollectionRequestStatus, CollectionStatus, Role
+from apps.base.enums import CollectionRequestStatus, CollectionStatus, ContainerType
 from apps.base.test_utils import BackendTestMixin
 from apps.collection.models import Collection, CollectionRequest
 from apps.route.models import Route, RouteDay, RouteDayClient
@@ -36,7 +36,7 @@ class CollectionApiTests(BackendTestMixin, TestCase):
 
         response = self.client_api.post(
             f"/collections/requests/{collection_request.id}/answer/",
-            {"final_liters": "75.50"},
+            {"container_type": ContainerType.BIDONES, "container_number": 3},
             format="json",
         )
 
@@ -44,7 +44,10 @@ class CollectionApiTests(BackendTestMixin, TestCase):
         collection_request.refresh_from_db()
         self.assertEqual(collection_request.status, CollectionRequestStatus.ANSWERED)
         self.assertEqual(collection_request.answered_by_id, self.client_user.id)
-        self.assertEqual(collection_request.final_liters, Decimal("75.50"))
+        self.assertEqual(collection_request.container_type, ContainerType.BIDONES)
+        self.assertEqual(collection_request.container_number, 3)
+        self.assertEqual(collection_request.final_liters, Decimal("180.00"))
+        self.assertEqual(collection_request.estimated_liters, Decimal("180.00"))
 
     def test_owner_can_filter_collections_by_billable(self):
         Collection.objects.create(
@@ -73,3 +76,31 @@ class CollectionApiTests(BackendTestMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["count"], 1)
         self.assertTrue(response.data["results"][0]["billable"])
+
+    def test_owner_can_filter_collections_by_date_range(self):
+        Collection.objects.create(
+            client=self.client_profile,
+            worker=self.owner_worker,
+            collection_date=date(2026, 1, 12),
+            measured_liters=Decimal("60.00"),
+            deduction_liters=Decimal("0.00"),
+            price_per_liter=Decimal("1.00"),
+            status=CollectionStatus.CONFIRMED,
+            billable=True,
+        )
+        included_collection = Collection.objects.create(
+            client=self.client_profile,
+            worker=self.owner_worker,
+            collection_date=date(2026, 3, 15),
+            measured_liters=Decimal("70.00"),
+            deduction_liters=Decimal("0.00"),
+            price_per_liter=Decimal("1.00"),
+            status=CollectionStatus.CONFIRMED,
+            billable=True,
+        )
+
+        response = self.owner_client.get("/collections/?start_date=2026-03-01&end_date=2026-03-31")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["results"][0]["id"], included_collection.id)

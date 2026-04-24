@@ -2,11 +2,14 @@ import logging
 
 from rest_framework import serializers
 
-from apps.base.enums import CollectionStatus
+from decimal import Decimal
+
+from apps.base.enums import CollectionStatus, ContainerType
 from apps.base.literals import COLLECTION_REQUEST_FINAL_LITERS_REQUIRED, COLLECTION_REQUEST_FINAL_LITERS_INVALID
 from apps.base.logger import configure_logging
 from apps.company.utils import resolve_default_collection_price_per_liter
 from apps.collection.models import Collection, CollectionRequest
+from apps.collection.utils import container_capacity_liters
 
 configure_logging()
 
@@ -207,14 +210,24 @@ class PartialUpdateCollectionSerializer(serializers.ModelSerializer):
 
 
 class AnswerCollectionRequestSerializer(serializers.Serializer):
-    final_liters = serializers.DecimalField(max_digits=10, decimal_places=2, required=True)
+    container_type = serializers.ChoiceField(choices=ContainerType.choices, required=False, default=ContainerType.BIDONES)
+    container_number = serializers.IntegerField(min_value=1, required=False)
+    final_liters = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
 
-    def validate_final_liters(self, value):
-        if value is None:
+    def validate(self, attrs):
+        container_number = attrs.get("container_number")
+        final_liters = attrs.get("final_liters")
+
+        if container_number is not None:
+            capacity = container_capacity_liters(attrs.get("container_type") or ContainerType.BIDONES)
+            attrs["final_liters"] = (Decimal(container_number) * capacity).quantize(Decimal("0.01"))
+            return attrs
+
+        if final_liters is None:
             raise serializers.ValidationError(COLLECTION_REQUEST_FINAL_LITERS_REQUIRED)
-        if value <= 0:
+        if final_liters <= 0:
             raise serializers.ValidationError(COLLECTION_REQUEST_FINAL_LITERS_INVALID)
-        return value
+        return attrs
 
 
 class ManualCollectionRequestSerializer(serializers.Serializer):
@@ -244,6 +257,7 @@ class CollectionRequestSerializer(serializers.ModelSerializer):
         model = CollectionRequest
         fields = (
             'id',
+            'created_date',
             'route_day_client',
             'client_id',
             'client_name',

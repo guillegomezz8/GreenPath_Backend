@@ -1,6 +1,6 @@
 # Manual de Usuario GreenPath
 
-Fecha de revision: 2026-04-14
+Fecha de revision: 2026-04-24
 
 ## 1. Objetivo del documento
 
@@ -288,8 +288,9 @@ Cuando el sistema crea una `CollectionRequest`, el client puede:
 
 1. abrir la solicitud pendiente
 2. revisar la fecha de recogida prevista
-3. introducir la estimacion de litros
-4. confirmar su respuesta
+3. seleccionar tipo de envase
+4. introducir cantidad de envases
+5. confirmar su respuesta
 
 ### 6.3 Revisar historico
 

@@ -4,7 +4,8 @@ import logging
 from django.db.models import Q, Sum
 from django.http import FileResponse
 from django.utils import timezone
-from django_filters.rest_framework import CharFilter, DjangoFilterBackend, FilterSet
+from django.utils.dateparse import parse_date
+from django_filters.rest_framework import CharFilter, DateFilter, DjangoFilterBackend, FilterSet
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -31,11 +32,13 @@ class SaleFilter(FilterSet):
     invoice_number = CharFilter(field_name="invoice_number", lookup_expr="icontains")
     buyer = CharFilter(field_name="buyer__fiscal_name", lookup_expr="icontains")
     invoice_year = CharFilter(field_name="invoice_year", lookup_expr="exact")
+    start_date = DateFilter(field_name="invoice_date", lookup_expr="gte")
+    end_date = DateFilter(field_name="invoice_date", lookup_expr="lte")
     search = CharFilter(method="filter_search")
 
     class Meta:
         model = Sale
-        fields = ["invoice_number", "buyer", "invoice_year", "search"]
+        fields = ["invoice_number", "buyer", "invoice_year", "start_date", "end_date", "search"]
 
     def filter_search(self, queryset, name, value):
         return queryset.filter(
@@ -59,6 +62,54 @@ def _monthly_keys(months=6):
             year -= 1
         items.append((year, month))
     return items
+
+
+def _filtered_monthly_keys(start_date=None, end_date=None, months=6):
+    if not start_date or not end_date:
+        return _monthly_keys(months=months)
+
+    items = []
+    current_year = start_date.year
+    current_month = start_date.month
+
+    while (current_year, current_month) <= (end_date.year, end_date.month):
+        items.append((current_year, current_month))
+        if current_month == 12:
+            current_year += 1
+            current_month = 1
+        else:
+            current_month += 1
+    return items
+
+
+def _parse_summary_date_range(query_params):
+    start_raw = (query_params.get("start_date") or "").strip()
+    end_raw = (query_params.get("end_date") or "").strip()
+
+    if not start_raw and not end_raw:
+        return None, None
+
+    if not start_raw or not end_raw:
+        raise ValidationError({"date_range": "Debes indicar start_date y end_date juntos."})
+
+    start_date = parse_date(start_raw)
+    if not start_date:
+        raise ValidationError({"start_date": "Formato de fecha invalido. Usa YYYY-MM-DD."})
+
+    end_date = parse_date(end_raw)
+    if not end_date:
+        raise ValidationError({"end_date": "Formato de fecha invalido. Usa YYYY-MM-DD."})
+
+    if start_date > end_date:
+        raise ValidationError({"date_range": "start_date no puede ser posterior a end_date."})
+
+    return start_date, end_date
+
+
+def _apply_date_range(queryset, field_name, start_date=None, end_date=None):
+    if not start_date or not end_date:
+        return queryset
+    return queryset.filter(**{f"{field_name}__range": (start_date, end_date)})
 
 
 class SaleViewSet(viewsets.ModelViewSet):
@@ -149,8 +200,19 @@ class SaleViewSet(viewsets.ModelViewSet):
             if not company:
                 return Response({DETAILS: "Empresa no encontrada."}, status=status.HTTP_404_NOT_FOUND)
 
-            collections_qs = company_collection_cost_queryset(company)
-            sales_qs = Sale.objects.filter(company=company)
+            start_date, end_date = _parse_summary_date_range(request.query_params)
+            collections_qs = _apply_date_range(
+                company_collection_cost_queryset(company),
+                "collection_date",
+                start_date,
+                end_date,
+            )
+            sales_qs = _apply_date_range(
+                Sale.objects.filter(company=company),
+                "invoice_date",
+                start_date,
+                end_date,
+            )
 
             total_cost = collections_qs.aggregate(total=Sum("total_price")).get("total") or 0
             total_income = sales_qs.aggregate(total=Sum("total")).get("total") or 0
@@ -158,7 +220,7 @@ class SaleViewSet(viewsets.ModelViewSet):
             total_sold_volume = sales_qs.aggregate(total=Sum("quantity")).get("total") or 0
 
             monthly = []
-            for year, month in _monthly_keys():
+            for year, month in _filtered_monthly_keys(start_date=start_date, end_date=end_date):
                 month_sales = sales_qs.filter(invoice_date__year=year, invoice_date__month=month)
                 month_collections = collections_qs.filter(collection_date__year=year, collection_date__month=month)
                 income = month_sales.aggregate(total=Sum("total")).get("total") or 0
@@ -186,6 +248,8 @@ class SaleViewSet(viewsets.ModelViewSet):
                 },
                 status=status.HTTP_200_OK,
             )
+        except ValidationError:
+            raise
         except Exception as e:
             logging.error(f"[sale_viewset - economic_summary] Error obteniendo resumen economico: {str(e)}")
             return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

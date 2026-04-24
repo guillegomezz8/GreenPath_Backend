@@ -96,3 +96,36 @@ class BuyerAndSaleApiTests(BackendTestMixin, TestCase):
         response = self.worker_client.get("/buyers/")
 
         self.assertEqual(response.status_code, 403)
+
+    def test_owner_can_filter_sales_list_by_date_range(self):
+        buyer = self.create_buyer(self.company, "Comprador Rango", "B44444444")
+        Sale.objects.create(
+            company=self.company,
+            buyer=buyer,
+            invoice_number="010/2026",
+            invoice_date=date(2026, 1, 15),
+            product_description="Venta enero",
+            quantity=Decimal("40.00"),
+            unit="L",
+            unit_price=Decimal("1.50"),
+            tax_rate=Decimal("21.00"),
+            currency="EUR",
+        )
+        included_sale = Sale.objects.create(
+            company=self.company,
+            buyer=buyer,
+            invoice_number="011/2026",
+            invoice_date=date(2026, 3, 10),
+            product_description="Venta marzo",
+            quantity=Decimal("60.00"),
+            unit="L",
+            unit_price=Decimal("1.80"),
+            tax_rate=Decimal("21.00"),
+            currency="EUR",
+        )
+
+        response = self.owner_client.get("/sales/", {"start_date": "2026-03-01", "end_date": "2026-03-31"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["results"][0]["id"], included_sale.id)

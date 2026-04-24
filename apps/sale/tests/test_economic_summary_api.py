@@ -162,3 +162,84 @@ class SaleEconomicSummaryApiTests(TestCase):
         response = self.client.get("/sales/economic-summary/")
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_economic_summary_can_be_filtered_by_date_range(self):
+        Sale.objects.create(
+            company=self.company,
+            buyer=self.buyer,
+            sale_date=date(2026, 1, 10),
+            invoice_date=date(2026, 1, 10),
+            invoice_number="010/2026",
+            product_description="Venta enero",
+            quantity=Decimal("50.00"),
+            unit="L",
+            unit_price=Decimal("2.00"),
+            tax_rate=Decimal("21.00"),
+        )
+        Sale.objects.create(
+            company=self.company,
+            buyer=self.buyer,
+            sale_date=date(2026, 3, 20),
+            invoice_date=date(2026, 3, 20),
+            invoice_number="011/2026",
+            product_description="Venta marzo",
+            quantity=Decimal("100.00"),
+            unit="L",
+            unit_price=Decimal("2.00"),
+            tax_rate=Decimal("21.00"),
+        )
+
+        Collection.objects.create(
+            client=self.client_profile,
+            worker=self.worker_profile,
+            collection_date=date(2026, 1, 10),
+            container_type=ContainerType.BIDONES,
+            container_number=1,
+            measured_liters=Decimal("50.00"),
+            deduction_liters=Decimal("0.00"),
+            price_per_liter=Decimal("1.00"),
+            billable=True,
+            status=CollectionStatus.CONFIRMED,
+        )
+        Collection.objects.create(
+            client=self.client_profile,
+            worker=self.worker_profile,
+            collection_date=date(2026, 3, 20),
+            container_type=ContainerType.BIDONES,
+            container_number=2,
+            measured_liters=Decimal("100.00"),
+            deduction_liters=Decimal("10.00"),
+            price_per_liter=Decimal("1.00"),
+            billable=True,
+            status=CollectionStatus.CONFIRMED,
+        )
+
+        self.authenticate_owner()
+        response = self.client.get("/sales/economic-summary/?start_date=2026-02-01&end_date=2026-03-31")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["total_cost"], Decimal("90.00"))
+        self.assertEqual(response.data["total_income"], Decimal("242.00"))
+        self.assertEqual(response.data["net_profit"], Decimal("152.00"))
+        self.assertEqual(response.data["total_bought_volume"], Decimal("90.00"))
+        self.assertEqual(response.data["total_sold_volume"], Decimal("100.00"))
+        self.assertEqual(len(response.data["monthly"]), 2)
+        self.assertEqual(response.data["monthly"][0]["year"], 2026)
+        self.assertEqual(response.data["monthly"][0]["month"], 2)
+        self.assertEqual(response.data["monthly"][0]["income"], 0)
+        self.assertEqual(response.data["monthly"][0]["cost"], 0)
+        self.assertEqual(response.data["monthly"][1]["year"], 2026)
+        self.assertEqual(response.data["monthly"][1]["month"], 3)
+        self.assertEqual(response.data["monthly"][1]["income"], Decimal("242.00"))
+        self.assertEqual(response.data["monthly"][1]["cost"], Decimal("90.00"))
+
+    def test_economic_summary_rejects_incomplete_or_invalid_date_ranges(self):
+        self.authenticate_owner()
+
+        response_missing = self.client.get("/sales/economic-summary/?start_date=2026-03-01")
+        response_invalid = self.client.get("/sales/economic-summary/?start_date=2026-04-01&end_date=2026-03-01")
+
+        self.assertEqual(response_missing.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("date_range", response_missing.data)
+        self.assertEqual(response_invalid.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("date_range", response_invalid.data)

@@ -1,7 +1,9 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
+
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet, CharFilter
 from django.db.models import Q
+
 from apps.zone.models import Zone
 from apps.zone.api.serializers.zone_serializers import (
     ZoneSerializer,
@@ -10,7 +12,6 @@ from apps.zone.api.serializers.zone_serializers import (
 )
 from apps.base.logger import configure_logging
 from apps.base.permissions import IsOwnerUser
-import logging
 
 configure_logging()
 

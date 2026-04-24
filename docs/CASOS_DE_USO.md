@@ -1,6 +1,6 @@
 # Casos de Uso GreenPath
 
-Fecha de revision: 2026-04-14
+Fecha de revision: 2026-04-24
 
 ## 1. Objetivo del documento
 
@@ -498,11 +498,11 @@ Cada caso de uso se expresa con:
 
 - el client entiende que se le esta pidiendo una estimacion
 
-### CU-017. Responder litros estimados
+### CU-017. Responder envases disponibles
 
 **Actor principal:** Client
 
-**Objetivo:** indicar la estimacion de litros disponible antes de la recogida.
+**Objetivo:** indicar cuantos bidones o IBC tiene disponibles antes de la recogida.
 
 **Precondiciones:**
 
@@ -511,9 +511,10 @@ Cada caso de uso se expresa con:
 **Flujo principal:**
 
 1. el client abre la solicitud
-2. introduce los litros estimados
-3. confirma la respuesta
-4. el sistema actualiza el estado y registra autoria y momento de respuesta
+2. selecciona tipo de envase
+3. introduce la cantidad de envases
+4. confirma la respuesta
+5. el sistema calcula litros equivalentes, actualiza el estado y registra autoria y momento de respuesta
 
 **Flujos alternativos:**
 

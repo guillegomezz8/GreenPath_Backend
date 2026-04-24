@@ -1,6 +1,6 @@
 # Guia de Pantallas Frontend GreenPath
 
-Fecha de revision: 2026-04-14
+Fecha de revision: 2026-04-24
 
 ## 1. Objetivo del documento
 
@@ -467,7 +467,16 @@ Notas:
 Objetivo:
 
 - listar solicitudes pendientes o resueltas del cliente
-- responder litros dentro del plazo permitido
+- mostrar todos los estados por defecto y filtrar por estado desde un dropdown
+- ordenar por creacion descendente, dejando primero las solicitudes mas nuevas
+- responder dentro del plazo indicando tipo de envase (`BIDONES` o `IBC`) y cantidad
+- calcular visualmente los litros derivados del numero de envases antes de enviar
+
+Notas:
+
+- la respuesta recomendada usa `container_type` y `container_number`
+- el backend calcula `final_liters` y sincroniza `estimated_liters` para que no prevalezca visualmente la autoestimacion
+- `final_liters` queda como compatibilidad legacy, no como flujo principal de cliente
 
 ## 14. Modulo de compradores
 
@@ -575,6 +584,7 @@ Contenido actual:
 - ingresos por ventas
 - beneficio neto
 - volumen comprado vs vendido
+- filtro por rango de fechas usando `start_date` y `end_date` sobre `GET /sales/economic-summary/`
 - leyenda visual de colores por grafica
 - scroll horizontal controlado en charts estrechos
 

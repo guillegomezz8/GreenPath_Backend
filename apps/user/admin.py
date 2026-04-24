@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.contrib.gis import forms as gis_forms
+from django.contrib.gis.admin import GISModelAdmin
 from django.utils.html import format_html
 
 from apps.user.models.client import Client
@@ -32,7 +34,17 @@ class UserAdmin(admin.ModelAdmin):
 
 
 @admin.register(Client)
-class ClientAdmin(admin.ModelAdmin):
+class ClientAdmin(GISModelAdmin):
+    gis_widget = gis_forms.OSMWidget
+    gis_widget_kwargs = {
+        "attrs": {
+            "map_width": 800,
+            "map_height": 500,
+            "default_lat": 37.3886,
+            "default_lon": -5.9823,
+            "default_zoom": 12,
+        }
+    }
     list_display = (
         "id",
         "name",

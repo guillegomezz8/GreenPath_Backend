@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import timedelta
 from decimal import Decimal
 import logging
 
@@ -9,9 +9,6 @@ from apps.base.literals import (
     GENERATE_WEEK_CAPACITY_MUTUALLY_EXCLUSIVE,
     GENERATE_WEEK_DAYS_DUPLICATED,
     GENERATE_WEEK_DAYS_OUTSIDE_WEEK,
-    ROUTE_DAY_DATE_PAST_INVALID,
-    ROUTE_ZONE_CONFIG_DAY_INVALID,
-    ROUTE_ZONE_CONFIG_KEY_INVALID,
     ROUTE_END_DATE_BEFORE_START_DATE,
     ROUTE_WORKER_COMPANY_INVALID,
     ROUTE_ZONE_DAYS_DUPLICATED,
@@ -19,8 +16,7 @@ from apps.base.literals import (
 )
 from apps.base.logger import configure_logging
 from apps.base.literals import MAX_CLIENTS_PER_DAY
-from apps.route.models import Route, RouteDay, RouteDayClient
-from apps.user.api.serializers.client_serializers import ClientSerializer
+from apps.route.models import Route
 from apps.zone.models import Zone
 from apps.base.enums import Weekday, ContainerType
 
@@ -45,12 +41,13 @@ class RouteSerializer(serializers.ModelSerializer):
 
 
 class CreateRouteSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
     start_date = serializers.DateField(required=True)
     end_date = serializers.DateField(required=False, allow_null=True)
 
     class Meta:
         model = Route
-        fields = ('name', 'worker', 'start_date', 'end_date', 'week_start', 'week_end')
+        fields = ('id', 'name', 'worker', 'start_date', 'end_date', 'week_start', 'week_end')
         extra_kwargs = {'worker': {'required': False}}
 
     def validate(self, attrs):
@@ -147,48 +144,6 @@ class PartialUpdateRouteSerializer(serializers.ModelSerializer):
         except Exception as e:
             logging.error(f"[route_serializers - update] Error updating route with id {instance.id}: {str(e)}")
             raise serializers.ValidationError(f"Error updating route: {str(e)}")
-
-
-class RouteDayClientSerializer(serializers.ModelSerializer):
-    client = ClientSerializer()
-
-    class Meta:
-        model = RouteDayClient
-        fields = ['client', 'order']
-
-
-class RouteDaySerializer(serializers.ModelSerializer):
-    ordered_clients = RouteDayClientSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = RouteDay
-        fields = ['id', 'route', 'date', 'ordered_clients']
-
-
-class GenerateWeeklyZoneRoutesInputSerializer(serializers.Serializer):
-    zone_config = serializers.DictField(child=serializers.ListField(child=serializers.CharField(max_length=100)), help_text='Configuracion de zonas por dia. Clave: dia de semana (0-6), Valor: lista de zonas')
-    max_clients_per_day = serializers.IntegerField(default=MAX_CLIENTS_PER_DAY, min_value=1, max_value=50, help_text='Maximo numero de clientes por dia')
-
-    def validate_zone_config(self, value):
-        for key in value.keys():
-            try:
-                day = int(key)
-                if day < 0 or day > 6:
-                    raise serializers.ValidationError(ROUTE_ZONE_CONFIG_DAY_INVALID)
-            except ValueError:
-                raise serializers.ValidationError(ROUTE_ZONE_CONFIG_KEY_INVALID)
-        return value
-
-
-class GenerateDailyZoneRouteInputSerializer(serializers.Serializer):
-    date = serializers.DateField(help_text='Fecha para la ruta (formato: YYYY-MM-DD)')
-    zones = serializers.ListField(child=serializers.CharField(max_length=100), help_text='Lista de zonas para incluir en la ruta')
-    max_clients = serializers.IntegerField(default=MAX_CLIENTS_PER_DAY, min_value=1, max_value=50, help_text='Maximo numero de clientes para esta ruta')
-
-    def validate_date(self, value):
-        if value < date.today():
-            raise serializers.ValidationError(ROUTE_DAY_DATE_PAST_INVALID)
-        return value
 
 
 class GenerateWeekDayCapacitySerializer(serializers.Serializer):

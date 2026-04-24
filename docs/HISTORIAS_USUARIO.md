@@ -1,6 +1,6 @@
 # Historias de Usuario GreenPath
 
-Fecha de revision: 2026-04-14
+Fecha de revision: 2026-04-24
 
 ## 1. Convenciones
 
@@ -163,7 +163,7 @@ Criterios de aceptacion:
 
 ## 4. Historias Client
 
-### US-CLI-001 (P0) Ver mis solicitudes de litros
+### US-CLI-001 (P0) Ver mis solicitudes de recogida
 
 Como Client quiero ver mis `CollectionRequest` para responder antes del limite.
 
@@ -171,15 +171,17 @@ Criterios de aceptacion:
 1. Solo veo solicitudes propias.
 2. Veo estado y `expires_at` de cada solicitud.
 3. Puedo filtrar por estado.
+4. Por defecto veo todos los estados ordenados por creacion descendente.
 
-### US-CLI-002 (P0) Responder litros
+### US-CLI-002 (P0) Responder envases
 
-Como Client quiero responder litros finales para evitar autoestimaciones no deseadas.
+Como Client quiero indicar bidones o IBC disponibles para evitar autoestimaciones no deseadas.
 
 Criterios de aceptacion:
 1. Solo puedo responder solicitudes abiertas (`PENDING` o `AUTO_ESTIMATED`) no expiradas.
 2. Al responder, estado cambia a `ANSWERED`.
-3. Queda trazabilidad de respuesta.
+3. El backend calcula los litros equivalentes segun tipo y cantidad de envases.
+4. Queda trazabilidad de respuesta.
 
 ### US-CLI-003 (P1) Consultar historial de recogidas
 
@@ -498,12 +500,12 @@ Criterios de aceptacion:
 2. Se puede inferir si hubo autoestimacion.
 3. Las fechas se muestran en formato local legible.
 
-### US-CLI-010 (P2) Reducir errores al responder litros
+### US-CLI-010 (P2) Reducir errores al responder envases
 
 Como Client quiero validaciones claras para no enviar datos incorrectos.
 
 Criterios de aceptacion:
-1. El formulario valida dato numerico positivo.
+1. El formulario valida cantidad numerica positiva.
 2. Si hay error, se muestra mensaje especifico.
 3. Tras envio correcto, la lista refleja nuevo estado.
 

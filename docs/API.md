@@ -1,6 +1,6 @@
 # API GreenPath (Backend Django)
 
-Fecha de revision: 2026-04-14
+Fecha de revision: 2026-04-24
 
 ## 1. Objetivo de este documento
 
@@ -268,7 +268,6 @@ Filtros soportados:
 CRUD base (`GET/POST /routes/`, `GET/PUT/PATCH/DELETE /routes/{id}/`).
 
 Actions:
-- `POST /routes/{id}/generate-range-routes/`
 - `POST /routes/{id}/generate-week/`
 - `GET /routes/{id}/operational-overview/`
 - `POST /routes/{id}/route-days/{route_day_id}/start/`
@@ -352,21 +351,26 @@ Validaciones comunes:
 - La semana debe estar dentro del rango de la ruta.
 - No se puede regenerar una semana con dias ya iniciados, parciales o completados.
 
-#### `POST /routes/{id}/generate-range-routes/`
-Endpoint legacy para generar rutas en rango de fechas por configuracion de zonas.
+#### `GET /routes/{id}/route-days/{route_day_id}/google-navigation/`
 
-Request:
+Devuelve enlaces de navegacion externa a Google Maps para una jornada.
+
+Response 200:
 ```json
 {
-  "start_date": "2026-02-23",
-  "end_date": "2026-02-28",
-  "zone_schedule": {
-    "0": ["Zona Norte"],
-    "2": ["Zona Centro", "Zona Este"]
-  },
-  "max_clients": 25
+  "url": "https://www.google.com/maps/dir/?api=1&...",
+  "urls": [
+    "https://www.google.com/maps/dir/?api=1&..."
+  ],
+  "is_split": false
 }
 ```
+
+Reglas:
+- `url` mantiene compatibilidad con clientes antiguos y contiene el primer enlace.
+- `urls` contiene todos los enlaces cuando la jornada se parte por limite practico de waypoints.
+- la navegacion sale del hub, respeta retornos al hub por capacidad y vuelve al hub al cierre del tramo.
+- las paradas sin ubicacion no se incluyen en el enlace de navegacion.
 
 ### 6.8 Collections (`/collections/`)
 
@@ -378,16 +382,20 @@ Filtros soportados:
 - `status`
 - `worker_id`
 - `billable`
+- `start_date`
+- `end_date`
 
 Notas de negocio:
 - si no se envia `price_per_liter` al crear una recogida manual, se usa `CompanySettings.default_price_per_liter`
 - al registrar una parada desde una ruta, la recogida nace con el precio global de la empresa
 - `deduction_reason_label` expone el valor traducido del enum para detalle frontend
+
+Notas:
 - `billable` es opcional y por defecto vale `true`
 - `billable_label` expone `Facturable` o `No facturable`
 - si `billable=false`, la recogida sigue siendo operativa y visible, pero queda fuera de estadisticas economicas, `total_paid` de cliente y `total_incomes` de trabajador
 
-Actions nuevas de planificacion:
+Actions de solicitudes:
 - `GET /collections/requests/me/`
 - `GET /collections/requests/{request_id}/`
 - `POST /collections/requests/{request_id}/answer/`
@@ -397,9 +405,12 @@ Actions nuevas de planificacion:
 Listado de solicitudes del cliente autenticado.
 
 Query params:
-- `status` opcional (`PENDING`, `AUTO_ESTIMATED`, `ANSWERED`, `MANUAL`)
+- `status` opcional (`ALL`, `PENDING`, `AUTO_ESTIMATED`, `ANSWERED`, `MANUAL`)
 
-Si no envias `status`, por defecto lista `PENDING` + `AUTO_ESTIMATED`.
+Reglas:
+- si no envias `status` o envias `ALL`, devuelve todos los estados visibles del cliente
+- ordena por `created_date` descendente y despues por `id` descendente
+- endpoint solo para rol `client`
 
 #### `GET /collections/requests/{request_id}/`
 Detalle de solicitud.
@@ -409,23 +420,30 @@ Acceso:
 - Owner/Worker de la misma empresa de la ruta.
 
 #### `POST /collections/requests/{request_id}/answer/`
-Respuesta del cliente con litros finales.
+Respuesta del cliente por envases. El backend calcula los litros finales.
 
-Request:
+Request recomendado:
 ```json
 {
-  "final_liters": "240.50"
+  "container_type": "BIDONES",
+  "container_number": 3
 }
 ```
+
+Capacidades:
+- `BIDONES`: 60 L por unidad
+- `IBC`: 1000 L por unidad
 
 Reglas:
 - Solo cliente propietario.
 - Estado permitido: `PENDING` o `AUTO_ESTIMATED`.
 - Debe no estar expirada (`timezone.now() < expires_at`).
+- `final_liters` se acepta como compatibilidad legacy, pero el flujo principal usa envases.
 
 Efectos:
 - `final_source=CLIENT`
 - `status=ANSWERED`
+- `final_liters` y `estimated_liters` quedan sincronizados con el calculo resultante
 - guarda trazabilidad `answered_by`, `answered_at`
 
 #### `POST /collections/requests/{request_id}/manual/`
@@ -486,6 +504,8 @@ Filtros soportados:
 - `invoice_number`
 - `buyer`
 - `invoice_year`
+- `start_date`
+- `end_date`
 - `search`
 
 Campos de escritura:
@@ -519,6 +539,17 @@ Comportamiento:
 #### `GET /sales/economic-summary/`
 
 Resumen economico global por empresa.
+
+Query params opcionales:
+
+- `start_date=YYYY-MM-DD`
+- `end_date=YYYY-MM-DD`
+
+Reglas:
+
+- si envias filtro, debes enviar `start_date` y `end_date` juntos
+- ambos rangos se aplican sobre `invoice_date` en ventas y `collection_date` en recogidas
+- la serie `monthly` se recalcula solo para los meses incluidos en el rango solicitado
 
 Response 200:
 ```json
@@ -592,14 +623,18 @@ Interpretacion:
 3. Si `regenerate=true`, valida antes que toda la semana sea editable y aborta completa si no lo es.
 4. Para cada dia editable, busca `RouteZoneDay` por `weekday`.
 5. Selecciona clientes por geofiltro (`location__within` de los poligonos de zona) y por frecuencia/vencimiento de recogida.
-6. Inserta `RouteDayClient` con orden secuencial inicial sin sobrepasar `max_clients_per_day` ni `daily_capacity_liters`.
-7. Optimiza orden con Google Directions:
+6. Ordena candidatos usando la fecha efectiva mas reciente entre ultima recogida real y ultima planificacion previa.
+7. Inserta `RouteDayClient` con orden secuencial inicial sin sobrepasar `max_clients_per_day` ni `daily_capacity_liters`.
+8. Optimiza orden con Google Directions por segmentos de capacidad:
 - origen: `CompanyHub.location`
-- waypoints: clientes
+- waypoints: clientes con ubicacion
+- cada segmento se optimiza con salida y vuelta al hub
+- si un segmento falla, conserva su orden previo
+- las paradas sin ubicacion se conservan en su posicion relativa
 - si la capacidad obliga a segmentar la jornada, inserta el hub entre segmentos al exportar navegacion
 - la navegacion exportada empieza en el hub y termina tambien en el hub
-8. Reescribe `order` en `RouteDayClient`.
-9. Crea/actualiza `CollectionRequest` por parada:
+9. Reescribe `order` en `RouteDayClient`.
+10. Crea/actualiza `CollectionRequest` por parada:
 - `expires_at = inicio_route_day - 36 horas`
 - programa tarea Celery `auto_estimate_collection_request_liters` con `eta=expires_at`
 - si `expires_at <= now`, se encola inmediata
@@ -643,12 +678,12 @@ curl -X POST http://localhost:8000/routes/12/generate-week/ \
   -d '{"week_start_date":"2026-02-23","regenerate":true,"daily_capacity_liters":"1800.00"}'
 ```
 
-### Cliente responde litros
+### Cliente responde solicitud por envases
 ```bash
 curl -X POST http://localhost:8000/collections/requests/55/answer/ \
   -H "Authorization: Bearer <token_cliente>" \
   -H "Content-Type: application/json" \
-  -d '{"final_liters":"245.00"}'
+  -d '{"container_type":"BIDONES","container_number":3}'
 ```
 
 ### Worker/Owner carga manual

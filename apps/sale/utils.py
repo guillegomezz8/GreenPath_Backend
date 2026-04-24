@@ -1,6 +1,7 @@
 import logging
 import math
 import re
+import textwrap
 from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
 
@@ -42,29 +43,71 @@ def assign_sale_invoice_number(sale):
 
 
 def _billing_address_lines(settings_obj):
-    lines = [settings_obj.billing_address]
+    lines = _split_invoice_address_lines(settings_obj.billing_address)
     locality_parts = [value for value in [settings_obj.billing_postal_code, settings_obj.billing_city] if value]
     locality = " ".join(locality_parts)
     if settings_obj.billing_province:
         locality = f"{locality}, {settings_obj.billing_province}" if locality else settings_obj.billing_province
     if locality:
-        lines.append(locality)
+        lines.extend(_split_invoice_address_lines(locality))
     if settings_obj.billing_country:
-        lines.append(settings_obj.billing_country)
+        lines.extend(_split_invoice_address_lines(settings_obj.billing_country))
     return [value for value in lines if value]
 
 
 def _buyer_address_lines(buyer):
-    lines = [buyer.fiscal_address]
+    lines = _split_invoice_address_lines(buyer.fiscal_address)
     locality_parts = [value for value in [buyer.postal_code, buyer.city] if value]
     locality = " ".join(locality_parts)
     if buyer.province:
         locality = f"{locality}, {buyer.province}" if locality else buyer.province
     if locality:
-        lines.append(locality)
+        lines.extend(_split_invoice_address_lines(locality))
     if buyer.country:
-        lines.append(buyer.country)
+        lines.extend(_split_invoice_address_lines(buyer.country))
     return [value for value in lines if value]
+
+
+def _wrap_invoice_text(value, max_length):
+    wrapped = textwrap.wrap(
+        value,
+        width=max_length,
+        break_long_words=False,
+        break_on_hyphens=False,
+    )
+    return wrapped or [value]
+
+
+def _split_invoice_address_lines(value, max_length=42):
+    cleaned_value = re.sub(r"\s+", " ", (value or "")).strip()
+    if not cleaned_value:
+        return []
+
+    chunks = [chunk.strip() for chunk in cleaned_value.split(",") if chunk.strip()]
+    if len(chunks) <= 1:
+        return _wrap_invoice_text(cleaned_value, max_length)
+
+    lines = []
+    current_line = ""
+    for chunk in chunks:
+        chunk_parts = _wrap_invoice_text(chunk, max_length)
+        for index, chunk_part in enumerate(chunk_parts):
+            if index > 0:
+                if current_line:
+                    lines.append(current_line)
+                current_line = chunk_part
+                continue
+
+            candidate = f"{current_line}, {chunk_part}" if current_line else chunk_part
+            if current_line and len(candidate) > max_length:
+                lines.append(current_line)
+                current_line = chunk_part
+                continue
+            current_line = candidate
+
+    if current_line:
+        lines.append(current_line)
+    return lines
 
 
 def _format_money(value, currency="EUR", decimals=2):
@@ -73,8 +116,6 @@ def _format_money(value, currency="EUR", decimals=2):
     symbol = "\u20ac" if currency == "EUR" else currency
     raw = f"{amount:,.{decimals}f}".replace(",", "X").replace(".", ",").replace("X", ".")
     return f"{raw} {symbol}".strip()
-
-
 
 def _format_decimal(value, suffix="", decimals=2):
     quantizer = Decimal("1").scaleb(-decimals)

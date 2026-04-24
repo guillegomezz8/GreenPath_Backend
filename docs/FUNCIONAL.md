@@ -1,6 +1,6 @@
 # Documento Funcional GreenPath
 
-Fecha de revision: 2026-04-14
+Fecha de revision: 2026-04-24
 Version funcional: 1.4
 
 ## 1. Proposito del documento
@@ -105,7 +105,7 @@ Actualmente GreenPath cubre las siguientes areas:
 - generacion semanal de rutas operativas
 - ejecucion diaria de paradas y cierre de jornada
 - control operativo simplificado por capacidad con retorno implicito al hub
-- solicitudes de estimacion de litros al cliente
+- solicitudes de estimacion por envases al cliente
 - autoestimacion con Celery cuando el cliente no responde a tiempo
 - registro de recogidas, medicion en nave y deducciones
 - control economico basico de recogidas mediante precio por litro
@@ -265,7 +265,7 @@ Es el rol externo asociado a un cliente recogido por la empresa.
 Su experiencia se limita a:
 
 - consultar sus solicitudes abiertas
-- responder litros antes de la expiracion
+- responder envases antes de la expiracion
 - consultar su historial de recogidas
 - consultar y actualizar su perfil
 
@@ -593,13 +593,13 @@ Construir la semana operativa a partir de una ruta plantilla.
 
 #### Objetivo
 
-Solicitar al cliente una estimacion o confirmacion previa de litros.
+Solicitar al cliente una estimacion o confirmacion previa de envases disponibles, calculando despues los litros equivalentes.
 
 #### Funcionalidades
 
 - creacion automatica desde la generacion semanal
 - expiracion automatica
-- respuesta del cliente
+- respuesta del cliente por tipo de envase y cantidad
 - carga manual por owner o worker
 - autoestimacion por tarea asincrona
 - envio de correo de notificacion
@@ -614,7 +614,8 @@ Solicitar al cliente una estimacion o confirmacion previa de litros.
 #### Reglas de negocio
 
 - `expires_at` se calcula como inicio de la jornada menos 36 horas
-- si el cliente responde a tiempo, prevalece su valor final
+- si el cliente responde a tiempo, prevalece su respuesta y el sistema calcula los litros finales
+- la respuesta principal del cliente usa `container_type` (`BIDONES` o `IBC`) y `container_number`
 - si no responde, el sistema puede autoestimar por historico o por capacidad del envase
 - owner y worker pueden resolver manualmente una solicitud
 
@@ -932,6 +933,8 @@ Durante esta fase, el sistema deja preparada tambien la base operativa de la eje
 - el correo solo se envia si la integracion Gmail esta correctamente configurada
 - la fecha limite se calcula como inicio de jornada menos 36 horas
 - el cliente solo puede responder mientras la solicitud no este expirada
+- el cliente responde indicando envases, no litros libres; el backend calcula litros equivalentes
+- `BIDONES` equivale a 60 L y `IBC` equivale a 1000 L
 - si la solicitud ya no esta en estado admitido, la respuesta queda bloqueada
 - owner y worker pueden intervenir manualmente dentro de su empresa
 
@@ -1025,7 +1028,7 @@ Su recorrido habitual es:
 
 - entrar al sistema
 - consultar solicitudes pendientes
-- responder litros
+- responder envases
 - revisar historico de recogidas
 - consultar y actualizar su perfil
 
@@ -1117,7 +1120,7 @@ Los indicadores mas relevantes que hoy soporta GreenPath son:
 - Ruta plantilla: definicion base de una ruta reutilizable
 - RouteDay: jornada diaria generada desde una ruta plantilla
 - RouteDayClient: parada concreta dentro de una jornada
-- CollectionRequest: solicitud previa de estimacion de litros
+- CollectionRequest: solicitud previa de estimacion por envases y litros calculados
 - Collection: recogida real ejecutada
 - Billable: marca que determina si una recogida computa economicamente
 - Buyer: comprador interno para modulo de ventas
@@ -1141,7 +1144,7 @@ Los indicadores mas relevantes que hoy soporta GreenPath son:
 ### 25.2 Requisitos de solicitud y estimacion
 
 - el sistema debe crear una solicitud de estimacion asociada a cada parada planificada
-- el cliente debe poder responder litros antes del vencimiento
+- el cliente debe poder responder tipo y cantidad de envases antes del vencimiento
 - owner y worker deben poder intervenir manualmente una solicitud
 - el sistema debe poder autoestimar cuando el cliente no responde dentro del plazo
 - toda resolucion debe dejar trazabilidad del origen de la respuesta

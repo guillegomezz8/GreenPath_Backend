@@ -1,6 +1,6 @@
 # Catalogo de Requisitos GreenPath
 
-Fecha de revision: 2026-04-14
+Fecha de revision: 2026-04-24
 
 ## 1. Objetivo del documento
 
@@ -155,7 +155,7 @@ Para facilitar la lectura, los requisitos se clasifican con los siguientes prefi
 | --- | --- |
 | RF-033 | El sistema debe crear `CollectionRequest` para las paradas planificadas. |
 | RF-034 | Cada solicitud debe tener una fecha de expiracion calculada automaticamente. |
-| RF-035 | El client debe poder responder litros desde su portal. |
+| RF-035 | El client debe poder responder tipo y cantidad de envases desde su portal. |
 | RF-036 | Owner o worker deben poder resolver manualmente una solicitud cuando aplique. |
 | RF-037 | Si una solicitud expira, el sistema debe poder autoestimar litros de forma asincrona. |
 | RF-038 | El sistema debe registrar quien resolvio la solicitud y como se resolvio. |

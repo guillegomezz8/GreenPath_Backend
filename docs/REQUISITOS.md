@@ -215,7 +215,7 @@ Para facilitar la lectura, los requisitos se clasifican con los siguientes prefi
 
 | Codigo | Requisito |
 | --- | --- |
-| RF-068 | El sistema debe ofrecer un dashboard inicial adaptado al rol del usuario. |
+| RF-068 | El sistema debe ofrecer un dashboard ejecutivo para owner y redireccionar a worker/client a sus pantallas operativas iniciales. |
 | RF-069 | El owner debe poder consultar actividad reciente del sistema. |
 | RF-070 | El dashboard debe ofrecer accesos rapidos a las acciones mas frecuentes. |
 | RF-071 | Los listados deben permitir busqueda por varios atributos relevantes. |

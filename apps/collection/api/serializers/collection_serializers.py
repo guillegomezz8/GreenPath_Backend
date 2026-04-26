@@ -4,7 +4,7 @@ from rest_framework import serializers
 
 from decimal import Decimal
 
-from apps.base.enums import CollectionStatus, ContainerType
+from apps.base.enums import CollectionStatus, ContainerType, DeductionReason
 from apps.base.literals import COLLECTION_REQUEST_FINAL_LITERS_REQUIRED, COLLECTION_REQUEST_FINAL_LITERS_INVALID
 from apps.base.logger import configure_logging
 from apps.company.utils import resolve_default_collection_price_per_liter
@@ -15,6 +15,9 @@ configure_logging()
 
 
 class CollectionSerializer(serializers.ModelSerializer):
+    client = serializers.IntegerField(source='client_id', read_only=True)
+    worker = serializers.IntegerField(source='worker_id', read_only=True)
+    route_day_client = serializers.IntegerField(source='route_day_client_id', read_only=True)
     status = serializers.SerializerMethodField()
     status_code = serializers.CharField(source='status', read_only=True)
     deduction_reason_label = serializers.CharField(source='get_deduction_reason_display', read_only=True)
@@ -52,10 +55,14 @@ class CollectionSerializer(serializers.ModelSerializer):
 
 
 def _normalize_collection_validated_data(validated_data, partial=False):
+    status_provided = "status" in validated_data
     status_value = validated_data.get("status")
     measured_liters = validated_data.get("measured_liters")
 
     if status_value == CollectionStatus.CANCELED:
+        return validated_data
+
+    if status_provided:
         return validated_data
 
     if measured_liters is not None:
@@ -65,6 +72,19 @@ def _normalize_collection_validated_data(validated_data, partial=False):
     if not partial and status_value is None:
         validated_data["status"] = CollectionStatus.PENDING_MEASUREMENT
     return validated_data
+
+
+def _update_collection_preserving_paid_total(instance, validated_data):
+    original_total_price = instance.total_price
+    for attr, value in validated_data.items():
+        setattr(instance, attr, value)
+    instance.save()
+
+    if instance.total_price != original_total_price:
+        Collection.objects.filter(pk=instance.pk).update(total_price=original_total_price)
+        instance.total_price = original_total_price
+
+    return instance
 
 
 def _apply_default_price_per_liter(validated_data):
@@ -86,6 +106,7 @@ class CreateCollectionSerializer(serializers.ModelSerializer):
     price_per_liter = serializers.DecimalField(max_digits=7, decimal_places=3, required=False)
     measured_liters = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, allow_null=True)
     deduction_liters = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
+    deduction_reason = serializers.ChoiceField(choices=DeductionReason.choices, required=False, allow_blank=True)
     deduction_notes = serializers.CharField(required=False, allow_blank=True)
     billable = serializers.BooleanField(required=False, default=True)
 
@@ -128,6 +149,7 @@ class UpdateCollectionSerializer(serializers.ModelSerializer):
     price_per_liter = serializers.DecimalField(max_digits=7, decimal_places=3, required=True)
     measured_liters = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, allow_null=True)
     deduction_liters = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
+    deduction_reason = serializers.ChoiceField(choices=DeductionReason.choices, required=False, allow_blank=True)
     deduction_notes = serializers.CharField(required=False, allow_blank=True)
     billable = serializers.BooleanField(required=False)
 
@@ -157,10 +179,7 @@ class UpdateCollectionSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         try:
             validated_data = _normalize_collection_validated_data(validated_data)
-            for attr, value in validated_data.items():
-                setattr(instance, attr, value)
-            instance.save()
-            return instance
+            return _update_collection_preserving_paid_total(instance, validated_data)
         except Exception as e:
             logging.error(f'[collection_serializers - update] Error updating collection with id {instance.id}: {str(e)}')
             raise serializers.ValidationError(f'Error updating collection: {str(e)}')
@@ -171,6 +190,7 @@ class PartialUpdateCollectionSerializer(serializers.ModelSerializer):
     price_per_liter = serializers.DecimalField(max_digits=7, decimal_places=3, required=False)
     measured_liters = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, allow_null=True)
     deduction_liters = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
+    deduction_reason = serializers.ChoiceField(choices=DeductionReason.choices, required=False, allow_blank=True)
     deduction_notes = serializers.CharField(required=False, allow_blank=True)
     billable = serializers.BooleanField(required=False)
 
@@ -200,10 +220,7 @@ class PartialUpdateCollectionSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         try:
             validated_data = _normalize_collection_validated_data(validated_data, partial=True)
-            for attr, value in validated_data.items():
-                setattr(instance, attr, value)
-            instance.save()
-            return instance
+            return _update_collection_preserving_paid_total(instance, validated_data)
         except Exception as e:
             logging.error(f'[collection_serializers - update] Error updating collection with id {instance.id}: {str(e)}')
             raise serializers.ValidationError(f'Error updating collection: {str(e)}')

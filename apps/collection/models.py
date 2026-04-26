@@ -86,7 +86,8 @@ class Collection(BaseModel):
         "Motivo descuento",
         max_length=20,
         choices=DeductionReason.choices,
-        default=DeductionReason.RESIDUE,
+        blank=True,
+        default="",
     )
 
     deduction_notes = models.TextField("Notas descuento", blank=True, default="")
@@ -160,6 +161,12 @@ class Collection(BaseModel):
 
         if self.measured_liters is not None and self.deduction_liters > self.measured_liters:
             raise ValueError("Los litros descontados no pueden ser mayores que los litros medidos.")
+
+        deduction = self.deduction_liters or Decimal("0.00")
+        if deduction <= Decimal("0.00"):
+            self.deduction_reason = ""
+        elif not self.deduction_reason:
+            raise ValueError("Debes indicar el motivo de deduccion cuando hay litros descontados.")
 
         if self.status == CollectionStatus.CONFIRMED and self.measured_liters is None:
             raise ValueError("Para confirmar la recogida debes indicar los litros medidos.")

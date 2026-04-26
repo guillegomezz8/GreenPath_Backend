@@ -114,7 +114,7 @@ Actualmente GreenPath cubre las siguientes areas:
 - gestion de ventas
 - generacion de facturas PDF de venta
 - configuracion fiscal y bancaria por empresa
-- dashboard y estadisticas operativas y economicas
+- dashboard ejecutivo para owner y estadisticas operativas/economicas
 - perfil de usuario y cambio de contrasena
 
 ## 7. Fuera de alcance actual

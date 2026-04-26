@@ -2,6 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.decorators import action
+from rest_framework.exceptions import APIException, ValidationError
 
 import django_filters
 from django.shortcuts import get_object_or_404
@@ -44,7 +45,12 @@ class ClientFilter(FilterSet):
 
     def filter_search(self, queryset, name, value):
         return queryset.filter(
-            Q(name__icontains=value) | Q(address__icontains=value)
+            Q(name__icontains=value)
+            | Q(cif__icontains=value)
+            | Q(phone__icontains=value)
+            | Q(address__icontains=value)
+            | Q(user__username__icontains=value)
+            | Q(user__email__icontains=value)
         )
 
 
@@ -139,9 +145,11 @@ class ClientViewSet(viewsets.ModelViewSet):
 
             sync_client_location_from_address(client, clear_on_failure=True)
             logging.info(f"[client_viewset - perform_create] Cliente creado con éxito: {client.id}")
+        except ValidationError:
+            raise
         except Exception as e:
             logging.error(f"[client_viewset - perform_create] Error creando cliente: {str(e)}")
-            return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            raise APIException({DETAILS: {INTERNAL_ERROR: str(e)}})
         
     def perform_destroy(self, instance):
         try:
@@ -149,9 +157,11 @@ class ClientViewSet(viewsets.ModelViewSet):
             instance.disabled = True
             instance.save(update_fields=['disabled'])
             logging.info(f"[client_viewset - perform_destroy] Cliente deshabilitado con éxito: {instance.id}")
+        except ValidationError:
+            raise
         except Exception as e:
             logging.error(f"[client_viewset - perform_destroy] Error eliminando cliente: {str(e)}")
-            return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            raise APIException({DETAILS: {INTERNAL_ERROR: str(e)}})
 
     def list(self, request):
         try:

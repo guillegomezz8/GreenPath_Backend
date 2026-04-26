@@ -59,7 +59,12 @@ class WorkerFilter(FilterSet):
 
     def filter_search(self, queryset, name, value):
         return queryset.filter(
-            Q(name__icontains=value) | Q(surname__icontains=value)
+            Q(name__icontains=value)
+            | Q(surname__icontains=value)
+            | Q(phone__icontains=value)
+            | Q(dni__icontains=value)
+            | Q(user__username__icontains=value)
+            | Q(user__email__icontains=value)
         )
 
 

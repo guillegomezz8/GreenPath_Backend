@@ -1,6 +1,6 @@
 # Route Flow - Flujo de Rutas GreenPath
 
-Fecha de revision: 2026-04-14
+Fecha de revision: 2026-04-26
 
 ## 1. Objetivo del documento
 
@@ -211,21 +211,23 @@ Esto evita mezclar historico si un cliente pertenece a mas de una empresa.
 
 ### Funcion principal
 
-- `apps/route/utils.py` -> `optimize_route_day_with_google(route_day)`
+- `apps/route/utils.py` -> `optimize_route_day_with_google(route_day, planned_liters_by_row=None)`
 
 ### Comportamiento
 
 1. toma clientes del dia en orden actual
-2. usa `CompanyHub.location` como origen
-3. construye `waypoints=optimize:true|...`
-4. consulta Google Directions
-5. reescribe `RouteDayClient.order` si la respuesta es valida
+2. calcula segmentos segun capacidad diaria y litros previstos
+3. usa `CompanyHub.location` como origen y destino de cada segmento
+4. envia a Google las paradas ubicadas con `waypoints=optimize:true|...`
+5. conserva las paradas sin ubicacion en su posicion relativa
+6. reescribe `RouteDayClient.order` si la respuesta es valida
 
 ### Cuando no se aplica
 
 La optimizacion no se aplica si:
 
 - hay menos de 2 paradas
+- hay menos de 2 paradas con ubicacion
 - la empresa no tiene hub
 - no existe `GOOGLE_MAPS_API_KEY`
 - Google responde error o estructura invalida
@@ -233,6 +235,18 @@ La optimizacion no se aplica si:
 ### Fallback
 
 En todos esos casos se conserva el orden existente y el flujo no se rompe.
+
+### Alcance real de la optimizacion
+
+La optimizacion actual es una optimizacion de orden segmentada.
+
+Si la capacidad diaria obliga a volver al hub, el backend no manda todo el dia como una unica secuencia: divide la jornada en segmentos y optimiza cada segmento como:
+
+```text
+hub -> paradas del segmento -> hub
+```
+
+No es todavia un VRP completo. No decide automaticamente reparto entre varios trabajadores, ventanas horarias, turnos, tiempo de servicio ni reasignacion de clientes omitidos por capacidad.
 
 ## 12. Capacidad, litros previstos y tramos operativos
 
@@ -403,6 +417,8 @@ Consecuencia:
 
 - si el dia cabe en una sola carga, se exporta una sola secuencia
 - si el dia requiere varios tramos, Google recibe un recorrido con retornos intermedios a nave
+- si hay demasiados waypoints, se devuelven varios enlaces en `urls[]` y `is_split=true`
+- en el caso dividido, cada enlace empieza y termina en el hub para mantener una navegacion manejable
 
 Esto mantiene alineados:
 
@@ -506,6 +522,11 @@ La vista `operational-overview` admite `week_start_date=YYYY-MM-DD` para cargar 
 - sin hub o sin Google API key no hay optimizacion real del orden
 - regenerar semanas ya operadas esta bloqueado para proteger trazabilidad
 - la capacidad diaria debe entenderse como restriccion operativa, no como simple campo informativo
+- capacidad `0.00` equivale a sin limite de capacidad
+- una parada individual mayor que la capacidad queda en un segmento propio y deberia revisarse manualmente
+- la seleccion de clientes es greedy; no resuelve una combinacion global optima de todos los clientes
+- Google se consulta durante la generacion, por lo que conviene vigilar latencia y fallos externos
+- la navegacion externa solo incluye paradas con ubicacion
 
 ## 23. Resumen ejecutivo del flujo
 
@@ -552,11 +573,15 @@ Una validacion funcional minima del flujo de rutas deberia cubrir:
 
 Las lineas de evolucion mas razonables del modulo de rutas son:
 
-- planificacion mas avanzada por multiples criterios
-- soporte mas rico para asignacion trabajador-camion
-- reglas de carga y retorno a hub mas sofisticadas
-- monitorizacion mas profunda de colas y decisiones automaticas
-- pruebas end-to-end centradas en operacion movil
+- sacar la optimizacion de Google fuera de la transaccion principal o ejecutarla de forma asincrona
+- persistir metadata de optimizacion: aplicada, omitida, motivo, segmentos y fecha
+- mostrar en UI clientes omitidos por capacidad y paradas sin ubicacion
+- exponer `max_clients_per_day` y capacidad por dia si el owner necesita control fino
+- anadir fallback local con heuristica simple cuando Google no este disponible
+- estudiar matrices de distancia o Google Routes API si se necesita mas precision
+- evaluar OR-Tools solo si aparece necesidad real de multi-vehiculo, ventanas horarias o optimizacion global
+- persistir subviajes, retornos a hub o descargas reales si la operativa necesita trazabilidad avanzada
+- pruebas end-to-end centradas en operacion movil y navegacion dividida
 
 ## 27. Referencias relacionadas
 

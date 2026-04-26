@@ -1,6 +1,6 @@
 # Analisis profundo de generacion y optimizacion de rutas
 
-Fecha de revision: 2026-04-24
+Fecha de revision: 2026-04-26
 
 ## 1. Objetivo
 
@@ -17,6 +17,12 @@ El foco principal esta en:
 - riesgos tecnicos y mejoras recomendadas
 
 El analisis se ha hecho sobre el codigo actual, no solo sobre documentacion existente.
+
+Tambien separa tres conceptos que conviene no mezclar:
+
+- seleccion de paradas: decide que clientes entran en cada jornada
+- optimizacion de orden: decide en que secuencia se visitan las paradas ya seleccionadas
+- navegacion externa: construye enlaces de Google Maps para ejecutar el orden guardado
 
 ## 2. Archivos revisados
 
@@ -623,21 +629,24 @@ Los clientes candidatos se ordenan por:
 
 ```python
 (
-    item.last_collection_date is not None,
-    item.last_collection_date or route_day.date,
+    _effective_reference_date(item) is not None,
+    _effective_reference_date(item) or route_day.date,
     item.id,
 )
 ```
 
 Efecto:
 
-- clientes sin recogidas previas van primero
-- despues clientes con recogida mas antigua
+- clientes sin referencia previa van primero
+- despues clientes con referencia mas antigua
 - desempate por id
 
-Punto de atencion:
+La fecha efectiva es:
 
-- el orden base no usa `last_planned_date`, aunque la decision de frecuencia si lo usa. Si un cliente nunca tuvo recogida real pero si planificacion previa, puede quedar ordenado como "sin recogida" aunque la planificacion haya sido reciente.
+- ultima recogida real
+- o ultima planificacion previa si es posterior
+
+Esto alinea la prioridad inicial con la misma referencia usada para decidir si el cliente esta pendiente por frecuencia.
 
 ### 9.7 Calculo de litros previstos para insertar paradas
 
@@ -721,17 +730,20 @@ Esto permite anadir nuevas paradas a una jornada ya existente sin rehacer las an
 
 Funcion principal actual:
 
-- `optimize_route_day_with_google(route_day)`
+- `optimize_route_day_with_google(route_day, planned_liters_by_row=None)`
 
 Se llama desde:
 
 - `generate_route_day_clients(...)`
 
+La optimizacion actual es una optimizacion de orden de paradas ya seleccionadas. No decide que clientes entran, no reparte clientes entre varios trabajadores y no resuelve un VRP completo.
+
 ### 10.1 Condiciones para intentar optimizar
 
 La optimizacion se omite si:
 
-- hay menos de 2 paradas
+- hay menos de 2 paradas en la jornada
+- hay menos de 2 paradas con ubicacion
 - no hay hub de empresa con `location`
 - no hay `GOOGLE_MAPS_API_KEY`
 
@@ -741,7 +753,29 @@ En esos casos:
 - se escribe log
 - la generacion no falla
 
-### 10.2 Construccion de la peticion
+### 10.2 Segmentacion previa por capacidad
+
+Antes de llamar a Google, el backend divide la jornada en segmentos con:
+
+- `RouteDay.daily_capacity_liters`
+- litros previstos por parada
+- orden actual de `RouteDayClient`
+
+Funcion implicada:
+
+- `_split_route_day_clients_by_capacity(...)`
+
+Regla:
+
+- si la siguiente parada supera la capacidad acumulada del segmento, se abre un nuevo segmento
+- si la capacidad es `0` o `None`, se considera sin limite y se optimiza un unico segmento
+- si una parada individual supera la capacidad, queda igualmente en un segmento propio
+
+Este diseno modela retornos implicitos al hub sin crear todavia entidades persistentes de subviaje o descarga.
+
+### 10.3 Construccion de la peticion
+
+Para cada segmento con al menos 2 paradas ubicadas:
 
 Origen:
 
@@ -749,11 +783,11 @@ Origen:
 
 Destino:
 
-- la parada mas alejada del hub segun distancia geometrica entre puntos
+- el mismo `CompanyHub.location`
 
 Waypoints:
 
-- todas las demas paradas
+- todas las paradas ubicadas del segmento
 
 Parametro:
 
@@ -767,7 +801,30 @@ Endpoint:
 https://maps.googleapis.com/maps/api/directions/json
 ```
 
-### 10.3 Interpretacion de respuesta
+Observacion importante:
+
+- el codigo actual no usa como destino la parada mas lejana
+- Google optimiza la lista completa de waypoints con salida y vuelta al hub
+
+### 10.4 Paradas sin ubicacion
+
+La generacion automatica solo selecciona clientes con ubicacion, pero pueden existir paradas sin coordenadas por datos legacy o carga manual.
+
+En optimizacion:
+
+- se excluyen de la llamada a Google
+- se conservan en su posicion relativa dentro del segmento
+- las paradas con ubicacion se reinsertan en los huecos disponibles
+
+Ejemplo conceptual:
+
+```text
+Antes:       A(ubicada) -> B(sin ubicacion) -> C(ubicada)
+Google:      C -> A
+Resultado:   C -> B(sin ubicacion) -> A
+```
+
+### 10.5 Interpretacion de respuesta
 
 Google devuelve:
 
@@ -783,12 +840,13 @@ Google devuelve:
 
 El backend:
 
-1. reordena los waypoints segun `waypoint_order`
-2. anade al final la parada destino
-3. valida que el total coincida con el numero de paradas original
-4. actualiza `RouteDayClient.order`
+1. valida que `waypoint_order` tenga tantos indices como paradas ubicadas del segmento
+2. valida que todos los indices sean enteros dentro de rango
+3. reordena las paradas ubicadas
+4. fusiona el resultado con las paradas sin ubicacion
+5. actualiza `RouteDayClient.order`
 
-### 10.4 Actualizacion segura del orden
+### 10.6 Actualizacion segura del orden
 
 Debido a la restriccion unica `(route_day, order)`, no se pueden intercambiar ordenes directamente.
 
@@ -799,7 +857,7 @@ El codigo hace dos fases:
 
 Esto evita colisiones de unicidad durante el `bulk_update`.
 
-### 10.5 Fallback
+### 10.7 Fallback
 
 Si Google falla:
 
@@ -807,34 +865,35 @@ Si Google falla:
 - timeout
 - status HTTP no valido
 - JSON sin rutas
-- respuesta inconsistente
+- respuesta sin `waypoint_order` valido
+- longitud o indices inconsistentes
 
 El backend:
 
-- conserva el orden actual
-- no rompe la generacion
+- conserva el orden del segmento afectado
+- no rompe la generacion completa
 - deja logs de aviso o error
 
 Este comportamiento es correcto para no hacer depender la operativa diaria de una integracion externa.
 
-### 10.6 Optimizacion segmentada por capacidad
+### 10.8 Que optimiza y que no optimiza
 
-La optimizacion ya no trata toda la jornada como una unica linea.
+Optimiza:
 
-Antes de llamar a Google, el backend agrupa las paradas en segmentos usando:
+- orden de visita dentro de cada segmento de capacidad
+- recorrido circular hub -> paradas -> hub
+- segmentos independientes cuando hay retorno a nave
 
-- `RouteDay.daily_capacity_liters`
-- litros previstos por parada
-- orden base actual
+No optimiza:
 
-Despues optimiza cada segmento por separado con origen y destino en el hub.
-
-Consecuencias:
-
-- si la jornada cabe en una carga, se optimiza como un unico bloque
-- si la jornada requiere retornos a nave, cada bloque se optimiza de forma independiente
-- las paradas sin ubicacion se mantienen en su posicion relativa y no rompen la optimizacion
-- el orden guardado queda mas alineado con el `operational_plan`
+- seleccion de clientes candidatos
+- reparto entre varios trabajadores o camiones
+- ventanas horarias de clientes
+- tiempo de servicio por parada
+- turnos del trabajador
+- costes economicos reales
+- prediccion de trafico por hora
+- reasignacion automatica de clientes omitidos por capacidad
 
 ## 11. Plan operativo por capacidad
 
@@ -1301,13 +1360,16 @@ La llamada a Google se ejecuta durante la generacion, dentro del flujo atomico.
 Riesgo:
 
 - locks de base de datos retenidos mientras se espera una API externa
+- mayor latencia percibida en `generate-week`
+- rollback completo si una excepcion no controlada aparece despues de crear paradas
 
 Mejora:
 
 - separar seleccion/creacion de paradas y optimizacion
-- o hacer optimizacion asincrona despues del commit
+- o lanzar optimizacion asincrona con Celery despues del commit
+- o persistir primero el orden base y marcar la optimizacion como pendiente
 
-### 18.2 Optimizacion por capacidad
+### 18.2 Optimizacion por capacidad, no VRP completo
 
 Estado actual:
 
@@ -1317,15 +1379,44 @@ Estado actual:
 
 Riesgo residual:
 
-- sigue sin ser un VRP completo con restricciones avanzadas, pero ya no mezcla todos los retornos a nave en una unica secuencia lineal.
+- no reparte demanda entre varios trabajadores
+- no reubica automaticamente clientes omitidos por capacidad
+- no considera ventanas horarias, turnos, tiempo de servicio ni trafico por hora
 
-### 18.3 Flujo legacy eliminado
+Esta limitacion es aceptable para una `v1` operativa, pero debe nombrarse como optimizacion de orden segmentada, no como optimizacion logistica integral.
 
-`generate-range-routes` ya no esta disponible.
+### 18.3 Seleccion greedy de clientes
 
-El sistema queda centralizado en `generate-week`.
+La seleccion de paradas recorre clientes ordenados por prioridad y los inserta si caben.
 
-### 18.4 Puntos en borde de poligono
+Riesgo:
+
+- una combinacion distinta de clientes podria llenar mejor la capacidad diaria
+- clientes grandes pueden quedar fuera aunque varios pequenos entren
+- no existe redistribucion automatica entre dias de la semana
+
+Mejora:
+
+- registrar cuantos clientes quedaron fuera y por que motivo
+- anadir una fase de rebalanceo entre dias habilitados
+- evaluar un algoritmo de mochila simple antes de dar el salto a VRP completo
+
+### 18.4 Litros previstos estimados
+
+La capacidad depende de litros previstos, no de litros reales medidos en nave.
+
+Riesgo:
+
+- si las estimaciones son bajas, la ruta puede parecer viable y superar capacidad real
+- si las estimaciones son altas, se pueden dejar clientes fuera innecesariamente
+
+Mejora:
+
+- mostrar confianza de estimacion
+- priorizar historico confirmado reciente
+- comparar litros previstos contra litros finalmente medidos para mejorar el estimador
+
+### 18.5 Puntos en borde de poligono
 
 El filtro moderno usa `location__within`.
 
@@ -1336,42 +1427,51 @@ Riesgo:
 Mejora:
 
 - revisar si conviene usar una geometria inclusiva o un pequeno buffer
+- anadir test especifico para punto en borde de zona
 
-### 18.5 Orden base no usa `last_planned_date`
+### 18.6 Paradas sin ubicacion
 
-La frecuencia usa `last_planned_date`, pero el orden inicial solo usa `last_collection_date`.
-
-Riesgo:
-
-- priorizacion menos justa para clientes sin recogida real pero con planificacion previa
-
-Mejora:
-
-- ordenar por fecha de referencia efectiva: max entre recogida y planificacion
-
-### 18.6 Paradas manuales sin ubicacion
-
-La generacion automatica exige ubicacion, pero admin o datos legacy podrian crear paradas sin ubicacion.
+La generacion automatica exige ubicacion, pero datos legacy o carga manual podrian producir paradas sin coordenadas.
 
 Estado actual:
 
 - `optimize_route_day_with_google` ignora esas paradas al llamar a Google
 - conserva su posicion relativa al fusionar el resultado optimizado
-- no rompe la generacion
-
-### 18.7 Limites practicos de Google Maps URL
-
-La navegacion externa envia waypoints en la URL.
+- la navegacion externa solo incluye paradas ubicadas
 
 Riesgo:
 
-- Google Maps puede imponer limites practicos de waypoints o longitud de URL
+- el trabajador puede necesitar gestionar una parada que no aparece en Google Maps
+- la segmentacion de navegacion puede diferir de la segmentacion operativa completa si faltan ubicaciones
+
+Mejora:
+
+- mostrar alerta de "paradas sin ubicacion" en detalle y ejecucion
+- bloquear o revisar manualmente rutas con paradas no navegables
+
+### 18.7 Limites practicos de Google
+
+Hay dos limites distintos:
+
+- Google Directions API durante la optimizacion
+- URL de Google Maps durante la navegacion externa
 
 Estado actual:
 
-- el backend controla un maximo conservador de waypoints por URL
-- si la jornada supera ese limite, devuelve varios enlaces en `urls[]`
+- la navegacion usa `GOOGLE_MAPS_NAVIGATION_MAX_WAYPOINTS = 8`
+- si se supera el limite interno, el backend devuelve varios enlaces en `urls[]`
 - el campo `url` se mantiene por compatibilidad con clientes antiguos
+
+Riesgo:
+
+- Google puede cambiar limites comerciales o tecnicos
+- una jornada grande puede requerir varios enlaces y ser menos comoda en movil
+
+Mejora:
+
+- documentar limite visible en UI
+- mostrar una lista ordenada de enlaces cuando `is_split=true`
+- estudiar Google Routes API si se necesita una navegacion mas rica
 
 ### 18.8 Capacidad 0 equivale a sin limite
 
@@ -1386,28 +1486,171 @@ Mejora:
 - aclararlo en UI
 - o exigir capacidad minima mayor que cero si el negocio lo requiere
 
-## 19. Recomendaciones priorizadas
+### 18.9 Parada individual mayor que capacidad
+
+Si una parada supera por si sola la capacidad diaria, el plan la acepta en un segmento propio.
+
+Riesgo:
+
+- el plan puede representar una carga imposible para el camion asignado
+
+Mejora:
+
+- avisar al owner antes de generar
+- permitir incluirla solo con confirmacion manual
+- proponer cambio de camion o division manual de la recogida
+
+### 18.10 Observabilidad limitada de la optimizacion
+
+Actualmente el resultado de optimizacion se refleja en el orden final, pero no se persiste un objeto de auditoria.
+
+Riesgo:
+
+- cuesta explicar por que una ruta no se optimizo
+- no hay metrica historica de fallos de Google, tiempo de respuesta o segmentos afectados
+
+Mejora:
+
+- guardar `optimization_status`, `optimization_reason` y `optimized_at` en `RouteDay`
+- registrar numero de segmentos, paradas optimizadas y paradas excluidas por ubicacion
+
+## 19. Alternativas de mejora evaluadas
+
+### 19.1 Mantener Google Directions y endurecer la `v1`
+
+Es la opcion mas conservadora.
+
+Cambios:
+
+- sacar Google de la transaccion principal
+- persistir estado de optimizacion
+- mostrar avisos de paradas sin ubicacion
+- avisar de clientes omitidos por capacidad
+- anadir tests de respuesta invalida y timeout de Google
+
+Ventaja:
+
+- bajo riesgo tecnico
+- mantiene la arquitectura actual
+- suficiente para una operativa con un trabajador por ruta y volumen moderado
+
+Coste:
+
+- no resuelve reparto multi-vehiculo ni ventanas horarias
+
+### 19.2 Anadir heuristica local de fallback
+
+Si Google no esta configurado o falla, se podria aplicar una heuristica local.
+
+Opciones:
+
+- vecino mas cercano desde el hub
+- 2-opt sobre el orden resultante
+- distancia euclidea/PostGIS como coste aproximado
+
+Ventaja:
+
+- mejora el orden incluso sin Google
+- evita depender totalmente de una API externa
+
+Coste:
+
+- no calcula carreteras reales
+- puede empeorar en zonas urbanas con rios, autovias o restricciones de giro
+
+### 19.3 Usar matriz de distancias
+
+En vez de pedir a Google un orden directo, se podria construir una matriz de tiempos/distancias.
+
+Opciones:
+
+- Google Distance Matrix API
+- Google Routes API
+- OSRM/GraphHopper si se quiere controlar infraestructura
+
+Ventaja:
+
+- permite algoritmos propios con coste mas realista
+- base necesaria para VRP avanzado
+
+Coste:
+
+- mas llamadas o mayor coste por optimizacion
+- mas cache y control de cuotas
+- mas complejidad de implementacion
+
+### 19.4 OR-Tools para VRP con restricciones
+
+Opcion avanzada.
+
+Permitiria modelar:
+
+- capacidad por camion
+- varios trabajadores/camiones
+- retornos al hub
+- ventanas horarias
+- tiempo de servicio
+- penalizacion por cliente no asignado
+- maximo de jornada
+
+Ventaja:
+
+- solucion logistica mucho mas potente
+- permite planificar a nivel empresa, no solo ruta individual
+
+Coste:
+
+- mayor complejidad tecnica
+- requiere datos mas completos y fiables
+- necesita UX para explicar soluciones, no solo generarlas
+
+### 19.5 Persistir subviajes y descargas
+
+Hoy los segmentos son calculados, no entidades.
+
+Entidades posibles:
+
+- `RouteTrip`
+- `RouteSegment`
+- `HubReturn`
+- `UnloadEvent`
+
+Ventaja:
+
+- trazabilidad real de retornos a nave
+- mejor analisis de operativa
+- base para medir desviaciones entre plan y ejecucion
+
+Coste:
+
+- cambios de modelo, migraciones, endpoints y frontend
+- mas estados que mantener correctamente
+
+## 20. Recomendaciones priorizadas
 
 ### Prioridad alta
 
 1. Sacar la llamada externa a Google fuera de la transaccion principal o hacerla asincrona.
-2. Anadir tests de fallback de Google cuando devuelve error o estructura invalida.
-3. Revisar si la division de enlaces de navegacion debe presentarse con una UI dedicada en movil.
+2. Anadir tests de fallback de Google cuando devuelve error, timeout o estructura invalida.
+3. Persistir o devolver metadata de optimizacion: aplicada, omitida, motivo y numero de segmentos.
+4. Avisar en frontend cuando hay paradas sin ubicacion o paradas omitidas por capacidad.
 
 ### Prioridad media
 
-1. Alinear el orden base con la fecha efectiva usada en frecuencia.
-2. Exponer `max_clients_per_day` en frontend si el owner necesita controlarlo.
-3. Exponer capacidad por dia en frontend si hay dias con camiones o turnos diferentes.
-4. Revisar filtro espacial en bordes de poligono.
+1. Exponer `max_clients_per_day` en frontend si el owner necesita controlarlo.
+2. Exponer capacidad por dia en frontend si hay dias con camiones o turnos diferentes.
+3. Revisar filtro espacial en bordes de poligono.
+4. Anadir UI dedicada para `is_split=true` en navegacion movil.
+5. Detectar parada individual mayor que capacidad y exigir confirmacion.
 
 ### Prioridad baja
 
-1. Mostrar en UI cuando Google no optimizo y se uso orden base.
-2. Mostrar en UI cuantas paradas quedaron fuera por capacidad.
+1. Crear heuristica local de fallback cuando Google no este disponible.
+2. Cachear respuestas o matrices de distancia por coordenadas cercanas.
 3. Persistir eventos reales de retorno a hub si la operativa lo necesita.
+4. Evaluar OR-Tools solo cuando haya necesidad real de multi-vehiculo, ventanas horarias o optimizacion global.
 
-## 20. Resumen ejecutivo
+## 21. Resumen ejecutivo
 
 El flujo principal actual, `generate-week`, esta bien estructurado para el uso operativo:
 
@@ -1427,15 +1670,18 @@ La parte mas solida es la trazabilidad:
 - las solicitudes se crean de forma idempotente
 - los estados diarios protegen el flujo de ejecucion
 
-La parte mas mejorable es la optimizacion:
+La optimizacion actual es correcta como `v1` pragmatica:
 
-- ahora es una optimizacion lineal inicial
-- no resuelve un problema VRP con capacidad
-- los retornos al hub se calculan despues para mapa y navegacion
+- primero selecciona clientes de forma determinista
+- despues segmenta por capacidad
+- luego pide a Google un orden por cada segmento
+- finalmente conserva fallback seguro si algo falla
+
+La limitacion principal es que no es un VRP completo. Para el alcance actual esto esta bien, siempre que la documentacion y la UI lo llamen optimizacion de orden segmentada y no planificacion logistica global.
 
 El mayor riesgo tecnico restante esta en que la llamada externa a Google sigue ocurriendo durante la generacion, por lo que puede mantener la transaccion abierta mas tiempo del ideal.
 
-## 21. Diagrama de flujo simplificado
+## 22. Diagrama de flujo simplificado
 
 ```text
 Owner
@@ -1478,6 +1724,12 @@ generate_week_for_route
               +--> crear RouteDayClient
               |
               +--> optimize_route_day_with_google
+              |     |
+              |     +--> dividir por capacidad
+              |     |
+              |     +--> optimizar cada segmento hub -> paradas -> hub
+              |     |
+              |     +--> conservar orden si Google falla
               |
               +--> crear/actualizar CollectionRequest
                     |
@@ -1486,7 +1738,7 @@ generate_week_for_route
                     +--> programar autoestimacion si procede
 ```
 
-## 22. Checklist de diagnostico rapido
+## 23. Checklist de diagnostico rapido
 
 Si una ruta no genera paradas, revisar:
 
@@ -1504,11 +1756,12 @@ Si una ruta no genera paradas, revisar:
 
 Si una ruta no se optimiza, revisar:
 
-- hay al menos 2 paradas
+- hay al menos 2 paradas con ubicacion
 - existe `CompanyHub.location`
 - existe `GOOGLE_MAPS_API_KEY`
 - Google Directions responde con rutas
-- no hay paradas con ubicacion nula
+- los logs no muestran respuesta invalida de Google
+- no hay una sola parada ubicada por segmento de capacidad
 
 Si la navegacion no abre:
 
@@ -1516,6 +1769,7 @@ Si la navegacion no abre:
 - existe hub con ubicacion
 - la URL devuelta existe
 - el navegador o dispositivo permite abrir Google Maps
+- si `is_split=true`, revisar todos los enlaces de `urls[]`
 
 Si no llega solicitud al cliente:
 
@@ -1524,3 +1778,11 @@ Si no llega solicitud al cliente:
 - Gmail esta configurado
 - no esta activo el modo `auto_estimate_without_contact`
 - no existe lock reciente de notificacion
+
+Si la ruta queda con pocas paradas:
+
+- revisar capacidad diaria
+- revisar `max_clients_per_day`
+- revisar frecuencia de clientes
+- revisar si clientes ya quedaron asignados en otro dia de la misma semana
+- revisar clientes sin ubicacion o fuera del poligono

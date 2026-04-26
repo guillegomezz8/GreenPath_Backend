@@ -52,7 +52,6 @@ Menu principal esperado:
 
 Menu principal esperado:
 
-- dashboard
 - rutas
 - recogidas
 - perfil
@@ -61,7 +60,6 @@ Menu principal esperado:
 
 Menu principal esperado:
 
-- dashboard
 - mis solicitudes
 - mis recogidas
 - perfil
@@ -119,7 +117,7 @@ Responsabilidad:
 - Archivo: `src/pages/oauth/SocialLogin.jsx`
 - Estado: implementada
 - Objetivo: autenticar mediante Google
-- Salida esperada: `client -> /my-requests`, resto -> `/dashboard`
+- Salida esperada: `owner -> /dashboard`, `worker -> /routes`, `client -> /my-requests`
 
 ## 5.3 Perfil de usuario
 
@@ -143,15 +141,17 @@ Responsabilidad:
 - Ruta: `/dashboard`
 - Archivo: `src/pages/dashboard/Dashboard.jsx`
 - Estado: implementada
+- Acceso actual: `owner`
 
 ### Objetivo
 
-Ser la puerta de entrada operativa del producto.
+Ser la puerta de entrada ejecutiva del owner.
 
 ### Variantes funcionales
 
-- owner/worker: KPIs operativos globales, actividad reciente y accesos rapidos
-- client: vision centrada en solicitudes y recogidas propias
+- owner: KPIs operativos globales, actividad reciente y accesos rapidos
+- worker: entrada directa por `/routes`
+- client: entrada directa por `/my-requests`
 
 ### Notas de UX
 

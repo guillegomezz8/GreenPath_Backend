@@ -229,7 +229,6 @@ El worker esta orientado a la ejecucion operativa.
 
 Normalmente dispone de acceso a:
 
-- dashboard
 - rutas
 - recogidas propias o relacionadas
 - perfil de usuario
@@ -277,7 +276,6 @@ El client representa al cliente de recogida con acceso limitado al portal.
 
 El client dispone, principalmente, de:
 
-- panel o dashboard limitado
 - solicitudes de recogida
 - historico de recogidas
 - perfil

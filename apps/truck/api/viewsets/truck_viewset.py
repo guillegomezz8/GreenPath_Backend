@@ -3,6 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.exceptions import APIException, ValidationError
 
 import django_filters
 from django_filters.rest_framework import FilterSet, CharFilter, NumberFilter, DjangoFilterBackend
@@ -125,12 +126,12 @@ class TruckViewSet(viewsets.ModelViewSet):
 
             if not company:
                 logging.error("[truck_viewset - perform_create] Debe especificar la empresa (company) para crear un camión.")
-                return Response({DETAILS: NEED_COMPANY_FOR_TRUCK_CREATION}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError({DETAILS: NEED_COMPANY_FOR_TRUCK_CREATION})
 
             user = self.request.user
             if user.role_type != "owner" or _user_company_id(user) != company.id:
                 logging.error("[truck_viewset - perform_create] Solo los dueños pueden crear camiones para su propia empresa.")
-                return Response({DETAILS: ONLY_OWNERS_CAN_CREATE_TRUCKS}, status=status.HTTP_400_BAD_REQUEST)
+                raise ValidationError({DETAILS: ONLY_OWNERS_CAN_CREATE_TRUCKS})
 
             if driver and hasattr(driver, "truck"):
                 old_truck = driver.truck if hasattr(driver, "truck") else None
@@ -144,24 +145,32 @@ class TruckViewSet(viewsets.ModelViewSet):
             logging.info(f"[truck_viewset - perform_create] Camión {truck.registration_number} creado correctamente (empresa {company.id}, conductor {driver.id if driver else 'sin asignar'})")
             return truck
 
+        except ValidationError:
+            raise
         except Exception as e:
             logging.error(f"[truck_viewset - perform_create] Error creando camión: {str(e)}")
-            return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            raise APIException({DETAILS: {INTERNAL_ERROR: str(e)}})
 
     def perform_update(self, serializer):
         try:
             instance = self.get_object()
             new_company = serializer.validated_data.get("company") or instance.company
+            if new_company is None:
+                logging.error("[truck_viewset - perform_update] Debe especificar la empresa (company) para actualizar un camion.")
+                raise ValidationError({DETAILS: NEED_COMPANY_FOR_TRUCK_CREATION})
+
             user = self.request.user
             if not (user.is_staff or user.is_superuser):
                 if user.role_type != "owner" or _user_company_id(user) != new_company.id:
                     logging.error("[truck_viewset - perform_update] Solo puedes actualizar camiones de tu empresa.")
-                    return Response({DETAILS: ONLY_UPDATE_TRUCKS_SAME_COMPANY}, status=status.HTTP_400_BAD_REQUEST)
+                    raise ValidationError({DETAILS: ONLY_UPDATE_TRUCKS_SAME_COMPANY})
 
             serializer.save(company=new_company)
+        except ValidationError:
+            raise
         except Exception as e:
             logging.error(f"[truck_viewset - perform_update] Error actualizando camión: {str(e)}")
-            return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            raise APIException({DETAILS: {INTERNAL_ERROR: str(e)}})
         
     def list(self, request):
         try:
@@ -200,6 +209,8 @@ class TruckViewSet(viewsets.ModelViewSet):
 
             return Response(response, status=status.HTTP_200_OK)
 
+        except ValidationError:
+            raise
         except Exception as e:
             logging.error(f"[truck_viewset - list] Error al listar camiones: {str(e)}")
             return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -234,6 +245,8 @@ class TruckViewSet(viewsets.ModelViewSet):
 
             logging.info(f"[truck_viewset - assign_driver] Conductor {worker_id} asignado a camión {truck_id} por usuario {request.user.id}")
             return Response(TruckSerializer(truck).data, status=status.HTTP_200_OK)
+        except ValidationError:
+            raise
         except Exception as e:
             logging.error(f"[truck_viewset - assign_driver] Error asignando conductor: {str(e)}")
             return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

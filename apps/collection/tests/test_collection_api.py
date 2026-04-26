@@ -104,3 +104,101 @@ class CollectionApiTests(BackendTestMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["count"], 1)
         self.assertEqual(response.data["results"][0]["id"], included_collection.id)
+
+    def test_collection_detail_exposes_client_and_worker_ids(self):
+        collection = Collection.objects.create(
+            client=self.client_profile,
+            worker=self.owner_worker,
+            collection_date=self.today(),
+            measured_liters=Decimal("60.00"),
+            deduction_liters=Decimal("0.00"),
+            price_per_liter=Decimal("1.00"),
+            status=CollectionStatus.CONFIRMED,
+            billable=True,
+        )
+
+        response = self.owner_client.get(f"/collections/{collection.id}/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["client"], self.client_profile.id)
+        self.assertEqual(response.data["worker"], self.owner_worker.id)
+
+    def test_update_preserves_paid_total_and_respects_manual_status(self):
+        collection = Collection.objects.create(
+            client=self.client_profile,
+            worker=self.owner_worker,
+            collection_date=self.today(),
+            container_type=ContainerType.BIDONES,
+            container_number=1,
+            measured_liters=Decimal("60.00"),
+            deduction_liters=Decimal("0.00"),
+            price_per_liter=Decimal("1.00"),
+            status=CollectionStatus.CONFIRMED,
+            billable=True,
+        )
+        original_total = collection.total_price
+
+        response = self.owner_client.put(
+            f"/collections/{collection.id}/",
+            {
+                "client": self.client_profile.id,
+                "worker": self.owner_worker.id,
+                "route_day_client": None,
+                "collection_date": self.today().isoformat(),
+                "container_type": ContainerType.BIDONES,
+                "container_number": 1,
+                "measured_liters": "100.00",
+                "deduction_liters": "0.00",
+                "deduction_reason": "",
+                "deduction_notes": "",
+                "price_per_liter": "1.000",
+                "billable": True,
+                "status": CollectionStatus.PENDING_MEASUREMENT,
+                "notes": "Ajuste manual de litros sin recalcular importe abonado.",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        collection.refresh_from_db()
+        self.assertEqual(collection.measured_liters, Decimal("100.00"))
+        self.assertEqual(collection.status, CollectionStatus.PENDING_MEASUREMENT)
+        self.assertEqual(collection.deduction_reason, "")
+        self.assertEqual(collection.total_price, original_total)
+
+    def test_update_requires_deduction_reason_when_deducting_liters(self):
+        collection = Collection.objects.create(
+            client=self.client_profile,
+            worker=self.owner_worker,
+            collection_date=self.today(),
+            container_type=ContainerType.BIDONES,
+            container_number=1,
+            measured_liters=Decimal("60.00"),
+            deduction_liters=Decimal("0.00"),
+            price_per_liter=Decimal("1.00"),
+            status=CollectionStatus.CONFIRMED,
+            billable=True,
+        )
+
+        response = self.owner_client.put(
+            f"/collections/{collection.id}/",
+            {
+                "client": self.client_profile.id,
+                "worker": self.owner_worker.id,
+                "route_day_client": None,
+                "collection_date": self.today().isoformat(),
+                "container_type": ContainerType.BIDONES,
+                "container_number": 1,
+                "measured_liters": "60.00",
+                "deduction_liters": "5.00",
+                "deduction_reason": "",
+                "deduction_notes": "",
+                "price_per_liter": "1.000",
+                "billable": True,
+                "status": CollectionStatus.CONFIRMED,
+                "notes": "",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)

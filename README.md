@@ -106,7 +106,7 @@ Actualmente estan operativos:
 - generacion semanal de rutas operativas con `POST /routes/{id}/generate-week/`
 - ejecucion diaria de `RouteDay`
 - solicitudes previas al cliente con expiracion y trazabilidad
-- dashboard y estadisticas por rol
+- dashboard ejecutivo para owner y estadisticas economicas
 - configuracion global por empresa
 - recogidas con control de `facturable`
 - compradores internos, ventas y facturas PDF

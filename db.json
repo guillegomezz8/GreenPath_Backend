@@ -6034,6 +6034,40 @@
     }
 },
 {
+    "model": "sale.historicalsale",
+    "pk": 7,
+    "fields": {
+        "id": 7,
+        "disabled": false,
+        "created_date": "2026-04-29T08:56:55.060Z",
+        "modified_date": "2026-04-29T08:56:55.060Z",
+        "deleted_date": "2026-04-29T08:56:55.060Z",
+        "sale_date": "2026-04-27",
+        "invoice_date": "2026-04-27",
+        "product_description": "ACEITE VEGETAL USADO SIN FILTRAR",
+        "quantity": "20240.00",
+        "unit": "kg",
+        "unit_price": "1.0350",
+        "subtotal": "20948.40",
+        "tax_rate": "21.00",
+        "tax_amount": "4399.16",
+        "total": "25347.56",
+        "currency": "EUR",
+        "invoice_year": 2026,
+        "invoice_sequence": null,
+        "invoice_number": "007",
+        "invoice_pdf": "",
+        "invoice_generated_at": null,
+        "notes": "",
+        "company": 1,
+        "buyer": 1,
+        "history_date": "2026-04-29T08:56:55.062Z",
+        "history_change_reason": null,
+        "history_type": "+",
+        "history_user": 1
+    }
+},
+{
     "model": "sale.sale",
     "pk": 1,
     "fields": {
@@ -6202,6 +6236,35 @@
         "invoice_year": 2026,
         "invoice_sequence": null,
         "invoice_number": "006",
+        "invoice_pdf": "",
+        "invoice_generated_at": null,
+        "notes": ""
+    }
+},
+{
+    "model": "sale.sale",
+    "pk": 7,
+    "fields": {
+        "disabled": false,
+        "created_date": "2026-04-29T08:56:55.060Z",
+        "modified_date": "2026-04-29T08:56:55.060Z",
+        "deleted_date": "2026-04-29T08:56:55.060Z",
+        "company": 1,
+        "buyer": 1,
+        "sale_date": "2026-04-27",
+        "invoice_date": "2026-04-27",
+        "product_description": "ACEITE VEGETAL USADO SIN FILTRAR",
+        "quantity": "20240.00",
+        "unit": "kg",
+        "unit_price": "1.0350",
+        "subtotal": "20948.40",
+        "tax_rate": "21.00",
+        "tax_amount": "4399.16",
+        "total": "25347.56",
+        "currency": "EUR",
+        "invoice_year": 2026,
+        "invoice_sequence": null,
+        "invoice_number": "007",
         "invoice_pdf": "",
         "invoice_generated_at": null,
         "notes": ""
@@ -6396,6 +6459,17 @@
     }
 },
 {
+    "model": "token_blacklist.outstandingtoken",
+    "pk": 4,
+    "fields": {
+        "user": 1,
+        "jti": "cf75178037fd4697a9f95747f7bec43a",
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc3NzUzOTMzMSwiaWF0IjoxNzc3NDUyOTMxLCJqdGkiOiJjZjc1MTc4MDM3ZmQ0Njk3YTlmOTU3NDdmN2JlYzQzYSIsInVzZXJfaWQiOjF9.EjX-_zafzsYf21uvQ6TcM83eXDEd66_kk5jIytLUAhA",
+        "created_at": "2026-04-29T08:55:31.686Z",
+        "expires_at": "2026-04-30T08:55:31Z"
+    }
+},
+{
     "model": "django_celery_beat.crontabschedule",
     "pk": 1,
     "fields": {
@@ -6411,7 +6485,7 @@
     "model": "django_celery_beat.periodictasks",
     "pk": 1,
     "fields": {
-        "last_update": "2026-04-24T08:26:40.883Z"
+        "last_update": "2026-04-29T08:55:18.118Z"
     }
 },
 {

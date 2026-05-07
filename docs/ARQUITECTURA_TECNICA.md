@@ -1,6 +1,6 @@
 # Arquitectura Tecnica del Proyecto
 
-Fecha de revision: 2026-04-14
+Fecha de revision: 2026-04-30
 
 ## 1. Objetivo de esta documentacion
 
@@ -22,6 +22,8 @@ GreenPath se apoya en varios principios tecnicos:
 - frontend orientado a experiencia por rol
 - uso de integraciones externas como complemento, no como dependencia absoluta del flujo base
 - configuracion editable para evitar valores criticos hardcodeados
+- preferencia por trazabilidad funcional antes que automatismo opaco
+- separacion explicita entre operacion diaria, cierre economico y documentacion de venta
 
 ## 3. Stack tecnico
 
@@ -41,11 +43,26 @@ GreenPath se apoya en varios principios tecnicos:
 - Vite
 - Tailwind CSS
 - componentes UI reutilizables propios
+- Leaflet / React Leaflet para vistas geograficas
+- librerias de soporte para formularios, iconografia y componentes responsivos
 
 ### 3.3 Infraestructura local
 
 - Docker Compose
 - contenedores para backend, frontend, postgres, redis, celery, celery beat y flower
+
+### 3.4 Complejidad tecnica derivada del stack
+
+La arquitectura no solo resuelve persistencia y vistas. Tambien debe coordinar:
+
+- datos relacionales y geoespaciales
+- procesos sincronos y asincronos
+- integraciones con terceros
+- generacion documental en PDF
+- aislamiento multiempresa
+- experiencia operativa responsive para uso en movilidad
+
+Esta combinacion es una de las razones por las que GreenPath tiene entidad suficiente como proyecto de TFG amplio y no como ejercicio reducido de gestion administrativa.
 
 ## 4. Organizacion del backend
 
@@ -69,6 +86,7 @@ Responsabilidades:
 - perfiles de `Client` y `Worker`
 - serializers y viewsets de usuarios, clientes y trabajadores
 - geocodificacion de clientes
+- adaptacion del comportamiento por rol y empresa
 
 ### 4.3 `apps/company`
 
@@ -105,6 +123,7 @@ Responsabilidades:
 - ejecucion diaria
 - calculo de tramos operativos por capacidad
 - integracion con Google Directions
+- construccion de navegacion externa alineada con el plan operativo
 
 ### 4.7 `apps/collection`
 
@@ -123,6 +142,7 @@ Responsabilidades:
 - `Sale`
 - generacion de facturas PDF
 - resumen economico
+- uso bajo demanda del documento de factura sin persistencia binaria
 
 ## 5. Modelado tecnico esencial
 
@@ -159,6 +179,8 @@ La accion `POST /routes/{route_id}/generate-week/` hace, a grandes rasgos, lo si
 10. optimiza orden con Google si procede
 11. crea o actualiza `CollectionRequest`
 12. agenda tarea de autoestimacion
+
+Este flujo concentra una parte importante de la complejidad del sistema porque mezcla reglas de negocio, geografia, frecuencia, capacidad, proteccion de dias ya operados y automatizaciones asincronas.
 
 ## 7. Flujo tecnico de ejecucion diaria
 
@@ -244,11 +266,17 @@ Elementos clave:
 ## 10. Flujo tecnico de ventas y facturacion
 
 1. el owner crea una `Sale`
-2. el backend valida `invoice_number` y `invoice_date`
-3. recalcula `subtotal`, `tax_amount` y `total`
-4. sincroniza `sale_date` con `invoice_date`
-5. renderiza el PDF con WeasyPrint solo cuando se solicita
-6. expone descarga via endpoint dedicado sin persistir el fichero
+2. el frontend muestra como referencia el numero de la ultima factura y permite reusar conceptos anteriores sin modificar la unidad
+3. el backend valida `invoice_number` y `invoice_date`
+4. recalcula `subtotal`, `tax_amount` y `total`
+5. sincroniza `sale_date` con `invoice_date`
+6. renderiza el PDF con WeasyPrint solo cuando se solicita
+7. expone descarga via endpoint dedicado sin persistir el fichero
+
+Esta decision de generar el documento bajo demanda tiene dos ventajas arquitectonicas:
+
+- evita persistencia innecesaria de binarios
+- garantiza que el PDF refleje los datos fiscales y comerciales vigentes
 
 ## 11. Frontend y organizacion de pantallas
 
@@ -296,6 +324,7 @@ Ejemplos:
 - compradores y ventas solo owner
 - client solo ve sus solicitudes y recogidas
 - worker solo opera rutas de su empresa y, normalmente, las que tiene asignadas
+- configuracion fiscal y economica aislada por empresa
 
 ## 13. Integraciones externas
 
@@ -327,8 +356,27 @@ Comportamiento esperado:
 
 Uso actual:
 
-- facturas PDF de ventas
-- render a partir de plantilla HTML/CSS
+- generacion de factura PDF desde HTML/CSS
+- descarga documental bajo demanda
+
+Consideraciones:
+
+- requiere dependencias del sistema dentro de Docker
+- anade complejidad de maquetacion, formato monetario y consistencia visual
+
+### 13.4 Celery y Redis
+
+Uso actual:
+
+- autoestimacion de solicitudes expiradas
+- notificaciones asincronas
+- soporte de tareas programadas y diferidas
+
+Valor tecnico:
+
+- desacopla operaciones lentas del flujo HTTP
+- mejora la experiencia de usuario
+- permite una arquitectura mas realista y mas defendible academicamente
 
 ## 14. Observabilidad
 
@@ -373,7 +421,7 @@ De forma simplificada, una peticion tipica en GreenPath sigue este recorrido:
 3. el serializer valida estructura, tipos y reglas basicas
 4. la logica de negocio se ejecuta en utilidades o metodos de dominio
 5. el ORM persiste cambios en PostgreSQL/PostGIS
-6. si aplica, se registran tareas asyncronas en Celery
+6. si aplica, se registran tareas asincronas en Celery
 7. el serializer de salida devuelve datos enriquecidos para frontend
 8. el frontend transforma la respuesta en estado de interfaz, tarjetas, tablas o mapas
 
@@ -414,14 +462,14 @@ GreenPath depende de PostGIS para:
 
 Esto hace que la calidad de coordenadas no sea un detalle accesorio, sino una condicion estructural del flujo de planificacion.
 
-### 20.2 Persistencia documental
+### 20.2 Generacion documental
 
-El sistema genera y conserva documentos de negocio en forma de PDF:
+El sistema genera documentos de negocio en forma de PDF:
 
 - facturas de venta ligadas a `Sale`
 - posible documentacion complementaria asociada a medios o email
 
-La generacion se hace con WeasyPrint a partir de plantillas HTML/CSS, lo que permite versionar la presentacion en el propio repositorio y regenerar documentos de forma controlada.
+La generacion se hace con WeasyPrint a partir de plantillas HTML/CSS, lo que permite versionar la presentacion en el propio repositorio y reconstruir el documento en cada descarga con los datos vigentes.
 
 ## 21. Validacion automatizada actual
 
@@ -535,3 +583,4 @@ Para una defensa o entrega del TFG, esta arquitectura se complementa con:
 - `docs/INTEGRACIONES_Y_APIS_EXTERNAS.md` para justificar dependencias externas
 - `docs/PLANIFICACION_Y_COSTES.md` para la dimension metodologica
 - `docs/UML_BD.md` para explicar el modelo de datos
+

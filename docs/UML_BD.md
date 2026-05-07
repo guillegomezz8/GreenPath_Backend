@@ -1,6 +1,6 @@
 # UML de Base de Datos
 
-Fecha de revision: 2026-04-08
+Fecha de revision: 2026-04-30
 
 ## 1. Objetivo
 
@@ -12,6 +12,16 @@ Su finalidad es servir como apoyo para:
 - revisar relaciones y cardinalidades antes de modificar backend
 - justificar el modelado de datos en la memoria del TFG
 - explicar como se conectan los modulos de operacion, recogidas y ventas
+
+Tambien resulta clave para poner en valor que GreenPath no es una aplicacion aislada de gestion basica, sino una plataforma multiempresa donde conviven:
+
+- autenticacion y perfiles diferenciados
+- aislamiento funcional por empresa
+- geografia operativa apoyada en PostGIS
+- planificacion logistica y ejecucion diaria
+- recogidas con impacto economico condicionado por `billable`
+- ventas y facturacion comercial
+- configuracion global por empresa para reglas fiscales y parametros operativos
 
 ## 2. Alcance
 
@@ -495,7 +505,7 @@ La siguiente tabla resume cada entidad desde el punto de vista funcional.
 | `CollectionRequest` | `collection` | peticion previa de estimacion | una por parada planificada |
 | `Collection` | `collection` | recogida real | puede ser planificada o manual |
 | `Buyer` | `sale` | comprador interno | sin acceso a plataforma |
-| `Sale` | `sale` | venta con factura | incluye PDF y datos economicos |
+| `Sale` | `sale` | venta con factura | concentra los datos economicos y documentales de la venta; el PDF se genera bajo demanda y no se persiste como flujo operativo activo |
 
 ## 8. Relaciones clave explicadas
 
@@ -562,8 +572,9 @@ Esto significa que casi todos los modulos se segmentan realmente por empresa, in
   - importes
   - IVA
   - numero de factura
-  - PDF generado
+  - referencia documental funcional para construir la factura PDF bajo demanda
 - `invoice_number` se gestiona manualmente a nivel funcional, aunque el modelo mantenga campos internos (`invoice_year`, `invoice_sequence`) por compatibilidad y trazabilidad
+- los campos `invoice_pdf` e `invoice_generated_at` deben entenderse actualmente como legado del modelo, no como parte del comportamiento funcional vigente del sistema
 
 ## 9. Claves foraneas y comportamiento de borrado
 
@@ -707,7 +718,7 @@ Este circuito cubre:
 - precio por litro
 - costes de recogidas
 - ingresos por ventas
-- facturacion PDF
+- facturacion PDF bajo demanda
 - estadisticas economicas
 
 ## 15. Limitaciones y decisiones de modelado
@@ -721,6 +732,7 @@ El UML refleja algunas decisiones importantes del proyecto:
 - las recogidas mantienen independencia historica aunque la parada planificada pueda desaparecer
 - la venta y la factura se agrupan en una misma entidad (`Sale`), lo que simplifica el flujo actual
 - el numero de factura es manual a nivel de negocio, mientras que `invoice_year` e `invoice_sequence` quedan como soporte interno del modelo
+- la factura comercial se reconstruye en cada descarga, por lo que el valor de `Sale` esta en sus datos economicos y fiscales, no en almacenar el binario como documento operativo
 
 ## 16. Observaciones de lectura para defensa
 
@@ -729,9 +741,21 @@ Si este UML se utiliza en una memoria o defensa, conviene remarcar:
 - que `Company` es el eje del aislamiento multiempresa
 - que el circuito operativo y el circuito economico comparten datos, pero no se confunden
 - que `Collection.billable` permite separar dato operativo de impacto economico
-- que `Sale` concentra tanto la venta como la referencia documental del PDF
+- que `Sale` concentra tanto la venta como la referencia documental necesaria para reconstruir el PDF bajo demanda
 
-## 17. Uso recomendado del documento
+## 17. Relacion con librerias e integraciones del proyecto
+
+Aunque el UML modela solo persistencia, varias decisiones de este esquema estan directamente conectadas con librerias y APIs que aportan complejidad tecnica al TFG:
+
+- `PostGIS` da soporte a `PointField` y `PolygonField`, que permiten geolocalizar clientes, dibujar zonas y seleccionar paradas por territorio real
+- `Google Maps Platform` se apoya en `CompanyHub.location`, `Client.location` y la estructura `Route -> RouteDay -> RouteDayClient` para optimizar orden y abrir navegacion externa
+- `Celery` y `Redis` interactuan especialmente con `CollectionRequest`, que conserva informacion de programacion para autoestimacion y notificaciones
+- `WeasyPrint` consume los datos de `Sale`, `Buyer` y `CompanySettings` para generar facturas PDF con formato documental sin necesidad de persistir el fichero como parte activa del modelo
+- `Leaflet / React Leaflet` se apoyan en `Zone`, `CompanyHub` y `Client.location` para trasladar el modelo relacional a una experiencia cartografica comprensible en frontend
+
+Esto permite defender que el valor del modelo no es solo relacional, sino tambien integrador: sirve como base para procesos geograficos, asincronos, documentales y comerciales dentro de una misma plataforma.
+
+## 18. Uso recomendado del documento
 
 Este documento es especialmente util cuando se necesita:
 
@@ -742,7 +766,7 @@ Este documento es especialmente util cuando se necesita:
 - explicar a un tercero como se conectan rutas, recogidas y ventas
 - preparar diagramas mas resumidos para una defensa oral
 
-## 18. Documentos relacionados
+## 19. Documentos relacionados
 
 - `docs/ARQUITECTURA_TECNICA.md`
 - `docs/FUNCIONAL.md`

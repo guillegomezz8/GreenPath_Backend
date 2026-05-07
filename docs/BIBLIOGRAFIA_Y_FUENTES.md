@@ -1,6 +1,6 @@
 # Bibliografia y Fuentes GreenPath
 
-Fecha de revision: 2026-04-08
+Fecha de revision: 2026-04-30
 
 ## 1. Objetivo del documento
 
@@ -36,6 +36,10 @@ Su finalidad es apoyar la parte academica del TFG y dejar trazabilidad sobre la 
 ### 2.7 Redis
 
 - Redis Ltd. *Redis documentation*. https://redis.io/docs/
+
+### 2.8 Simple JWT
+
+- Jazzband. *djangorestframework-simplejwt documentation*. https://django-rest-framework-simplejwt.readthedocs.io/
 
 ## 3. Fuentes de frontend
 
@@ -78,6 +82,16 @@ Su finalidad es apoyar la parte academica del TFG y dejar trazabilidad sobre la 
 
 - CourtBouillon. *WeasyPrint documentation*. https://doc.courtbouillon.org/weasyprint/
 
+## 5.2 Infraestructura y contenedores
+
+### Docker
+
+- Docker Inc. *Docker documentation*. https://docs.docker.com/
+
+### Docker Compose
+
+- Docker Inc. *Docker Compose documentation*. https://docs.docker.com/compose/
+
 ## 6. Testing y calidad
 
 ### 6.1 Pytest y testing en Python
@@ -117,8 +131,21 @@ Estas fuentes pueden utilizarse para:
 - reforzar la seccion metodologica y de calidad
 - construir bibliografia de la memoria final
 
+## 8.1 Fuentes especialmente valiosas para defender la complejidad tecnica
+
+En el caso concreto de GreenPath, conviene dar un peso especial a varias familias de fuentes, porque son las que mejor ayudan a justificar que el proyecto va mas alla de una aplicacion CRUD simple:
+
+- documentacion de Google Maps Platform, por el papel de la geocodificacion, la optimizacion y la navegacion externa
+- documentacion de Celery y Redis, por la existencia de tareas asincronas reales y arquitectura de soporte
+- documentacion de Leaflet y React Leaflet, por la capa cartografica embebida en el frontend
+- documentacion de WeasyPrint, por la generacion documental en PDF a partir de HTML/CSS
+- documentacion de Django REST Framework, por el peso de la API como capa contractual y de negocio
+
+Estas referencias son especialmente utiles en la memoria del TFG cuando se quiere argumentar que la complejidad del sistema no depende solo del numero de modulos, sino tambien de las integraciones y librerias especializadas que se han incorporado.
+
 ## 9. Observaciones
 
 - Siempre que sea posible conviene citar documentacion oficial de la herramienta o servicio utilizado.
 - Para la memoria final del TFG puede adaptarse este documento al formato bibliografico exigido por la universidad o por el tutor.
 - Este documento no sustituye a la explicacion tecnica del proyecto, sino que la apoya con referencias verificables.
+- Para la defensa oral del TFG, resulta especialmente recomendable enlazar estas fuentes con decisiones concretas tomadas en GreenPath y no dejarlas como una lista aislada de tecnologias.

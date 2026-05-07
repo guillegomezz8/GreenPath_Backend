@@ -1,6 +1,6 @@
 # Organizacion, Planificacion y Costes GreenPath
 
-Fecha de revision: 2026-04-14
+Fecha de revision: 2026-04-30
 
 ## 1. Objetivo del documento
 
@@ -17,6 +17,7 @@ GreenPath puede entenderse como un proyecto full-stack con las siguientes caract
 - necesidad de equilibrar backend, frontend, integraciones, testing y documentacion
 - importancia especial del uso movil en el modulo de rutas
 - crecimiento del alcance al incorporar la capa economica de ventas y facturacion
+- complejidad adicional por consumo de Google Maps, Gmail API, WeasyPrint, Celery, Redis y mapas interactivos
 
 Esto justifica que la planificacion no se haya concebido como una secuencia totalmente lineal, sino como una organizacion por bloques funcionales y por hitos de valor.
 
@@ -245,6 +246,8 @@ Desde una lectura de producto, GreenPath combina al menos:
 - integraciones externas opcionales pero utiles
 
 Esto refuerza la idea de que el proyecto tiene suficiente profundidad para una memoria academica extensa.
+
+Tambien ayuda a justificar que el esfuerzo no se distribuye solo entre backend y frontend. Una parte relevante del trabajo se concentra en integrar servicios externos, resolver dependencias del entorno, definir degradacion controlada cuando un tercero falla y documentar adecuadamente el impacto de cada libreria o API consumida.
 
 ## 11. Estimacion de costes del proyecto
 

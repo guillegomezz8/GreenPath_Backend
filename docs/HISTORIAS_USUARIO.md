@@ -1,6 +1,30 @@
 # Historias de Usuario GreenPath
 
-Fecha de revision: 2026-04-24
+Fecha de revision: 2026-04-30
+
+## 0. Contexto del backlog
+
+Este documento recoge el backlog funcional consolidado de GreenPath en su estado actual de TFG. No describe ideas teoricas aisladas, sino necesidades reales derivadas del problema que el proyecto pretende resolver: la digitalizacion integral de empresas de recogida de aceites usados que tradicionalmente operan con un alto componente manual, poca trazabilidad y una separacion muy debil entre operacion diaria, control economico y documentacion.
+
+El valor de estas historias no esta solo en enumerar pantallas o formularios. Sirven para explicar:
+
+- como se transforma un negocio tradicional en una plataforma multiempresa
+- como se conectan los flujos de oficina, calle, planificacion y analitica
+- que capacidades son imprescindibles para `owner`, `worker` y `client`
+- que piezas tecnicas elevan la complejidad del proyecto mas alla de un CRUD convencional
+
+GreenPath no se limita a registrar clientes o recogidas. El sistema cubre:
+
+- configuracion empresarial y fiscal por empresa
+- planificacion semanal de rutas con seleccion geografica de clientes
+- ejecucion diaria en movilidad
+- solicitudes previas de recogida con respuesta del cliente y autoestimacion
+- recogidas reales con impacto economico condicionado por `billable`
+- compradores, ventas y facturacion PDF bajo demanda
+- estadisticas operativas y economicas
+- integraciones externas como Google Maps, Gmail API, Celery, Redis, Leaflet y WeasyPrint
+
+Por ello, las historias de usuario funcionan tambien como puente entre la memoria funcional, el modelo de datos, la arquitectura tecnica y los casos de uso.
 
 ## 1. Convenciones
 
@@ -94,7 +118,7 @@ Como Owner quiero registrar ventas con numero de factura manual para controlar i
 Criterios de aceptacion:
 1. Puedo crear una venta seleccionando comprador y fecha de factura.
 2. El sistema calcula base imponible, IVA y total.
-3. Puedo descargar y regenerar el PDF de factura de esa venta.
+3. Puedo descargar el PDF de factura y el sistema lo reconstruye con los datos vigentes de la venta y de la configuracion fiscal de la empresa.
 
 ### US-OWN-005E (P1) Configurar datos fiscales de empresa
 
@@ -152,14 +176,14 @@ Criterios de aceptacion:
 2. Existe barra de progreso por dia.
 3. El estado del dia es visible con badge.
 
-### US-WRK-005 (P1) Saber en que tramo estoy trabajando
+### US-WRK-005 (P1) Entender si debo volver a nave durante la jornada
 
-Como Worker quiero que la app me diga en que tramo estoy para entender si debo volver a nave antes de seguir recogiendo.
+Como Worker quiero que la app me diga si debo volver a nave antes de seguir recogiendo para poder operar sin interpretar logica tecnica interna.
 
 Criterios de aceptacion:
 1. La pantalla operativa simplifica la informacion tecnica y prioriza la siguiente parada sugerida.
 2. El mapa y la navegacion reflejan cuando la jornada exige retorno al hub.
-3. La siguiente parada sugerida es coherente con el plan operativo interno mientras existan pendientes.
+3. La informacion visible no depende de exponer tarjetas tecnicas de `tramo`, sino de decisiones operativas comprensibles para el trabajador.
 
 ## 4. Historias Client
 
@@ -258,7 +282,7 @@ Criterios de aceptacion:
 1. Puedo iniciar dia, registrar paradas y finalizar sin cambiar a desktop.
 2. El detalle de parada muestra informacion minima necesaria (cliente, estado, limite, plan base).
 3. Los controles criticos son visibles y tocables con una mano.
-4. El usuario entiende rapidamente si esta en un tramo con retorno posterior a nave.
+4. El usuario entiende rapidamente si la jornada exige un retorno a nave antes de continuar.
 
 ### US-UXM-002 (P1) Resumen rapido en pantalla pequena
 
@@ -361,7 +385,7 @@ Criterios de aceptacion:
 2. Los contadores cambian al cambiar de semana.
 3. Los filtros de estado aplican sobre ese conjunto.
 
-### US-OWN-015 (P2) Tener control rapido de expansion de dias
+### US-OWN-016 (P2) Tener control rapido de expansion de dias
 
 Como Owner quiero expandir u ocultar todos los dias para navegar rapido entre semanas largas.
 
@@ -637,7 +661,7 @@ Como equipo quiero fixtures de compradores, ventas y datos fiscales para probar 
 Criterios de aceptacion:
 1. Existen compradores demo listos para seleccionar en ventas.
 2. Existen ventas demo con numero de factura manual y fechas coherentes.
-3. La configuracion global incluye datos fiscales basicos para regenerar PDFs sin edicion previa.
+3. La configuracion global incluye datos fiscales basicos para generar PDFs bajo demanda sin edicion previa.
 
 ### US-PLT-013 (P2) Observabilidad de tareas Celery
 
@@ -978,3 +1002,32 @@ Por ello conviene leerlo junto con:
 - `docs/CASOS_DE_USO.md`
 - `docs/FUNCIONAL.md`
 - `docs/TESTING.md`
+
+## 17. Lectura global del backlog
+
+Este backlog pone de manifiesto que GreenPath combina varias capas de valor dentro de un mismo sistema:
+
+- una capa administrativa, centrada en empresa, clientes, trabajadores, camiones, compradores y configuracion
+- una capa logistica, centrada en zonas, rutas, generacion semanal, capacidad diaria y criterio territorial
+- una capa operativa, centrada en la ejecucion real de jornadas y recogidas desde movil
+- una capa economica, centrada en costes, ingresos, ventas, facturacion y estadisticas
+- una capa tecnica de integracion, donde intervienen servicios y librerias externas que aumentan la complejidad del TFG
+
+En particular, varias historias dependen directamente de integraciones y componentes que aportan valor tecnico real:
+
+- `Google Maps` para optimizacion del orden, navegacion externa y geocodificacion
+- `Leaflet / React Leaflet` para representacion cartografica de zonas, clientes, hub y recorridos
+- `Celery` y `Redis` para programar autoestimaciones, notificaciones y automatismos desacoplados del flujo sincrono
+- `Gmail API` para el envio de correos transaccionales sin bloquear la operacion principal
+- `WeasyPrint` para generar facturas PDF bajo demanda con datos fiscales actuales
+
+Esto refuerza que el sistema no es un prototipo de interfaz, sino una plataforma que coordina reglas de negocio, procesos asincronos, geografia operativa y documentacion comercial.
+
+## 18. Uso recomendado del documento
+
+Este documento resulta especialmente util para:
+
+- justificar el alcance funcional del TFG
+- mapear historias a casos de uso, pruebas y pantallas
+- demostrar trazabilidad entre necesidad de negocio y solucion implementada
+- defender que la complejidad del proyecto viene tanto de la logica funcional como de las integraciones tecnicas

@@ -1,10 +1,12 @@
 # Memoria Funcional TFG - GreenPath
 
-Fecha de revision: 2026-04-14
+Fecha de revision: 2026-04-30
 
 ## 1. Introduccion
 
 GreenPath es una plataforma web orientada a la gestion integral de la recogida de aceite usado y a su explotacion economica posterior. El proyecto nace de una necesidad concreta de negocio: disponer de un sistema unificado para planificar rutas, ejecutar recogidas, mantener trazabilidad operativa y medir correctamente el impacto economico de la actividad.
+
+El sistema no se ha concebido como una aplicacion cerrada para una unica empresa, sino como una plataforma multiempresa preparada para aislar datos, permisos, configuracion y operacion entre distintas organizaciones. Esta decision incrementa claramente la dificultad y el valor del TFG, porque obliga a pensar el dominio como una solucion reutilizable, no como un desarrollo puntual mononegocio.
 
 En muchos escenarios reales, la gestion de este tipo de operacion se reparte entre hojas de calculo, mensajes, llamadas telefonicas, documentos manuales y conocimiento informal de las personas que operan la ruta. Esa fragmentacion impide responder con seguridad a preguntas tan basicas como:
 
@@ -14,7 +16,7 @@ En muchos escenarios reales, la gestion de este tipo de operacion se reparte ent
 - cuanto se ha ingresado por ventas
 - cual es el beneficio neto del periodo
 
-GreenPath se plantea como una respuesta integral a ese problema. No se limita a almacenar informacion, sino que conecta planificacion, operacion, documentacion y analitica en una unica herramienta.
+GreenPath se plantea como una respuesta integral a ese problema. No se limita a almacenar informacion, sino que conecta planificacion, operacion, documentacion y analitica en una unica herramienta. En otras palabras, intenta transformar una operacion tradicionalmente fragmentada en un flujo digital coherente, trazable y medible.
 
 ### 1.1 Contexto y motivacion
 
@@ -29,6 +31,15 @@ Por una parte, existe una necesidad funcional real: transformar una operacion de
 - generacion documental en PDF
 - integraciones externas
 - medicion economica del negocio
+
+Ademas, el proyecto incorpora varias librerias y APIs consumidas con impacto funcional real:
+
+- Google Maps Platform para geocodificacion, optimizacion y navegacion
+- Gmail API para comunicaciones de acceso y notificaciones
+- Celery y Redis para tareas asincronas
+- WeasyPrint para facturacion PDF con formato empresarial
+
+Esto hace que la complejidad del trabajo no dependa solo del modelado de pantallas y entidades, sino tambien de la integracion, configuracion, tolerancia a fallos externos y coordinacion entre varias capas de software.
 
 ### 1.2 Stakeholders principales
 
@@ -62,6 +73,8 @@ GreenPath se diferencia por integrar en una misma solucion:
 - compradores, ventas y facturacion PDF
 - estadisticas con coste, ingreso y beneficio
 
+Tambien se diferencia porque la parte economica no es decorativa: el sistema distingue entre recogidas que representan coste o inversion y ventas que representan ingreso, permitiendo construir un cierre economico mucho mas util para el negocio.
+
 ### 1.4 Objetivo general
 
 Desarrollar una plataforma web multiusuario que permita a una empresa de recogida de aceite usado planificar rutas, ejecutar recogidas, registrar ventas, emitir facturas PDF y consultar indicadores economicos y operativos desde una unica solucion coherente.
@@ -77,6 +90,7 @@ Desarrollar una plataforma web multiusuario que permita a una empresa de recogid
 - incorporar tareas asincronas con Celery
 - generar facturas PDF desde plantillas HTML
 - dotar al sistema de testing automatizado por modulos
+- poner en valor documentalmente las integraciones y la complejidad tecnica del sistema
 
 #### Objetivos academicos
 
@@ -117,7 +131,7 @@ GreenPath cubre el ciclo funcional principal del negocio:
 6. medicion y cierre economico de recogidas
 7. gestion de compradores internos
 8. registro de ventas
-9. generacion de facturas PDF
+9. generacion bajo demanda de facturas PDF
 10. analitica de costes, ingresos y beneficio
 
 Esta vision es importante porque demuestra que el proyecto no es un conjunto de modulos aislados, sino un flujo completo de negocio.
@@ -140,6 +154,8 @@ El alcance actual del sistema incluye:
 - generacion bajo demanda de facturas PDF
 - configuracion fiscal y operativa por empresa
 - dashboard y estadisticas
+
+En conjunto, este alcance refleja que GreenPath ya no debe entenderse como una maqueta funcional o un simple prototipo academico, sino como una base bastante avanzada de producto para un caso de uso real.
 
 El catalogo formal de requisitos del proyecto se desarrolla en `docs/REQUISITOS.md`, mientras que esta memoria mantiene una vision de sintesis mas academica.
 
@@ -165,6 +181,8 @@ El sistema aporta valor economico porque:
 - integra compradores, ventas y facturas
 - calcula beneficio neto sobre datos mas coherentes
 
+Ademas, la introduccion de la marca `billable` en recogidas permite separar el dato operativo del impacto economico, evitando que casos internos, excepcionales o no liquidables distorsionen los indicadores del negocio.
+
 ### 4.3 Aportacion academica
 
 Desde la perspectiva del TFG, el proyecto aporta complejidad suficiente en varios frentes:
@@ -176,6 +194,8 @@ Desde la perspectiva del TFG, el proyecto aporta complejidad suficiente en vario
 - generacion documental
 - trabajo frontend y backend desacoplado
 - testing automatizado y documentacion extensa
+
+Esa complejidad no es solo acumulativa, sino transversal: la plataforma une operacion en calle, configuracion empresarial, estadistica, facturacion, APIs externas y procesos asincronos dentro de una sola arquitectura coherente.
 
 ## 5. Flujo funcional resumido
 
@@ -211,6 +231,8 @@ El sistema se apoya en una arquitectura cliente-servidor con desacoplamiento cla
 - Gmail API
 - Docker Compose
 
+La combinacion de estas piezas es una de las razones por las que el proyecto tiene entidad suficiente como TFG amplio: no solo resuelve el dominio funcional, sino que lo hace con una arquitectura moderna y con integraciones de terceros que aportan valor visible y complejidad tecnica real.
+
 ### 6.2 Decisiones arquitectonicas relevantes
 
 Durante el proyecto se han consolidado varias decisiones tecnicas y funcionales importantes:
@@ -222,9 +244,12 @@ Durante el proyecto se han consolidado varias decisiones tecnicas y funcionales 
 - calculo de frecuencia y elegibilidad semanal dentro de la empresa de la ruta
 - uso de una sola fecha operativa en ventas: `invoice_date`
 - numero de factura manual y unico por empresa
+- ayuda visual con el numero de la ultima factura al crear una nueva venta
+- reutilizacion de conceptos de facturas anteriores desde el formulario de ventas, sin sobrescribir la unidad
 - precio por litro configurable a nivel de empresa
 - bandera `facturable` en recogidas para impactar o no en estadisticas
 - uso de Celery para no bloquear procesos operativos
+- generacion de factura solo en el momento de descarga para evitar almacenamiento innecesario y garantizar que el PDF refleje los datos vigentes
 
 La arquitectura detallada del sistema se desarrolla en `docs/ARQUITECTURA_TECNICA.md`.
 
@@ -234,9 +259,81 @@ GreenPath utiliza varias integraciones relevantes:
 
 - Google Maps Platform para geocodificacion y optimizacion de rutas
 - Gmail API para notificaciones y correos de acceso
+- Leaflet / React Leaflet para la dimension cartografica del frontend
 - WeasyPrint para generacion de facturas PDF
 
+Estas integraciones no son accesorios menores. Forman parte del valor defendible del proyecto porque obligan a resolver configuracion sensible, degradacion controlada ante fallos, dependencias del entorno y alineacion funcional entre frontend, backend y tareas asincronas.
+
 La explicacion detallada de estas integraciones, su configuracion, su criticidad y su comportamiento ante fallos se recoge en `docs/INTEGRACIONES_Y_APIS_EXTERNAS.md`.
+
+### 6.4 Valor concreto de las librerias y APIs consumidas
+
+Desde una perspectiva academica, una de las fortalezas del proyecto es que la complejidad no se apoya solo en el numero de modulos propios, sino tambien en la integracion coherente de varias tecnologias de terceros con impacto real en el dominio.
+
+#### Google Maps Platform
+
+Google Maps aporta valor en tres planos distintos:
+
+- geocodificacion de clientes a partir de su direccion
+- optimizacion del orden de paradas durante la planificacion semanal
+- apertura de navegacion externa desde la vista operativa de la ruta
+
+Esto es importante porque conecta directamente la informacion almacenada en la plataforma con una operacion fisica real en calle. No se trata de una integracion ornamental: afecta a la elegibilidad geografica, a la calidad de la planificacion y a la experiencia del trabajador durante la jornada.
+
+#### Leaflet y React Leaflet
+
+Leaflet y React Leaflet permiten llevar la capa cartografica al propio frontend del producto.
+
+Su valor esta en que:
+
+- hacen visible el territorio real del negocio
+- permiten representar zonas, hubs y clientes
+- mejoran la comprension de las rutas y de su cobertura
+- refuerzan el caracter logistico del sistema
+
+Gracias a ello, GreenPath no depende unicamente de listados o tablas, sino que incorpora una interfaz espacial coherente con el problema que resuelve.
+
+#### Gmail API
+
+Gmail API se utiliza para dotar al sistema de un canal formal de comunicacion saliente.
+
+Su valor tecnico y funcional aparece en:
+
+- envio de credenciales de acceso
+- notificaciones asociadas a solicitudes de recogida
+- centralizacion del correo saliente sin depender de mecanismos locales improvisados
+
+Ademas, esta integracion introduce una dificultad relevante en gestion de credenciales OAuth, expiracion de tokens, configuracion segura del entorno y tratamiento de errores externos.
+
+#### Celery y Redis
+
+Celery y Redis son especialmente importantes porque elevan el sistema desde una aplicacion web puramente sincrona a una arquitectura con procesos diferidos y tareas asincronas reales.
+
+Su uso actual permite:
+
+- programar autoestimaciones de solicitudes expiradas
+- desacoplar notificaciones del tiempo de respuesta de la API
+- mantener una experiencia de usuario mas fluida
+- preparar el sistema para automatizaciones futuras
+
+Desde la perspectiva del TFG, esto tiene mucho valor porque demuestra conocimientos de arquitectura distribuida ligera, colas de trabajo y separacion entre flujo interactivo y ejecucion diferida.
+
+#### WeasyPrint
+
+WeasyPrint aporta la dimension documental del negocio.
+
+Su uso no solo permite generar facturas PDF, sino que obliga a resolver:
+
+- maquetacion de documentos empresariales
+- formateo monetario y fiscal
+- composicion dinamica de datos
+- dependencias del sistema necesarias para el renderizado
+
+Ademas, la decision actual de generar la factura bajo demanda y no almacenarla añade una justificacion arquitectonica adicional: el documento final siempre refleja el estado vigente de la venta y de la configuracion fiscal de la empresa.
+
+#### Conclusion de valor tecnologico
+
+En conjunto, estas librerias y APIs hacen que GreenPath se situe claramente por encima de una aplicacion de gestion basica. El proyecto combina desarrollo full-stack, geografia, integraciones reales, procesos asincronos y generacion documental, lo que refuerza de forma clara su entidad academica y profesional.
 
 ## 7. Estado actual de calidad y validacion
 
@@ -247,8 +344,9 @@ A fecha de esta revision, el sistema cubre el flujo principal del negocio y disp
 - documentacion unificada en la carpeta `docs`
 - soporte para operacion diaria y bloque economico
 - testing automatizado modular
+- una narrativa documental suficiente para explicar el sistema desde negocio, arquitectura, testing e integraciones
 
-### 7.1 Snapshot de testing actual a fecha 2026-04-14
+### 7.1 Snapshot de testing actual a fecha 2026-04-30
 
 - backend: 31 tests automatizados
 - frontend: 17 tests automatizados
@@ -279,9 +377,9 @@ Como evolucion posterior al alcance actual, el proyecto podria crecer en:
 - integracion contable externa
 - optimizacion avanzada de rutas con mas restricciones
 - exportaciones financieras y auditoria
-- portal especifico para compradores
 - analitica mas avanzada
 - testing end-to-end mas profundo
+- persistencia avanzada de retornos reales al hub o subviajes si el negocio lo requiriese
 
 ## 10. Conclusion
 

@@ -1,6 +1,6 @@
 # Route Flow - Flujo de Rutas GreenPath
 
-Fecha de revision: 2026-04-26
+Fecha de revision: 2026-04-30
 
 ## 1. Objetivo del documento
 
@@ -12,6 +12,18 @@ Su objetivo es servir como referencia para:
 - localizar sus puntos de entrada en backend y frontend
 - explicar que automatismos existen y bajo que condiciones
 - documentar reglas de negocio y decisiones actuales del sistema
+
+Tambien cumple una funcion especialmente importante dentro del TFG: explicar por que el modulo de rutas es el nucleo de complejidad funcional de GreenPath. En este flujo confluyen:
+
+- el aislamiento multiempresa del dominio
+- la geografia operativa basada en zonas y coordenadas reales
+- la planificacion semanal con reglas de frecuencia
+- la capacidad diaria de vehiculo
+- la integracion con Google Maps
+- la programacion asincrona con Celery y Redis
+- la experiencia de uso movil para operativa de calle
+
+Por tanto, este documento no debe leerse solo como una descripcion de endpoints, sino como la explicacion del motor logistico que diferencia GreenPath de una aplicacion administrativa convencional.
 
 ## 2. Stack tecnologico implicado en el flujo de rutas
 
@@ -38,6 +50,18 @@ El flujo de rutas no depende de una sola tecnologia, sino de varias piezas coord
 - Google Maps Directions API para optimizacion del orden de paradas
 - Google Maps / navegador del dispositivo para abrir navegacion externa
 - Gmail API para correos asociados a `CollectionRequest` cuando procede
+
+## 2.1 Por que este stack aporta valor real al proyecto
+
+La complejidad del modulo de rutas no proviene solo del numero de tablas o endpoints, sino de la necesidad de coordinar tecnologias con responsabilidades muy distintas:
+
+- `PostGIS` permite trabajar con geometria real y decidir que clientes pertenecen a una zona operativa
+- `Google Maps Directions API` introduce optimizacion de orden y calculo de recorridos apoyados en un servicio externo
+- `Leaflet / React Leaflet` trasladan esa planificacion a una interfaz visual comprensible, especialmente importante en movilidad
+- `Celery` y `Redis` desacoplan del flujo sincrono tareas como autoestimaciones o notificaciones para no bloquear la operacion principal
+- `Gmail API` aporta comunicacion automatizada con el cliente en torno a `CollectionRequest`
+
+Esta combinacion es una de las razones por las que GreenPath se situa por encima de un CRUD academico tipico: el sistema tiene que orquestar reglas de negocio, datos geograficos, servicios de terceros y UX operativa en tiempo real.
 
 ## 3. Alcance del modulo de rutas
 
@@ -176,6 +200,8 @@ Criterio operativo actual:
 - ese limite se aplica junto con `daily_capacity_liters`
 - si una jornada alcanza el tope de clientes aunque todavia quede capacidad, no se siguen insertando mas paradas en ese dia
 
+Este criterio responde a una decision de negocio deliberada: no basta con llenar la jornada por litros; tambien hay que evitar dias artificialmente saturados en numero de paradas, porque eso penaliza tiempos de desplazamiento, carga cognitiva del conductor y calidad del servicio.
+
 ## 9. Seleccion de clientes para cada jornada
 
 La generacion de paradas se hace en `generate_route_day_clients(...)`.
@@ -206,6 +232,8 @@ La decision de si un cliente esta "due" se apoya en:
 - ambas calculadas dentro de la misma empresa de la ruta
 
 Esto evita mezclar historico si un cliente pertenece a mas de una empresa.
+
+En terminos funcionales, esta regla es clave para el enfoque multiempresa del TFG: un mismo cliente puede existir vinculado a varias empresas, pero la generacion de una semana debe respetar exclusivamente el contexto operativo e historico de la empresa que esta planificando la ruta.
 
 ## 11. Optimizacion con Google Directions
 
@@ -248,6 +276,8 @@ hub -> paradas del segmento -> hub
 
 No es todavia un VRP completo. No decide automaticamente reparto entre varios trabajadores, ventanas horarias, turnos, tiempo de servicio ni reasignacion de clientes omitidos por capacidad.
 
+Eso no reduce el valor del modulo; al contrario, refleja una decision tecnica sensata para un TFG con foco realista. Se implementa una optimizacion util y defendible para el negocio actual, sin sobredisenar un solucionador de rutas global cuando el modelo operativo vigente trabaja con una ruta y un trabajador asignado.
+
 ## 12. Capacidad, litros previstos y tramos operativos
 
 La version actual del sistema incorpora una `v1` de control operativo por capacidad diaria sin introducir nuevas entidades persistentes para subviajes o descargas intermedias.
@@ -255,6 +285,13 @@ La version actual del sistema incorpora una `v1` de control operativo por capaci
 ### Principio funcional
 
 Una jornada (`RouteDay`) sigue siendo una unica unidad operativa, pero internamente puede dividirse en varios `tramos operativos` si la suma de litros previstos obliga a volver al hub antes de continuar.
+
+Es importante entender que `tramo` no se trata aqui como una entidad de negocio visible para el usuario final, sino como una abstraccion tecnica interna que permite:
+
+- mantener una sola jornada diaria coherente en base de datos
+- calcular cuando la capacidad obliga a volver a nave
+- sincronizar optimizacion, mapa y navegacion externa
+- simplificar la interfaz para que el trabajador vea decisiones operativas y no estructuras internas complejas
 
 ### Datos usados para calcular la carga prevista de una parada
 
@@ -290,6 +327,8 @@ Esta `v1`:
 - expone esa informacion al frontend
 - no crea todavia entidades persistentes del tipo `RouteTrip`, `Unload` o `ReturnToHub`
 - no registra eventos reales de descarga en base de datos
+
+Esta aproximacion tiene mucho valor para el TFG porque demuestra capacidad de modelado incremental: se resuelve un problema logistico real con una capa intermedia de plan operativo, sin introducir prematuramente nuevas tablas o un dominio excesivamente rigido.
 
 ## 13. CollectionRequest y automatizacion asociada
 
@@ -369,6 +408,8 @@ La pantalla `RouteExecution` utiliza este bloque para:
 - construir el recorrido del dia en mapa
 - exportar una navegacion coherente con retornos al hub cuando la capacidad lo exige
 - simplificar la UX operativa sin exponer al usuario tarjetas tecnicas de `tramo`, `segmento` o metrica interna innecesaria
+
+La idea de producto actual es clara: la complejidad de segmentacion debe existir en backend y en la logica de apoyo, pero la experiencia de usuario debe expresarla como decisiones simples del tipo "siguiente parada", "debes volver a nave" o "ya puedes continuar".
 
 ## 16. Reglas de `start`, `complete` y `finish`
 
@@ -476,6 +517,8 @@ Responsabilidad:
 - registrar recogida
 - fijar por defecto la semana operativa actual de la ruta
 
+La separacion entre `RouteDetail` y `RouteExecution` es una decision importante del proyecto: evita sobrecargar una sola pantalla con planificacion, analitica, tabla de dias, mapa y operacion de calle. De este modo, la parte administrativa y la parte operativa conviven, pero sin competir visualmente entre si.
+
 ### Componentes clave
 
 - `GenerateWeekDialog`
@@ -528,7 +571,20 @@ La vista `operational-overview` admite `week_start_date=YYYY-MM-DD` para cargar 
 - Google se consulta durante la generacion, por lo que conviene vigilar latencia y fallos externos
 - la navegacion externa solo incluye paradas con ubicacion
 
-## 23. Resumen ejecutivo del flujo
+## 23. Valor tecnico del modulo dentro del TFG
+
+El flujo de rutas es probablemente el mejor ejemplo de la complejidad real de GreenPath, porque obliga a integrar:
+
+- reglas de negocio sobre frecuencia de cliente y estado de solicitudes
+- logica relacional entre `Route`, `RouteDay`, `RouteDayClient`, `CollectionRequest` y `Collection`
+- datos geoespaciales soportados por PostGIS
+- consumo de Google Maps para optimizar y exportar recorridos
+- procesos asincronos en Celery con soporte de Redis
+- una interfaz responsive y util en movilidad
+
+Esto permite defender academicamente que el proyecto no se limita a almacenar informacion, sino que implementa un flujo logistico real con dependencias tecnicas heterogeneas y decisiones de arquitectura justificadas.
+
+## 24. Resumen ejecutivo del flujo
 
 - el owner configura ruta, zonas y capacidades
 - el sistema genera jornadas y paradas
@@ -539,7 +595,7 @@ La vista `operational-overview` admite `week_start_date=YYYY-MM-DD` para cargar 
 - cada parada puede terminar en recogida real
 - la recogida medida y facturable impacta en estadisticas economicas
 
-## 24. Observabilidad y control operativo del flujo
+## 25. Observabilidad y control operativo del flujo
 
 Para diagnosticar incidencias en rutas conviene revisar:
 
@@ -555,7 +611,7 @@ Senales utiles de comprobacion:
 - existencia de solicitudes programadas
 - estado final correcto de la jornada tras `finish`
 
-## 25. Checklist de validacion manual del modulo
+## 26. Checklist de validacion manual del modulo
 
 Una validacion funcional minima del flujo de rutas deberia cubrir:
 
@@ -569,7 +625,7 @@ Una validacion funcional minima del flujo de rutas deberia cubrir:
 - finalizar con pendientes obligando a decidir
 - revisar que una parada cancelada no bloquee un cierre completo si ya no quedan pendientes reales
 
-## 26. Evolucion prevista del modulo
+## 27. Evolucion prevista del modulo
 
 Las lineas de evolucion mas razonables del modulo de rutas son:
 
@@ -583,7 +639,7 @@ Las lineas de evolucion mas razonables del modulo de rutas son:
 - persistir subviajes, retornos a hub o descargas reales si la operativa necesita trazabilidad avanzada
 - pruebas end-to-end centradas en operacion movil y navegacion dividida
 
-## 27. Referencias relacionadas
+## 28. Referencias relacionadas
 
 - `docs/FUNCIONAL.md`
 - `docs/API.md`

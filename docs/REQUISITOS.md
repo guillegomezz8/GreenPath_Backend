@@ -1,6 +1,6 @@
 # Catalogo de Requisitos GreenPath
 
-Fecha de revision: 2026-04-24
+Fecha de revision: 2026-04-30
 
 ## 1. Objetivo del documento
 
@@ -22,6 +22,8 @@ Aqui se recopilan requisitos de varios tipos:
 - requisitos de integracion
 - requisitos de seguridad y trazabilidad
 - requisitos de despliegue, testing y documentacion
+
+El catalogo debe leerse teniendo en cuenta que GreenPath es una plataforma multiempresa con una operativa real compleja: combina reglas logisticas, geografia, procesos asincronos, facturacion bajo demanda, configuracion fiscal editable y separacion estricta entre operacion en calle, cierre economico y reporting.
 
 ## 2. Criterio de clasificacion
 
@@ -198,6 +200,9 @@ Para facilitar la lectura, los requisitos se clasifican con los siguientes prefi
 | RF-058 | El sistema debe recalcular subtotal, impuesto y total de la venta. |
 | RF-059 | El sistema debe generar un PDF de factura para cada venta. |
 | RF-060 | El sistema debe permitir descargar la factura PDF generandola bajo demanda con los datos vigentes. |
+| RF-060A | El formulario de venta debe mostrar como ayuda el numero de la ultima factura registrada sin autocompletar el campo. |
+| RF-060B | El formulario de venta debe usar `kg` como unidad por defecto. |
+| RF-060C | El formulario de alta y edicion de venta debe permitir reusar conceptos anteriores sin modificar la unidad seleccionada. |
 
 ### 6.10 Configuracion y estadisticas
 
@@ -250,7 +255,7 @@ Para facilitar la lectura, los requisitos se clasifican con los siguientes prefi
 | --- | --- |
 | RF-086 | El PDF de factura debe incluir los datos fiscales de emisor y comprador. |
 | RF-087 | El PDF de factura debe incluir numero de factura, fecha, concepto, base, IVA y total. |
-| RF-088 | El sistema debe permitir regenerar el PDF sin recrear manualmente la venta. |
+| RF-088 | El sistema debe permitir volver a descargar la factura generandola de nuevo con los datos vigentes sin recrear manualmente la venta. |
 | RF-089 | El nombre del fichero PDF debe ser consistente con el numero de factura. |
 | RF-090 | El sistema debe permitir adaptar el contenido documental mediante configuracion editable de empresa. |
 
@@ -281,10 +286,10 @@ Para facilitar la lectura, los requisitos se clasifican con los siguientes prefi
 | Codigo | Requisito |
 | --- | --- |
 | RF-103 | El sistema debe permitir descargar documentos PDF asociados a ventas. |
-| RF-104 | El sistema debe permitir regenerar documentos cuando cambie la informacion de la venta. |
+| RF-104 | El sistema debe reconstruir el documento PDF con los datos vigentes cada vez que se descargue. |
 | RF-105 | Los documentos generados deben mantener un formato reutilizable y legible. |
 | RF-106 | El sistema debe poder mostrar o enlazar informacion documental desde el detalle de la entidad correspondiente. |
-| RF-107 | Los ficheros documentales deben almacenarse con una nomenclatura consistente. |
+| RF-107 | El nombre de descarga del documento debe seguir una nomenclatura consistente. |
 | RF-108 | La documentacion generada debe usar datos configurables de empresa y no valores fijos. |
 
 ### 6.18 Operacion economica avanzada

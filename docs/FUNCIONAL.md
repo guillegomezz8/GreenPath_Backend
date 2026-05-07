@@ -1,6 +1,6 @@
 # Documento Funcional GreenPath
 
-Fecha de revision: 2026-04-24
+Fecha de revision: 2026-04-30
 Version funcional: 1.4
 
 ## 1. Proposito del documento
@@ -36,6 +36,8 @@ El sistema cubre el ciclo funcional principal del negocio:
 
 Por tanto, GreenPath no se limita a almacenar recogidas: articula una cadena completa de planificacion, ejecucion, trazabilidad y analitica economica.
 
+La plataforma debe interpretarse dentro de un contexto multiempresa y de digitalizacion real de negocio. No esta pensada como una demo aislada para una sola entidad, sino como una solucion reusable donde cada empresa trabaja con su propio conjunto de clientes, trabajadores, rutas, recogidas, compradores, ventas y configuracion fiscal. Este enfoque condiciona buena parte de las reglas funcionales del sistema: aislamiento de datos, permisos por rol, configuracion editable y separacion entre operacion diaria y supervision global del negocio.
+
 ## 3. Contexto y problema de negocio
 
 El negocio al que da soporte GreenPath presenta varios retos funcionales simultaneos:
@@ -57,6 +59,8 @@ GreenPath reduce esa fragmentacion mediante una unica plataforma capaz de conect
 - configuracion fiscal
 - ventas y facturacion
 - estadisticas de negocio
+
+Tambien es importante destacar que el sistema no se apoya unicamente en formularios y almacenamiento persistente. Una parte importante de su valor funcional nace de varias integraciones y librerias consumidas que permiten trabajar con mapas, geocodificacion, optimizacion de rutas, tareas asincronas, correos y generacion documental en PDF. Estas piezas anaden complejidad real al producto y explican por que GreenPath debe entenderse como una plataforma de gestion integral y no como una simple aplicacion administrativa.
 
 ## 4. Objetivos funcionales del sistema
 
@@ -91,7 +95,7 @@ Los objetivos funcionales principales de GreenPath son:
 
 - datos fiscales de empresa editables sin tocar codigo
 - historico funcional por cliente, trabajador y recogida
-- documentacion de venta descargable y regenerable
+- documentacion de venta descargable bajo demanda
 - base mas solida para auditar, defender o evolucionar el sistema
 
 ## 6. Alcance funcional actual
@@ -124,7 +128,6 @@ Aunque la plataforma cubre una parte amplia del proceso, hay elementos que hoy n
 - contabilidad oficial o integracion contable externa
 - conciliacion bancaria automatica
 - firma electronica de facturas
-- portal de compradores
 - reparto multi-vehiculo automatico para una misma ruta
 - persistencia avanzada de subviajes, descargas y retornos reales al hub durante una jornada
 - simulacion avanzada de optimizacion con restricciones complejas
@@ -243,7 +246,7 @@ Sus responsabilidades principales son:
 - editar recogidas y mediciones
 - marcar recogidas como facturables o no facturables
 - gestionar compradores
-- registrar ventas y regenerar facturas
+- registrar ventas y descargar facturas actualizadas
 - configurar datos fiscales de la empresa
 - consultar estadisticas globales
 
@@ -303,7 +306,7 @@ Puede ejecutar acciones sensibles:
 - editar zonas por dia
 - editar recogidas y ventas
 - borrar registros permitidos
-- regenerar facturas PDF
+- descargar facturas PDF
 - modificar configuracion fiscal y operativa
 
 ### 11.2 Worker
@@ -702,6 +705,8 @@ Registrar operaciones de venta y reflejar los ingresos del negocio.
 - numero de factura manual
 - fecha de factura
 - descripcion, cantidad, unidad y precio unitario
+- unidad inicial por defecto en `kg`
+- reutilizacion de conceptos de facturas anteriores desde alta y edicion
 - calculo automatico de subtotal, IVA y total
 - descarga de PDF bajo demanda
 
@@ -710,8 +715,10 @@ Registrar operaciones de venta y reflejar los ingresos del negocio.
 - acceso solo para owner
 - `invoice_number` es manual y obligatorio
 - `invoice_number` debe ser unico por empresa
+- el formulario muestra como placeholder el numero de la ultima factura para orientar la numeracion
 - `invoice_date` es la unica fecha visible y funcional del modulo
 - `sale_date` se sincroniza internamente con `invoice_date` para mantener compatibilidad del modelo
+- reusar un concepto solo copia la descripcion comercial; no sobrescribe unidad, cantidad ni precio
 - el PDF siempre representa el estado actual de la venta y la configuracion fiscal de la empresa
 
 ### 13.12 Modulo de facturacion PDF
@@ -1111,7 +1118,7 @@ Los indicadores mas relevantes que hoy soporta GreenPath son:
 - respuesta del cliente fuera de plazo
 - recogida editada con datos de medicion inconsistentes
 - venta con numero de factura duplicado en la misma empresa
-- PDF no regenerable por falta de dependencias o datos invalidos
+- PDF no descargable por falta de dependencias de WeasyPrint o datos documentales invalidos
 - cliente sin localizacion valida para planificacion geografica
 
 ## 24. Glosario
@@ -1126,6 +1133,7 @@ Los indicadores mas relevantes que hoy soporta GreenPath son:
 - Buyer: comprador interno para modulo de ventas
 - Sale: operacion de venta registrada en sistema
 - Invoice PDF: factura de venta generada para una `Sale`
+- Facturacion bajo demanda: generacion del PDF de venta en el momento de descarga, usando los datos vigentes sin persistir el binario como documento operativo
 
 ## 25. Requisitos funcionales resumidos
 
@@ -1163,7 +1171,7 @@ Los indicadores mas relevantes que hoy soporta GreenPath son:
 
 - el owner debe poder registrar compradores internos
 - el owner debe poder registrar ventas con numero de factura manual
-- cada venta debe generar un PDF descargable y regenerable
+- cada venta debe ofrecer un PDF descargable generado bajo demanda
 - la empresa debe poder editar sus datos fiscales y bancarios
 - las estadisticas deben distinguir con claridad entre costes, ingresos y beneficio
 
@@ -1264,7 +1272,7 @@ Puede ejecutar acciones criticas como:
 - editar configuracion fiscal
 - marcar recogidas facturables
 - medir y confirmar recogidas
-- generar y regenerar facturas PDF
+- descargar facturas PDF con datos fiscales vigentes
 
 ### 28.2 Worker
 

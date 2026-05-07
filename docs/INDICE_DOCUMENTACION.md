@@ -1,16 +1,25 @@
 # Indice de Documentacion GreenPath
 
-Fecha de revision: 2026-04-14
+Fecha de revision: 2026-04-30
 
 Este documento sirve como mapa de lectura de la documentacion del proyecto.
-Actualmente la documentacion central del sistema se mantiene de forma unificada en la carpeta `docs/` del backend y cubre negocio, requisitos, arquitectura, API, frontend, testing, integraciones, planificacion, despliegue, manual de usuario, bibliografia y modelo de datos.
+Actualmente la documentacion central del sistema se mantiene de forma unificada en la carpeta `docs/` del backend y cubre negocio, requisitos, arquitectura, API, frontend, testing, integraciones, planificacion, despliegue, manual de usuario, bibliografia, modelo de datos y analisis profundo del motor de rutas.
 
-En la revision actual el paquete documental suma `17` documentos principales, con un reparto deliberado entre:
+En la revision actual el paquete documental suma `18` documentos principales, con un reparto deliberado entre:
 
 - documentacion funcional y de negocio
 - documentacion tecnica y de integracion
 - documentacion academica y de planificacion
 - documentacion de uso, testing y soporte
+
+La idea de esta estructura no es fragmentar sin sentido, sino separar capas de explicacion para que cada documento tenga un foco claro:
+
+- que problema resuelve GreenPath
+- como se comporta funcionalmente
+- como se ha implementado
+- que librerias y APIs externas consume
+- como se valida y despliega
+- como se puede defender academicamente como TFG
 
 ## 1. Por donde empezar
 
@@ -33,6 +42,7 @@ Si vienes nuevo al proyecto, el orden recomendado es:
 15. `docs/DESPLIEGUE_Y_OPERACION.md`
 16. `docs/BIBLIOGRAFIA_Y_FUENTES.md`
 17. `docs/UML_BD.md`
+18. `docs/ANALISIS_GENERACION_OPTIMIZACION_RUTAS.md`
 
 ## 2. Descripcion de cada documento
 
@@ -42,7 +52,10 @@ Resumen ejecutivo del proyecto:
 
 - que es GreenPath
 - que cubre hoy
+- contexto multiempresa
+- valor operativo, logistico y economico
 - stack
+- librerias y APIs consumidas
 - mapa de documentacion
 - puesta en marcha
 - estado actual de testing automatizado
@@ -52,12 +65,15 @@ Resumen ejecutivo del proyecto:
 Documento funcional principal.
 Es la referencia mas importante para entender:
 
+- contexto de negocio real
 - vision del producto
 - roles
 - modulos
 - procesos de negocio
 - reglas de negocio
 - alcance actual
+- separacion entre operacion y economia
+- por que el sistema va mas alla de un CRUD tradicional
 
 ### `docs/ARQUITECTURA_TECNICA.md`
 
@@ -68,6 +84,7 @@ Explica:
 - flujo tecnico de rutas, recogidas y ventas
 - integraciones externas
 - seguridad y observabilidad
+- papel de Celery, Redis, Google Maps, Gmail API y WeasyPrint
 
 ### `docs/API.md`
 
@@ -108,6 +125,7 @@ Documento especifico de integraciones.
 Explica:
 
 - APIs externas utilizadas
+- librerias y servicios de terceros con impacto funcional real
 - para que se usa cada una
 - variables de entorno implicadas
 - riesgos y comportamiento ante fallos
@@ -206,6 +224,7 @@ Es util para:
 - defensa del proyecto
 - explicar el valor del sistema mas alla de la API y el codigo
 - enlazar de forma coherente la parte funcional, tecnica y de planificacion
+- poner en valor la complejidad derivada de las integraciones consumidas y del enfoque multiempresa
 
 ### `docs/UML_BD.md`
 
@@ -216,6 +235,17 @@ Es util para:
 - revisar cardinalidades
 - apoyar explicaciones tecnicas y academicas
 - visualizar el modelo persistente del sistema
+
+### `docs/ANALISIS_GENERACION_OPTIMIZACION_RUTAS.md`
+
+Analisis tecnico profundo del modulo de rutas.
+Es util para:
+
+- justificar decisiones concretas de generacion semanal
+- explicar seleccion de clientes por frecuencia, zona y planificacion previa
+- documentar optimizacion con Google Directions
+- detallar capacidad, segmentos internos y retornos al hub
+- recoger riesgos tecnicos y posibles evoluciones del motor logistico
 
 ## 3. Recomendacion para defensa o entrega
 
@@ -235,6 +265,7 @@ Si el objetivo es presentar el proyecto de forma profesional:
 - utiliza `docs/MANUAL_USUARIO.md` como anexo de uso
 - utiliza `docs/MEMORIA_FUNCIONAL_TFG.md` como hilo academico de sintesis
 - utiliza `docs/UML_BD.md` para apoyar la explicacion del modelo de datos
+- utiliza `docs/ANALISIS_GENERACION_OPTIMIZACION_RUTAS.md` para defender con detalle la complejidad del motor logistico
 
 ## 4. Lectura segun objetivo
 
@@ -264,9 +295,10 @@ Lee en este orden:
 6. `docs/PLANIFICACION_Y_COSTES.md`
 7. `docs/TESTING.md`
 8. `docs/ROUTE_FLOW.md`
-9. `docs/CASOS_DE_USO.md`
-10. `docs/DESPLIEGUE_Y_OPERACION.md`
-11. `docs/UML_BD.md`
+9. `docs/ANALISIS_GENERACION_OPTIMIZACION_RUTAS.md`
+10. `docs/CASOS_DE_USO.md`
+11. `docs/DESPLIEGUE_Y_OPERACION.md`
+12. `docs/UML_BD.md`
 
 ### Si tu objetivo es entrar a desarrollar frontend
 
@@ -280,9 +312,10 @@ Lee en este orden:
 6. `docs/PLANIFICACION_Y_COSTES.md`
 7. `docs/TESTING.md`
 8. `docs/ROUTE_FLOW.md`
-9. `docs/MANUAL_USUARIO.md`
-10. `docs/DESPLIEGUE_Y_OPERACION.md`
-11. `docs/UML_BD.md`
+9. `docs/ANALISIS_GENERACION_OPTIMIZACION_RUTAS.md`
+10. `docs/MANUAL_USUARIO.md`
+11. `docs/DESPLIEGUE_Y_OPERACION.md`
+12. `docs/UML_BD.md`
 
 ### Si tu objetivo es preparar entrega o defensa
 
@@ -301,3 +334,4 @@ Lee en este orden:
 11. `docs/DESPLIEGUE_Y_OPERACION.md`
 12. `docs/BIBLIOGRAFIA_Y_FUENTES.md`
 13. `docs/UML_BD.md`
+14. `docs/ANALISIS_GENERACION_OPTIMIZACION_RUTAS.md`

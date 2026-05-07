@@ -1,6 +1,6 @@
 # Despliegue y Operacion GreenPath
 
-Fecha de revision: 2026-04-14
+Fecha de revision: 2026-04-30
 
 ## 1. Objetivo del documento
 
@@ -16,6 +16,8 @@ Se centra en:
 - operacion diaria
 - observabilidad y soporte
 - backup, recuperacion y continuidad
+
+La revision actual contempla el alcance completo de GreenPath: backend, frontend, PostGIS, Celery, Redis, Gmail API, Google Maps Platform, WeasyPrint, facturacion bajo demanda y datos de demostracion para defensa del TFG.
 
 ## 2. Vision general del entorno
 
@@ -118,7 +120,7 @@ Por ello, para defensa conviene disponer de:
 - una base de datos ya poblada
 - usuarios demo conocidos
 - servicios levantados antes de la presentacion
-- facturas PDF de ejemplo regeneradas y verificadas
+- ventas de ejemplo verificadas y facturas PDF descargables bajo demanda
 
 ## 5. Variables de entorno y configuracion
 
@@ -226,6 +228,8 @@ Desde la perspectiva de negocio, la operacion cotidiana se apoya en:
 - registro de ventas y descarga de facturas
 - revision de estadisticas
 
+En este punto conviene remarcar que la descarga de facturas no depende de ficheros previamente almacenados. Si los datos fiscales, comprador o venta cambian, el documento se genera con los datos vigentes.
+
 Desde la perspectiva tecnica, esto implica revisar:
 
 - estado de backend
@@ -278,7 +282,7 @@ Para una demo consistente se recomienda:
 
 - copia periodica de la base de datos PostgreSQL
 - custodia separada de los medios de backup
-- copia del directorio de media si se utilizan ficheros persistidos
+- copia del directorio de media si se utilizan ficheros persistidos para imagenes u otros adjuntos
 - copia controlada de `.env` sin exponer secretos en repositorios
 
 ## 10.2 Recuperacion
@@ -287,8 +291,10 @@ Ante una incidencia grave, la recuperacion minima deberia contemplar:
 
 1. restaurar base de datos
 2. restaurar configuracion de entorno
-3. restaurar ficheros PDF y media si aplica
+3. restaurar media persistida si aplica
 4. verificar login, API, panel y facturas
+
+Las facturas de venta no requieren restaurar binarios PDF historicos en el flujo actual, porque se reconstruyen en cada descarga a partir de `Sale`, `Buyer` y `CompanySettings`.
 
 ## 11. Riesgos operativos principales
 
@@ -297,7 +303,18 @@ Ante una incidencia grave, la recuperacion minima deberia contemplar:
 - datos geograficos incompletos que degradan la planificacion
 - base de datos vacia o sin fixtures tras un `flush`
 - diferencias entre entorno Windows host y contenedores Docker
-- PDFs no generables si faltan dependencias del sistema para WeasyPrint
+- PDFs no descargables si faltan dependencias del sistema para WeasyPrint
+
+## 11.1 Dependencias externas y degradacion
+
+Las integraciones externas aportan valor, pero tambien requieren una estrategia de degradacion:
+
+- si Google Maps no esta configurado, la generacion de rutas mantiene el orden base
+- si Gmail API falla, la tarea deja trazabilidad en logs y no bloquea la operacion principal
+- si WeasyPrint o sus dependencias del sistema fallan, la venta sigue existiendo aunque la descarga del PDF devuelva error
+- si Redis o Celery no estan disponibles, los flujos sincronos pueden funcionar, pero se pierden automatismos de autoestimacion y notificacion
+
+Esta separacion entre flujo principal y servicios auxiliares es importante para operar el sistema con estabilidad durante desarrollo, demo o defensa.
 
 ## 12. Recomendaciones para defensa del TFG
 

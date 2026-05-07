@@ -1,6 +1,6 @@
 # Guia de Pantallas Frontend GreenPath
 
-Fecha de revision: 2026-04-24
+Fecha de revision: 2026-04-30
 
 ## 1. Objetivo del documento
 
@@ -12,6 +12,8 @@ Su proposito es describir:
 - que acciones permite cada vista
 - que endpoints consume de forma principal
 - que consideraciones responsive y de UX son relevantes
+
+La version actual recoge tambien el valor de las integraciones que llegan a la interfaz: mapas con Leaflet, navegacion externa de Google, facturas PDF bajo demanda, estados derivados de tareas Celery y datos economicos calculados desde backend.
 
 Este documento sustituye a la documentacion funcional dispersa del frontend y se toma como referencia principal junto con:
 
@@ -538,7 +540,12 @@ Notas:
 
 - solo visible para owner
 - `invoice_number` manual
+- en alta, el placeholder de `invoice_number` muestra el numero de la ultima factura como referencia
 - `invoice_date` como fecha funcional unica
+- la unidad por defecto del formulario es `kg`
+- el formulario de alta y edicion permite reusar conceptos de facturas anteriores mediante modal
+- el modal `Reusar concepto` copia solo la descripcion, no modifica la unidad seleccionada
+- si hay 5 o mas conceptos reutilizables, el modal usa scroll interno para mantener comportamiento responsive
 - detalle con descarga directa de factura bajo demanda
 
 ## 16. Modulo de configuracion de empresa
@@ -663,7 +670,7 @@ Para mantener consistencia entre modulos, las pantallas del frontend deberian co
 - `loading`: skeletons, cards vacias o spinners discretos
 - `empty`: mensaje contextual y CTA clara para crear o volver
 - `error`: mensaje visible, no tecnico, con opcion de reintento
-- `success`: feedback claro tras guardar, eliminar o regenerar
+- `success`: feedback claro tras guardar, eliminar o descargar documentos
 
 Esto es especialmente importante en:
 
@@ -769,3 +776,15 @@ El frontend ya no depende solo de revision visual manual. Existe una base de tes
 - validacion responsive final en movil real
 
 No porque no sean importantes, sino porque concentran mas comportamiento visual, GIS o integracion externa y conviene cubrirlos con una mezcla de test automatizado y validacion manual guiada.
+
+## 26. Valor del frontend dentro del TFG
+
+El frontend no es una capa decorativa del backend. En GreenPath cumple un papel funcional fuerte porque traduce procesos complejos a flujos operables:
+
+- convierte la planificacion logistica en pantallas de detalle y ejecucion separadas
+- transforma datos geograficos en mapas comprensibles para owner y worker
+- adapta tablas y contadores a tarjetas y controles tocables en movil
+- protege al usuario de conceptos internos como segmentos o tramos tecnicos, mostrando solo decisiones operativas claras
+- permite que ventas, facturas, configuracion y estadisticas sean manejables desde una interfaz coherente
+
+Este enfoque es importante para la defensa del TFG porque muestra que la experiencia de usuario se ha trabajado como parte del dominio, no como una capa final añadida.

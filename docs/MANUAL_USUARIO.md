@@ -1,6 +1,6 @@
 # Manual de Usuario GreenPath
 
-Fecha de revision: 2026-04-24
+Fecha de revision: 2026-04-30
 
 ## 1. Objetivo del documento
 
@@ -183,6 +183,8 @@ Desde el modulo de ventas, el owner puede:
 - editar ventas
 - descargar factura PDF
 
+La factura se genera en el momento de la descarga con los datos actuales de la venta y de la configuracion fiscal de la empresa. No se almacena como fichero persistido.
+
 Para crear una venta, debe indicar:
 
 - comprador
@@ -193,6 +195,10 @@ Para crear una venta, debe indicar:
 - unidad
 - precio unitario
 - IVA
+
+El campo `Numero de factura` muestra como ayuda el numero de la ultima factura registrada, pero el owner lo introduce manualmente. La unidad aparece por defecto en `kg`.
+
+En creacion y edicion de ventas, el boton `Reusar concepto` abre un modal con conceptos usados en facturas anteriores. Al elegir uno, solo se copia la descripcion del producto; la unidad seleccionada no cambia. Si hay cinco o mas conceptos, el modal mantiene scroll interno para no romper la vista en movil.
 
 ### 4.12 Configuracion de empresa
 

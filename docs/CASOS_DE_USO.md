@@ -1,6 +1,6 @@
 # Casos de Uso GreenPath
 
-Fecha de revision: 2026-04-24
+Fecha de revision: 2026-04-30
 
 ## 1. Objetivo del documento
 
@@ -18,6 +18,8 @@ Cada caso de uso se expresa con:
 - flujo principal
 - flujos alternativos o excepciones
 - resultado esperado
+
+La revision actual incorpora el alcance completo del TFG: gestion multiempresa, rutas con apoyo geografico, operacion movil, recogidas facturables, ventas, compradores, facturacion PDF bajo demanda, tareas asincronas e integraciones externas.
 
 ## 2. Actores considerados
 
@@ -290,13 +292,15 @@ Cada caso de uso se expresa con:
 1. el owner accede al modulo de ventas
 2. crea una nueva venta
 3. selecciona comprador
-4. introduce numero de factura, fecha de factura, concepto, cantidad, unidad y precio
-5. el sistema recalcula subtotal, impuesto y total
-6. la venta queda disponible en listado, detalle y descarga documental
-7. el PDF se renderiza en el momento de la descarga
+4. introduce numero de factura, fecha de factura, concepto, cantidad, unidad y precio; el formulario muestra como ayuda el numero de la ultima factura y la unidad inicial aparece como `kg`
+5. si quiere reutilizar una descripcion, abre `Reusar concepto` y selecciona un concepto anterior
+6. el sistema recalcula subtotal, impuesto y total
+7. la venta queda disponible en listado, detalle y descarga documental
+8. el PDF se renderiza en el momento de la descarga
 
 **Flujos alternativos:**
 
+- en edicion, el owner puede abrir `Reusar concepto`; la seleccion solo sustituye la descripcion, no la unidad
 - si el numero de factura ya existe en la empresa, el sistema rechaza la operacion
 - si el PDF falla por problema de entorno, la descarga devuelve error y la venta sigue existiendo
 
@@ -598,7 +602,7 @@ Cada caso de uso se expresa con:
 
 **Actor principal:** Sistema
 
-**Objetivo:** producir el documento PDF asociado a una venta.
+**Objetivo:** producir al instante el documento PDF asociado a una venta cuando el owner lo descarga.
 
 **Precondiciones:**
 
@@ -610,11 +614,33 @@ Cada caso de uso se expresa con:
 1. el sistema construye el contexto documental
 2. renderiza la plantilla HTML
 3. genera el PDF con WeasyPrint
-4. almacena la referencia documental
+4. devuelve el binario al navegador sin almacenar el documento como fichero operativo persistente
 
 **Resultado esperado:**
 
-- la venta queda vinculada a su factura PDF
+- el owner descarga una factura PDF construida con los datos vigentes de la venta, comprador y configuracion fiscal de empresa
+
+### CU-022. Recalcular documento tras cambios de datos
+
+**Actor principal:** Sistema
+
+**Objetivo:** garantizar que la factura descargada refleja siempre la informacion actual.
+
+**Precondiciones:**
+
+- existe una venta registrada
+- el owner ha modificado datos de venta, comprador o configuracion fiscal
+
+**Flujo principal:**
+
+1. el owner solicita de nuevo la descarga de factura
+2. el backend consulta los datos actuales
+3. WeasyPrint vuelve a renderizar el PDF con ese contexto
+4. el sistema entrega el documento actualizado
+
+**Resultado esperado:**
+
+- no hace falta endpoint de regeneracion ni limpiar ficheros antiguos, porque la factura se reconstruye bajo demanda
 
 ## 7. Observaciones finales
 
@@ -624,6 +650,8 @@ Estos casos de uso no sustituyen a la documentacion de requisitos ni a la docume
 - onboarding funcional
 - validacion manual de flujos
 - preparacion de anexos de memoria
+
+Vistos en conjunto, los casos de uso muestran que GreenPath coordina varios tipos de complejidad: reglas de negocio, estados operativos, procesos asincronos, geolocalizacion, documentos PDF y permisos por rol. Esa combinacion es una parte importante del valor defendible del TFG.
 
 Tambien conviene leer este documento junto con:
 

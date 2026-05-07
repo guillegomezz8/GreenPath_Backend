@@ -1,6 +1,6 @@
 # API GreenPath (Backend Django)
 
-Fecha de revision: 2026-04-24
+Fecha de revision: 2026-04-30
 
 ## 1. Objetivo de este documento
 
@@ -19,6 +19,17 @@ El documento se centra en:
 - payloads esperados
 - convenciones de respuesta
 - reglas de negocio visibles desde la API
+
+Aunque se trata de un documento tecnico, conviene recordar que la API de GreenPath no es solo un canal de CRUD. Es una pieza estructural del TFG porque concentra una parte importante de la logica funcional del sistema:
+
+- aislamiento por empresa
+- permisos por rol
+- validacion de reglas de negocio
+- calculo economico sensible
+- acciones operativas complejas como `generate-week`, ejecucion diaria o cierre de recogidas
+- exposicion de datos enriquecidos al frontend
+
+Desde la perspectiva academica, esto aporta valor porque demuestra una separacion clara entre capa de presentacion y capa de negocio, y porque la API actua como contrato real entre modulos.
 
 Para contexto de producto y negocio conviene complementar esta lectura con:
 
@@ -51,6 +62,44 @@ Notas:
 - Algunos permisos se refuerzan en acciones custom, incluso si el `get_queryset` ya reduce el alcance.
 - El bloque economico (`buyers`, `sales`, configuracion fiscal) esta reservado a `owner`.
 
+## 3.1 Valor arquitectonico de la API propia
+
+La API tiene varias funciones de alto valor dentro del sistema:
+
+- centraliza la verdad funcional del negocio
+- evita que el frontend pueda imponer calculos sensibles
+- mantiene consistencia entre experiencia web, tareas asincronas y persistencia
+- permite documentar y testear el comportamiento del producto de forma verificable
+
+Esta aproximacion es especialmente importante en GreenPath porque la aplicacion mezcla:
+
+- rutas y geografia
+- solicitudes y recogidas
+- configuracion fiscal
+- ventas y documentos PDF
+- acciones asincronas
+
+Una logica tan variada no deberia repartirse de forma arbitraria entre frontend y backend. Por eso, la API de GreenPath no es un accesorio de transporte de datos, sino una capa de aplicacion con peso propio.
+
+## 3.2 Relacion entre API e integraciones del proyecto
+
+La API es tambien el punto donde se materializa gran parte del valor de las integraciones consumidas por GreenPath. No todas aparecen como endpoints externos dedicados, pero si atraviesan el comportamiento funcional de varias acciones:
+
+- la creacion y edicion de clientes puede disparar geocodificacion basada en Google Maps
+- `generate-week` puede usar Google Directions para ordenar paradas
+- la ejecucion de rutas consume datos compatibles con navegacion externa y mapas de Leaflet
+- la creacion de solicitudes de recogida puede programar tareas diferidas en Celery
+- la notificacion al cliente y el correo de acceso utilizan Gmail API
+- la descarga de facturas de venta activa el renderizado PDF con WeasyPrint
+
+Desde el punto de vista del contrato API, esto significa que algunos endpoints no solo crean o actualizan modelos, sino que orquestan procesos mas amplios:
+
+- persistencia
+- validacion
+- enriquecimiento de respuesta
+- coordinacion asincrona
+- integracion documental
+
 ## 4. Convenciones de respuesta
 
 Codigos tipicos:
@@ -74,6 +123,24 @@ Convenciones practicas:
 - Algunos serializers exponen campos enriquecidos para frontend como `*_label`, `*_name` o datos agregados.
 - Cuando existe logica economica, backend recalcula los importes relevantes y no se fia del frontend como fuente final de verdad.
 - Las respuestas de acciones custom suelen incluir `message` y, cuando aplica, el recurso o resumen afectado.
+- En modulos con complejidad operativa, la API devuelve contexto enriquecido para reducir logica de negocio en cliente.
+
+## 4.1 Enriquecimiento de respuestas y por que importa
+
+La API no devuelve unicamente campos brutos de base de datos. En muchos endpoints se incorporan:
+
+- etiquetas legibles para enums
+- nombres de entidades relacionadas
+- agregados economicos
+- campos calculados de apoyo a la interfaz
+- bloques operativos como `operational_plan`
+
+Esto tiene varias ventajas:
+
+- simplifica el frontend
+- reduce duplicacion de reglas
+- mantiene coherencia entre listados, detalles y estadisticas
+- facilita testing y depuracion del sistema
 
 ## 5. Autenticacion
 
@@ -525,7 +592,7 @@ Reglas:
 - `invoice_date` es la unica fecha visible y funcional del modulo.
 - internamente `sale_date` se sincroniza con `invoice_date` para mantener compatibilidad del modelo.
 - `subtotal`, `tax_amount` y `total` se recalculan en backend.
-- el PDF no se almacena: se genera bajo demanda cuando se descarga o se valida.
+- el PDF no se almacena: se genera bajo demanda cuando se descarga.
 
 #### `GET /sales/{id}/invoice/download/`
 

@@ -1,6 +1,6 @@
 # Analisis profundo de generacion y optimizacion de rutas
 
-Fecha de revision: 2026-04-26
+Fecha de revision: 2026-04-30
 
 ## 1. Objetivo
 
@@ -18,11 +18,15 @@ El foco principal esta en:
 
 El analisis se ha hecho sobre el codigo actual, no solo sobre documentacion existente.
 
+Esta revision tambien alinea el documento con el enfoque actual del TFG: rutas como nucleo logistico de la plataforma, segmentacion por capacidad tratada como logica interna, mapa operativo simplificado para el usuario y dependencia controlada de Google Maps, Celery, Redis y PostGIS.
+
 Tambien separa tres conceptos que conviene no mezclar:
 
 - seleccion de paradas: decide que clientes entran en cada jornada
 - optimizacion de orden: decide en que secuencia se visitan las paradas ya seleccionadas
 - navegacion externa: construye enlaces de Google Maps para ejecutar el orden guardado
+
+La idea de producto actual es que los conceptos tecnicos internos no se trasladen de forma cruda al usuario. El backend puede trabajar con segmentos, carga acumulada y retornos a hub, pero la interfaz debe presentar decisiones operativas sencillas: siguiente parada, volver a nave cuando toque, registrar recogida y finalizar jornada.
 
 ## 2. Archivos revisados
 

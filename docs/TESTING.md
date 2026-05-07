@@ -1,6 +1,6 @@
 # Guia de Testing GreenPath
 
-Fecha de revision: 2026-04-14
+Fecha de revision: 2026-04-30
 
 ## 1. Objetivo del documento
 
@@ -14,6 +14,8 @@ Su objetivo es explicar:
 - como ampliar la cobertura sin romper el estilo actual del proyecto
 
 No sustituye a la documentacion funcional o tecnica. Su papel es servir como guia operativa para validar el sistema y evolucionar la suite con criterio.
+
+La revision actual refleja el estado de GreenPath como plataforma completa: rutas, recogidas, ventas, compradores, configuracion, facturacion bajo demanda, permisos por rol e integraciones externas.
 
 ## 2. Estrategia actual
 
@@ -181,6 +183,7 @@ La suite backend valida hoy, al menos, estos bloques:
 
 - creacion de compradores
 - ventas con numero de factura manual
+- descarga de factura PDF generada bajo demanda
 - resumen economico
 - restricciones owner-only
 
@@ -201,7 +204,11 @@ La suite frontend valida hoy estos puntos:
 ### 6.3 Sales
 
 - `SaleForm` usa numero de factura manual
+- `SaleForm` muestra el numero de la ultima factura como placeholder en alta
 - `SaleForm` usa solo `Fecha de factura`
+- `SaleForm` usa `kg` como unidad por defecto
+- `SaleForm` permite reusar conceptos desde modal en alta y edicion
+- `SaleForm` al reusar concepto no modifica la unidad seleccionada
 - `SaleDetail` ya no muestra textos legacy retirados
 
 ### 6.4 Collections
@@ -359,6 +366,7 @@ Si se quiere seguir ampliando cobertura, el orden mas rentable seria:
 
 - `manage.py check`
 - `manage.py check --tag admin`
+- `manage.py makemigrations --check --dry-run`
 - suite de tests verde
 
 ### Frontend
@@ -378,6 +386,7 @@ Si se quiere seguir ampliando cobertura, el orden mas rentable seria:
 ## 14. Conclusion
 
 GreenPath ya no depende solo de pruebas manuales puntuales.
+La base actual de tests protege los flujos mas sensibles y deja identificadas las zonas que por su naturaleza visual, geografica o externa requieren validacion manual complementaria. Para el TFG esto es relevante porque demuestra una estrategia de calidad realista: automatizar reglas de negocio y contratos criticos, y validar manualmente aquello que depende de mapas, proveedores externos o comportamiento responsive en dispositivo.
 Existe una base automatizada suficiente para detectar regresiones importantes en:
 
 - permisos

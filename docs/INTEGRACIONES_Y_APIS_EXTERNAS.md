@@ -1,12 +1,12 @@
 # Integraciones y APIs Externas GreenPath
 
-Fecha de revision: 2026-04-14
+Fecha de revision: 2026-04-30
 
 ## 1. Objetivo del documento
 
-Este documento recoge de forma especifica las APIs y servicios externos utilizados por GreenPath, el papel que cumple cada integracion dentro del sistema y las decisiones tecnicas asociadas a su uso.
+Este documento recoge de forma especifica las APIs, servicios externos y librerias de terceros con impacto funcional relevante utilizados por GreenPath, el papel que cumple cada integracion dentro del sistema y las decisiones tecnicas asociadas a su uso.
 
-Su objetivo es cubrir una parte importante de la memoria del TFG que a menudo queda dispersa entre documentos tecnicos: que servicios externos se usan, para que se usan, como se configuran y que ocurre cuando no estan disponibles.
+Su objetivo es cubrir una parte importante de la memoria del TFG que a menudo queda dispersa entre documentos tecnicos: que servicios externos se usan, para que se usan, como se configuran, que complejidad introducen y que ocurre cuando no estan disponibles.
 
 ## 2. Mapa general de integraciones
 
@@ -15,6 +15,22 @@ Su objetivo es cubrir una parte importante de la memoria del TFG que a menudo qu
 | Google Maps Platform | API externa | Geocodificacion y optimizacion de rutas | `user`, `route`, frontend de rutas | Media |
 | Gmail API | API externa | Envio de correos operativos y de acceso | `base`, `collection`, `user` | Media |
 | WeasyPrint | Libreria de terceros | Generacion de facturas PDF | `sale` | Alta dentro del bloque de ventas |
+| Celery | Infraestructura de procesos | Tareas asincronas y automatizacion | `collection`, `base`, `route` | Alta en flujos diferidos |
+| Redis | Servicio auxiliar | Broker y backend de resultados | infraestructura | Alta cuando hay tareas diferidas |
+| Leaflet / React Leaflet | Libreria frontend | Visualizacion cartografica | `routes`, `zones`, `settings` | Media |
+
+## 2.1 Valor academico y tecnico de estas integraciones
+
+La complejidad de GreenPath no viene solo del numero de entidades o pantallas. Una parte importante del valor del TFG aparece al integrar librerias y APIs especializadas en puntos criticos del flujo:
+
+- geocodificacion de clientes
+- optimizacion logistica
+- navegacion real en campo
+- envio de correos operativos
+- generacion documental de facturas
+- ejecucion asincrona de tareas que no deben bloquear la experiencia del usuario
+
+Esto obliga a resolver configuracion por entorno, manejo de secretos, dependencias del sistema, comportamiento degradado cuando un tercero falla y coherencia entre backend, frontend y tareas auxiliares.
 
 ## 3. API propia del proyecto
 
@@ -181,8 +197,8 @@ WeasyPrint no es una API externa en sentido estricto, pero si es una integracion
 El modulo `sale` utiliza WeasyPrint para:
 
 - renderizar facturas desde HTML y CSS
-- regenerar el documento cuando se actualiza una venta
-- exponer descarga del PDF asociado
+- componer el documento cada vez que se descarga una factura
+- exponer descarga del PDF asociado sin persistir el binario
 
 ### 6.3 Ventaja tecnica de esta eleccion
 
@@ -196,6 +212,16 @@ La eleccion de WeasyPrint frente a soluciones mas de bajo nivel permite:
 
 La integracion requiere dependencias del sistema dentro de la imagen Docker. Por ello, no basta con instalar el paquete Python: el contenedor debe incluir tambien las librerias necesarias para el renderizado.
 
+### 6.5 Decision actual sobre persistencia documental
+
+En la version actual del proyecto, el PDF de factura:
+
+- no se almacena como fichero persistido
+- se genera al vuelo en cada descarga
+- se construye con el estado vigente de la venta y de la configuracion fiscal
+
+Esta decision reduce almacenamiento innecesario y asegura que el documento final refleje los datos actuales del negocio.
+
 ## 7. Estrategia general ante integraciones externas
 
 GreenPath sigue una serie de principios comunes para el uso de APIs y servicios externos:
@@ -205,6 +231,56 @@ GreenPath sigue una serie de principios comunes para el uso de APIs y servicios 
 - los fallos deben dejar rastro en logs
 - el frontend no debe asumir que una integracion siempre existe
 - la documentacion debe explicar claramente que integra, como y con que limites
+- cuando sea posible, el sistema debe degradar a un modo util en lugar de bloquear el flujo principal
+
+## 7.1 Celery y Redis como infraestructura de integracion interna
+
+Aunque Celery y Redis no son APIs de negocio externas en el mismo sentido que Google Maps o Gmail API, forman parte de la complejidad integradora real del proyecto y por eso conviene tratarlos aqui.
+
+### Papel de Celery
+
+Celery permite sacar del flujo sincrono de peticion-respuesta varias tareas que no deben bloquear al usuario:
+
+- autoestimacion de `CollectionRequest` cuando expira
+- notificaciones por correo
+- tareas programadas o reprocesos asociados a cambios de planificacion
+
+Sin esta capa, determinadas operaciones quedarían demasiado acopladas al tiempo de respuesta de la API y a la disponibilidad inmediata de terceros como Gmail.
+
+### Papel de Redis
+
+Redis actua como:
+
+- broker de mensajes
+- backend de resultados
+- soporte de coordinacion para workers Celery
+
+Su uso aporta una separacion clara entre:
+
+- logica de negocio principal
+- ejecucion diferida
+- observabilidad del estado de tareas
+
+### Valor tecnico
+
+Desde la perspectiva del TFG, la presencia de Celery y Redis demuestra que GreenPath no se limita a un flujo web elemental. El proyecto incorpora procesos asincronos reales, planificacion diferida y tolerancia a trabajos lentos o no inmediatos.
+
+## 7.2 Leaflet y React Leaflet en la experiencia operativa
+
+Leaflet y React Leaflet permiten integrar la capa geografica directamente dentro de la interfaz del producto.
+
+Su uso actual cubre:
+
+- representacion de zonas sobre mapa
+- visualizacion del hub de empresa
+- visualizacion de clientes y paradas
+- apoyo visual a la ejecucion diaria de rutas
+
+Valor añadido:
+
+- evita depender por completo de vistas embebidas de terceros
+- permite personalizar la experiencia de mapa segun el dominio operativo
+- refuerza el valor del proyecto en su parte logistica y geoespacial
 
 ## 8. Variables de entorno relacionadas
 
@@ -217,6 +293,13 @@ Resumen de variables clave:
 | `GMAIL_CLIENT_SECRET_JSON` | Cliente OAuth de Gmail API |
 | `GMAIL_TOKEN_JSON` | Token OAuth para envio real |
 
+Variables relacionadas de infraestructura asíncrona:
+
+| Variable | Uso |
+| --- | --- |
+| `CELERY_BROKER_URL` | Conexion del broker de Celery |
+| `CELERY_RESULT_BACKEND` | Backend de resultados de Celery |
+
 ## 9. Impacto academico de estas integraciones
 
 Desde la perspectiva del TFG, estas integraciones aportan valor porque demuestran:
@@ -226,6 +309,7 @@ Desde la perspectiva del TFG, estas integraciones aportan valor porque demuestra
 - manejo de configuracion sensible
 - coordinacion entre backend, frontend y procesos asincronos
 - generacion documental con calidad suficiente para un caso de uso real
+- uso de infraestructura auxiliar mas alla de una base de datos y una API CRUD
 
 ## 10. Coste, cuotas y control operativo
 
@@ -255,6 +339,15 @@ Aspectos a vigilar:
 - consistencia de la plantilla HTML/CSS
 - correcta generacion bajo demanda del PDF
 
+### 10.4 Celery y Redis
+
+Aspectos a vigilar:
+
+- disponibilidad del broker
+- correcta ejecucion de workers
+- sincronizacion con Celery Beat cuando existen tareas programadas
+- visibilidad del estado de las tareas en desarrollo, pruebas y demo
+
 ## 11. Seguridad de integraciones y custodia de secretos
 
 Las integraciones utilizadas por GreenPath implican custodiar informacion sensible.
@@ -273,6 +366,10 @@ Las integraciones elegidas responden a criterios concretos:
 - Google Maps aporta geocodificacion y optimizacion realista para un caso de uso logistico
 - Gmail API permite un canal formal de notificacion sin depender de envio local improvisado
 - WeasyPrint permite facturas PDF mantenibles a partir de HTML y CSS versionables
+- Celery y Redis permiten desacoplar expiraciones y notificaciones del tiempo de respuesta normal
+- Leaflet permite integrar el mapa dentro de la aplicacion sin delegar toda la experiencia cartografica a un servicio externo
+
+Ademas, estas elecciones tienen sentido en conjunto: cada pieza cubre una dimension distinta del problema real del negocio, y juntas construyen un sistema mas rico que una aplicacion de gestion administrativa convencional.
 
 Estas elecciones se consideran razonables para un TFG porque aportan valor funcional visible sin exigir una infraestructura desproporcionada.
 

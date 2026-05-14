@@ -105,6 +105,32 @@ class CollectionApiTests(BackendTestMixin, TestCase):
         self.assertEqual(response.data["count"], 1)
         self.assertEqual(response.data["results"][0]["id"], included_collection.id)
 
+    def test_client_searches_collections_by_worker_or_date_without_notes(self):
+        collection = Collection.objects.create(
+            client=self.client_profile,
+            worker=self.owner_worker,
+            collection_date=date(2026, 5, 11),
+            measured_liters=Decimal("70.00"),
+            deduction_liters=Decimal("0.00"),
+            price_per_liter=Decimal("1.00"),
+            status=CollectionStatus.CONFIRMED,
+            billable=True,
+            notes="nota interna sensible",
+        )
+
+        worker_response = self.client_api.get("/collections/?search=Owner")
+        date_response = self.client_api.get("/collections/?search=11/5/2026")
+        notes_response = self.client_api.get("/collections/?search=nota interna sensible")
+
+        self.assertEqual(worker_response.status_code, 200)
+        self.assertEqual(worker_response.data["count"], 1)
+        self.assertEqual(worker_response.data["results"][0]["id"], collection.id)
+        self.assertEqual(date_response.status_code, 200)
+        self.assertEqual(date_response.data["count"], 1)
+        self.assertEqual(date_response.data["results"][0]["id"], collection.id)
+        self.assertEqual(notes_response.status_code, 200)
+        self.assertEqual(notes_response.data["count"], 0)
+
     def test_collection_detail_exposes_client_and_worker_ids(self):
         collection = Collection.objects.create(
             client=self.client_profile,

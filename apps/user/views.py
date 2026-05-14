@@ -1,6 +1,7 @@
 import logging
 
 from django.contrib.auth import authenticate
+from django.contrib.auth.models import update_last_login
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
@@ -43,6 +44,7 @@ class Login(TokenObtainPairView):
             if user:
                 login_serializer = self.serializer_class(data=request.data)
                 if login_serializer.is_valid():
+                    update_last_login(None, user)
                     user_serializer = CustomUserSerializer(user)
                     return Response(
                         {

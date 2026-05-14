@@ -15,6 +15,7 @@ configure_logging()
 class ClientSerializer(serializers.ModelSerializer):
     email = serializers.SerializerMethodField()
     username = serializers.CharField(source="user.username", read_only=True)
+    photo = serializers.ImageField(required=False, allow_null=True)
     frequency = serializers.SerializerMethodField()
     total_pick_ups = serializers.SerializerMethodField()
     last_pick_up = serializers.SerializerMethodField()

@@ -29,6 +29,12 @@ class Client(BaseModel):
         max_length=20, 
         blank=True
     )
+    photo = models.ImageField(
+        'Foto',
+        upload_to='clients/',
+        null=True,
+        blank=True
+    )
     cif = models.CharField(
         'CIF', 
         max_length=20, 

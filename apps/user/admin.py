@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django import forms
+from django.contrib.auth.password_validation import validate_password
 from django.contrib.gis import forms as gis_forms
 from django.contrib.gis.admin import GISModelAdmin
 from django.utils.html import format_html
@@ -8,17 +10,72 @@ from apps.user.models.user import User
 from apps.user.models.worker import Worker
 
 
+class UserAdminPasswordForm(forms.ModelForm):
+    new_password = forms.CharField(
+        label="Nueva contrasena",
+        required=False,
+        strip=False,
+        widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}),
+        help_text="Rellena este campo solo si quieres restablecer la contrasena del usuario.",
+    )
+    confirm_password = forms.CharField(
+        label="Confirmar contrasena",
+        required=False,
+        strip=False,
+        widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}),
+    )
+
+    class Meta:
+        model = User
+        fields = (
+            "username",
+            "email",
+            "is_active",
+            "is_staff",
+            "is_superuser",
+            "groups",
+            "user_permissions",
+        )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        new_password = cleaned_data.get("new_password")
+        confirm_password = cleaned_data.get("confirm_password")
+
+        if new_password or confirm_password:
+            if new_password != confirm_password:
+                raise forms.ValidationError("Las contrasenas no coinciden.")
+            validate_password(new_password, self.instance)
+        elif not self.instance.pk:
+            raise forms.ValidationError("Indica una contrasena inicial para el usuario.")
+
+        return cleaned_data
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        new_password = self.cleaned_data.get("new_password")
+        if new_password:
+            user.set_password(new_password)
+
+        if commit:
+            user.save()
+            self.save_m2m()
+        return user
+
+
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
+    form = UserAdminPasswordForm
     list_display = ("id", "username", "email", "role_type_display", "is_active", "is_staff", "last_login")
     search_fields = ("username", "email")
     list_filter = ("is_active", "is_staff", "is_superuser")
-    readonly_fields = ("id", "last_login")
+    readonly_fields = ("id", "password_status", "last_login")
+    filter_horizontal = ("groups", "user_permissions")
     ordering = ("id",)
 
     fieldsets = (
         ("Cuenta", {
-            "fields": ("id", "username", "email", "password"),
+            "fields": ("id", "username", "email", "password_status", "new_password", "confirm_password"),
         }),
         ("Permisos", {
             "fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions"),
@@ -31,6 +88,12 @@ class UserAdmin(admin.ModelAdmin):
     @admin.display(description="Rol")
     def role_type_display(self, obj):
         return obj.role_type
+
+    @admin.display(description="Contrasena")
+    def password_status(self, obj):
+        if not obj or not obj.pk:
+            return "Pendiente de guardar"
+        return "Configurada" if obj.has_usable_password() else "Sin contrasena usable"
 
 
 @admin.register(Client)
@@ -60,7 +123,7 @@ class ClientAdmin(GISModelAdmin):
     list_filter = ("disabled", "frequency", "city", "country", "companies")
     autocomplete_fields = ("user",)
     filter_horizontal = ("companies",)
-    readonly_fields = ("id", "location_summary")
+    readonly_fields = ("id", "location_summary", "photo_preview")
     list_select_related = ("user",)
     ordering = ("name", "id")
     actions = ("mark_disabled", "mark_enabled")
@@ -71,6 +134,9 @@ class ClientAdmin(GISModelAdmin):
         }),
         ("Datos del cliente", {
             "fields": ("name", "phone", "cif", "frequency"),
+        }),
+        ("Imagen", {
+            "fields": ("photo", "photo_preview"),
         }),
         ("Direccion y geolocalizacion", {
             "fields": ("address", "city", "postal_code", "country", "location", "location_summary"),
@@ -105,6 +171,15 @@ class ClientAdmin(GISModelAdmin):
         if not obj.location:
             return "Sin coordenadas"
         return f"{obj.location.y:.6f}, {obj.location.x:.6f}"
+
+    @admin.display(description="Foto")
+    def photo_preview(self, obj):
+        if obj.photo:
+            return format_html(
+                '<img src="{}" width="120" height="120" style="object-fit: cover; border-radius: 12px;" />',
+                obj.photo.url,
+            )
+        return "No hay foto"
 
     @admin.action(description="Deshabilitar clientes seleccionados")
     def mark_disabled(self, request, queryset):

@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 
 from django.utils import timezone
 from django.db.models import Q
@@ -58,15 +59,36 @@ class CollectionFilter(FilterSet):
         fields = ["client", "worker", "status", "worker_id", "billable", "start_date", "end_date", "search"]
 
     def filter_search(self, queryset, name, value):
-        return queryset.filter(
-            Q(client__name__icontains=value) |
-            Q(client__cif__icontains=value) |
-            Q(worker__name__icontains=value) |
-            Q(worker__surname__icontains=value) |
-            Q(notes__icontains=value) |
-            Q(status__icontains=value) |
-            Q(route_day_client__route_day__route__name__icontains=value)
-        ).distinct()
+        search_value = (value or "").strip()
+        if not search_value:
+            return queryset
+
+        date_value = self._parse_search_date(search_value)
+        user = getattr(self.request, "user", None)
+        query = Q(worker__name__icontains=search_value) | Q(worker__surname__icontains=search_value)
+        if date_value:
+            query |= Q(collection_date=date_value)
+
+        if getattr(user, "role_type", None) == "client":
+            return queryset.filter(query).distinct()
+
+        query |= (
+            Q(client__name__icontains=search_value) |
+            Q(client__cif__icontains=search_value) |
+            Q(notes__icontains=search_value) |
+            Q(status__icontains=search_value) |
+            Q(route_day_client__route_day__route__name__icontains=search_value)
+        )
+        return queryset.filter(query).distinct()
+
+    @staticmethod
+    def _parse_search_date(value):
+        for date_format in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%d.%m.%Y"):
+            try:
+                return datetime.strptime(value, date_format).date()
+            except ValueError:
+                continue
+        return None
 
 
 def _user_company_id(user):

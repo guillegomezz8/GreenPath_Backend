@@ -1,6 +1,6 @@
 # Catalogo de Requisitos GreenPath
 
-Fecha de revision: 2026-04-30
+Fecha de revision: 2026-05-27
 
 ## 1. Objetivo del documento
 
@@ -55,7 +55,7 @@ Para facilitar la lectura, los requisitos se clasifican con los siguientes prefi
 | RB-001 | El sistema debe permitir planificar la recogida de aceite usado por semanas operativas. |
 | RB-002 | El sistema debe diferenciar entre planificacion y ejecucion real de la ruta. |
 | RB-003 | El sistema debe permitir consultar que clientes corresponden a cada jornada operativa. |
-| RB-004 | El sistema debe poder solicitar al cliente una estimacion previa de litros. |
+| RB-004 | El sistema debe poder solicitar al cliente una estimacion previa por envases y calcular los litros equivalentes. |
 | RB-005 | El sistema debe poder continuar operando aunque el cliente no responda a tiempo. |
 | RB-006 | El sistema debe registrar la recogida real realizada en cada parada. |
 | RB-007 | El sistema debe permitir una medicion posterior en nave antes del cierre economico de la recogida. |
@@ -99,6 +99,7 @@ Para facilitar la lectura, los requisitos se clasifican con los siguientes prefi
 | Codigo | Requisito |
 | --- | --- |
 | RF-001 | El sistema debe permitir login con usuario y password. |
+| RF-001A | El sistema debe actualizar `last_login` cuando el login con credenciales sea correcto. |
 | RF-002 | El sistema debe soportar login social cuando este configurado. |
 | RF-003 | El sistema debe identificar el rol del usuario autenticado. |
 | RF-004 | El sistema debe limitar el acceso a vistas, acciones y datos segun rol. |
@@ -111,6 +112,7 @@ Para facilitar la lectura, los requisitos se clasifican con los siguientes prefi
 | --- | --- |
 | RF-007 | El owner debe poder crear, editar, listar y consultar clientes. |
 | RF-008 | El sistema debe almacenar direccion y datos de contacto del cliente. |
+| RF-008A | El sistema debe permitir crear clientes sin CIF y sin email/username cuando no se concede acceso por correo. |
 | RF-009 | El sistema debe intentar geocodificar automaticamente al cliente desde su direccion. |
 | RF-010 | El sistema debe permitir definir frecuencia de recogida del cliente. |
 | RF-011 | El client debe poder consultar sus solicitudes de recogida. |
@@ -235,7 +237,7 @@ Para facilitar la lectura, los requisitos se clasifican con los siguientes prefi
 | --- | --- |
 | RF-076 | El usuario debe poder consultar sus datos personales desde la interfaz. |
 | RF-077 | El usuario debe poder editar su informacion personal permitida. |
-| RF-078 | El sistema debe permitir actualizar la imagen de perfil cuando el flujo lo contemple. |
+| RF-078 | El sistema debe permitir actualizar la imagen de perfil en clientes, workers y owners cuando exista perfil asociado. |
 | RF-079 | El sistema debe permitir cerrar sesion desde la interfaz principal. |
 | RF-080 | La navegacion de perfil debe ser consistente con el resto de la aplicacion. |
 
@@ -248,6 +250,7 @@ Para facilitar la lectura, los requisitos se clasifican con los siguientes prefi
 | RF-083 | El admin debe permitir localizar rapidamente registros mediante filtros y busqueda. |
 | RF-084 | El admin debe reflejar los campos realmente existentes en los modelos. |
 | RF-085 | Las entidades administrativas sensibles deben mostrar informacion de contexto suficiente para su revision. |
+| RF-085A | El admin debe permitir restablecer contrasenas de usuarios desde la pantalla administrativa. |
 
 ### 6.14 Facturacion y documentos
 

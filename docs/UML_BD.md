@@ -1,6 +1,6 @@
 # UML de Base de Datos
 
-Fecha de revision: 2026-04-30
+Fecha de revision: 2026-05-27
 
 ## 1. Objetivo
 
@@ -80,6 +80,7 @@ class User {
   +id: int
   +username: string
   +email: string
+  +last_login: datetime
   +is_active: bool
   +is_staff: bool
 }
@@ -110,6 +111,7 @@ class CompanySettings {
   +billing_phone: string
   +billing_email: string
   +billing_bank_account: string
+  +billing_logo: image
   +billing_ler_code: string
   +billing_footer: text
 }
@@ -128,6 +130,7 @@ class Worker {
 class Client {
   +name: string
   +phone: string
+  +photo: image
   +cif: string
   +address: string
   +city: string
@@ -250,6 +253,7 @@ BaseModel <|-- Truck
 BaseModel <|-- Zone
 BaseModel <|-- Route
 BaseModel <|-- Collection
+BaseModel <|-- CollectionRequest
 BaseModel <|-- Buyer
 BaseModel <|-- Sale
 
@@ -259,16 +263,16 @@ User "1" --> "0..1" Client : client_profile
 
 Company "1" --> "0..1" CompanyHub : hub
 Company "1" --> "0..1" CompanySettings : settings
-Company "1" --> "0..*" Worker : workers
-Company "1" --> "0..*" Truck : trucks
+Company "0..1" --> "0..*" Worker : workers
+Company "0..1" --> "0..*" Truck : trucks
 Company "1" --> "0..*" Route : routes
 Company "1" --> "0..*" Buyer : buyers
 Company "1" --> "0..*" Sale : sales
 Company "0..*" --> "0..*" Client : companies
 
 Truck "0..1" --> "0..1" Worker : driver
-Worker "1" --> "0..*" Route : routes
-Worker "1" --> "0..*" Collection : collections
+Worker "0..1" --> "0..*" Route : routes
+Worker "0..1" --> "0..*" Collection : collections
 Route "0..*" --> "0..1" Worker : worker
 
 Route "1" --> "0..*" RouteDay : route_days
@@ -299,6 +303,7 @@ direction LR
 class User {
   +username: string
   +email: string
+  +last_login: datetime
   +is_active: bool
   +is_staff: bool
 }
@@ -318,6 +323,7 @@ class CompanySettings {
   +default_price_per_liter: decimal
   +billing_business_name: string
   +billing_tax_id: string
+  +billing_logo: image
   +billing_ler_code: string
 }
 
@@ -326,10 +332,12 @@ class Worker {
   +name: string
   +surname: string
   +dni: string
+  +photo: image
 }
 
 class Client {
   +name: string
+  +photo: image
   +cif: string
   +frequency: string
   +location: Point
@@ -340,7 +348,7 @@ User "1" --> "0..1" Worker : worker_profile
 User "1" --> "0..1" Client : client_profile
 Company "1" --> "0..1" CompanyHub : hub
 Company "1" --> "0..1" CompanySettings : settings
-Company "1" --> "0..*" Worker : workers
+Company "0..1" --> "0..*" Worker : workers
 Company "0..*" --> "0..*" Client : companies
 ```
 
@@ -392,7 +400,7 @@ class Client {
 }
 
 Company "1" --> "0..*" Route : routes
-Worker "1" --> "0..*" Route : assigned_worker
+Worker "0..1" --> "0..*" Route : assigned_worker
 Route "1" --> "0..*" RouteZoneDay : zone_days
 RouteZoneDay "0..*" --> "0..*" Zone : zones
 Route "1" --> "0..*" RouteDay : route_days
@@ -443,7 +451,7 @@ class User {
 }
 
 Client "1" --> "0..*" Collection : collections
-Worker "1" --> "0..*" Collection : registered_by
+Worker "0..1" --> "0..*" Collection : registered_by
 RouteDayClient "1" --> "0..1" CollectionRequest : request
 RouteDayClient "1" --> "0..*" Collection : real_collections
 CollectionRequest "0..*" --> "0..1" User : answered_by
@@ -492,10 +500,10 @@ La siguiente tabla resume cada entidad desde el punto de vista funcional.
 |---|---|---|---|
 | `User` | `user` | autenticacion y cuenta base | no almacena el rol final como tabla separada |
 | `Worker` | `user` | perfil interno de trabajador u owner | el campo `role` distingue `owner` y `worker` |
-| `Client` | `user` | perfil cliente con acceso al portal | tiene geolocalizacion y frecuencia |
+| `Client` | `user` | perfil cliente con acceso al portal | tiene geolocalizacion, frecuencia e imagen de perfil |
 | `Company` | `company` | empresa operadora | punto central del modelo |
 | `CompanyHub` | `company` | base fisica de salida | geolocalizada |
-| `CompanySettings` | `company` | configuracion operativa y fiscal | clave para precio por litro y facturacion |
+| `CompanySettings` | `company` | configuracion operativa y fiscal | clave para precio por litro, logos fiscales y facturacion |
 | `Truck` | `truck` | flota de vehiculos | conductor unico por camion |
 | `Zone` | `zone` | zona geografica | poligono PostGIS |
 | `Route` | `route` | ruta plantilla | define semana operativa y trabajador |
@@ -539,6 +547,7 @@ Esto significa que casi todos los modulos se segmentan realmente por empresa, in
 - `Client` se relaciona con `User` mediante `OneToOne`
 - `Client` puede pertenecer a varias empresas mediante `ManyToMany`
 - esta decision facilita escenarios donde un mismo cliente puede operar con mas de una empresa
+- `Client.photo` almacena la imagen de perfil visible en el portal de cliente
 - `Client.location` permite:
   - geocodificacion
   - inclusion en zonas
@@ -546,8 +555,9 @@ Esto significa que casi todos los modulos se segmentan realmente por empresa, in
 
 ### 8.4 Trabajadores y camiones
 
-- `Worker` pertenece a una sola empresa
+- `Worker` pertenece como maximo a una empresa; el campo permite `NULL` para conservar el perfil aunque se desasigne
 - `Truck` puede tener un unico conductor asignado mediante `OneToOne`
+- `Truck.company` tambien permite `NULL`, por lo que un camion puede quedar temporalmente sin empresa asociada
 - este modelado refleja la restriccion operativa actual: un camion no debe aparecer vinculado a varios conductores a la vez
 
 ### 8.5 Rutas
@@ -586,15 +596,23 @@ Esta seccion es importante porque algunas relaciones expresan reglas de negocio 
 | `Client.user -> User` | OneToOne | `CASCADE` | mismo criterio para cliente |
 | `Worker.company -> Company` | FK | `SET_NULL` | el trabajador puede quedar sin empresa asignada |
 | `Company.owner -> User` | FK | `SET_NULL` | la empresa no desaparece si se borra el owner |
+| `CompanyHub.company -> Company` | OneToOne | `CASCADE` | el hub depende de la empresa |
+| `CompanySettings.company -> Company` | OneToOne | `CASCADE` | la configuracion depende de la empresa |
 | `Truck.driver -> Worker` | OneToOne | `SET_NULL` | el camion puede quedar sin conductor |
+| `Truck.company -> Company` | FK | `SET_NULL` | el camion puede quedar sin empresa asignada |
 | `Route.company -> Company` | FK | `CASCADE` | la ruta depende de la empresa |
 | `Route.worker -> Worker` | FK | `SET_NULL` | una ruta puede quedar sin trabajador |
 | `RouteDay.route -> Route` | FK | `CASCADE` | la jornada depende de la ruta |
 | `RouteDayClient.route_day -> RouteDay` | FK | `CASCADE` | la parada depende de la jornada |
+| `RouteDayClient.client -> Client` | FK | `CASCADE` | la parada depende del cliente planificado |
+| `RouteZoneDay.route -> Route` | FK | `CASCADE` | la asignacion de zonas depende de la ruta |
 | `Collection.client -> Client` | FK | `CASCADE` | la recogida depende del cliente |
 | `Collection.route_day_client -> RouteDayClient` | FK | `SET_NULL` | la recogida puede sobrevivir como historico manual |
 | `Collection.worker -> Worker` | FK | `SET_NULL` | puede mantenerse sin trabajador actual |
 | `CollectionRequest.route_day_client -> RouteDayClient` | OneToOne | `CASCADE` | la solicitud depende de la parada |
+| `CollectionRequest.answered_by -> User` | FK | `SET_NULL` | conserva la solicitud aunque el usuario deje de existir |
+| `CollectionRequest.manual_by -> User` | FK | `SET_NULL` | conserva la trazabilidad funcional sin bloquear borrados |
+| `Buyer.company -> Company` | FK | `CASCADE` | el comprador interno pertenece a una empresa |
 | `Sale.company -> Company` | FK | `CASCADE` | la venta pertenece a una empresa concreta |
 | `Sale.buyer -> Buyer` | FK | `PROTECT` | no debe eliminarse un comprador con ventas asociadas |
 
@@ -606,6 +624,7 @@ Las restricciones son una parte esencial del modelo porque encapsulan reglas de 
 
 - `User.username` es unico
 - `User.email` es unico
+- `User.last_login` se actualiza en los inicios de sesion correctos
 - `Truck.registration_number` es unica
 - `Zone.name` es unico
 - `Route.name` es unico
@@ -646,6 +665,16 @@ Esto es clave para:
 - generacion de rutas
 - optimizacion operativa
 - representacion cartografica en frontend
+
+### 11.1 Campos de imagen y adjuntos
+
+La estructura actual de la base de datos tambien contempla campos persistentes para imagenes y documentos:
+
+- `Company.logo`: logo general de empresa
+- `CompanySettings.billing_logo`: logo fiscal usado en facturacion
+- `Worker.photo`: imagen de perfil de trabajadores y propietarios
+- `Client.photo`: imagen de perfil de clientes
+- `Sale.invoice_pdf`: fichero historico de factura; actualmente el flujo funcional genera el PDF bajo demanda y no depende de este binario
 
 ## 12. Tablas intermedias relevantes
 

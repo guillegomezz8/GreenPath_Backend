@@ -1,6 +1,6 @@
 # Arquitectura Tecnica del Proyecto
 
-Fecha de revision: 2026-04-30
+Fecha de revision: 2026-05-27
 
 ## 1. Objetivo de esta documentacion
 
@@ -41,6 +41,7 @@ GreenPath se apoya en varios principios tecnicos:
 
 - React
 - Vite
+- HashRouter con rutas privadas por rol
 - Tailwind CSS
 - componentes UI reutilizables propios
 - Leaflet / React Leaflet para vistas geograficas
@@ -85,6 +86,7 @@ Responsabilidades:
 - modelo `User`
 - perfiles de `Client` y `Worker`
 - serializers y viewsets de usuarios, clientes y trabajadores
+- actualizacion de perfil propio, incluyendo imagen de perfil cuando aplica
 - geocodificacion de clientes
 - adaptacion del comportamiento por rol y empresa
 
@@ -325,6 +327,7 @@ Ejemplos:
 - client solo ve sus solicitudes y recogidas
 - worker solo opera rutas de su empresa y, normalmente, las que tiene asignadas
 - configuracion fiscal y economica aislada por empresa
+- el login correcto actualiza `last_login` y el fallo de credenciales no lo modifica
 
 ## 13. Integraciones externas
 
@@ -351,6 +354,16 @@ Uso actual:
 Comportamiento esperado:
 
 - si no esta configurada, se omite la notificacion operativa sin tumbar el resto del flujo
+
+### 13.2.1 Google Identity Services
+
+Uso actual:
+
+- login social en `src/pages/oauth/SocialLogin.jsx`
+- validacion backend del Google ID token en `POST /authenticate/login`
+- emision posterior de JWT propio de GreenPath
+
+El frontend envia el token principalmente en el campo `token`; el backend mantiene compatibilidad aceptando tambien `credential`.
 
 ### 13.3 WeasyPrint
 

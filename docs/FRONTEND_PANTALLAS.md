@@ -1,6 +1,6 @@
 # Guia de Pantallas Frontend GreenPath
 
-Fecha de revision: 2026-04-30
+Fecha de revision: 2026-05-27
 
 ## 1. Objetivo del documento
 
@@ -26,6 +26,7 @@ Este documento sustituye a la documentacion funcional dispersa del frontend y se
 El frontend actual sigue varios principios de producto:
 
 - navegacion diferente por rol (`owner`, `worker`, `client`)
+- enrutado con `HashRouter`, por lo que las URLs reales de navegador se sirven bajo `#/ruta`
 - separacion entre pantallas de consulta y pantallas de operacion
 - prioridad a legibilidad y accion rapida en movil para rutas y recogidas
 - reuse de componentes de filtros, contadores, modales y layouts
@@ -130,7 +131,7 @@ Responsabilidad:
   - ver datos del usuario
   - editar datos personales
   - cambiar contrasena
-  - cambiar foto cuando aplique
+  - cambiar foto de perfil en clientes, workers y owners cuando el perfil asociado la soporta
 
 ## 5.4 Error 404
 
@@ -195,6 +196,8 @@ Notas:
 
 - campos obligatorios alineados con backend
 - direccion estructurada para permitir geocodificacion
+- `cif` no es obligatorio
+- si no se marca envio de email, `email` y `username` pueden generarse automaticamente a partir del nombre
 
 ### 7.3 Detalle de cliente
 
@@ -571,7 +574,7 @@ Notas:
 - cada bloque funciona como dropdown independiente
 - cada bloque tiene guardar/restablecer propios
 - el hub se selecciona sobre mapa
-- el logo de facturacion ya no forma parte del flujo funcional
+- el logo fiscal existe en backend/PDF, pero la pantalla actual prioriza datos fiscales, precio y hub
 
 ## 17. Modulo de estadisticas
 
@@ -594,6 +597,7 @@ Contenido actual:
 - filtro por rango de fechas usando `start_date` y `end_date` sobre `GET /sales/economic-summary/`
 - leyenda visual de colores por grafica
 - scroll horizontal controlado en charts estrechos
+- en movil los contadores pueden plegarse en un dropdown recogido por defecto
 
 ## 18. Responsive y criterios de UX
 
@@ -619,7 +623,7 @@ Zonas donde la responsividad es especialmente critica:
 ### Auth
 
 - `POST /login/`
-- `POST /authenticate/login`
+- `POST /authenticate/login` (`SocialLogin` envia el Google ID token en `token`)
 - `POST /token/refresh/`
 
 ### Perfil
@@ -630,18 +634,20 @@ Zonas donde la responsividad es especialmente critica:
 
 ### Operacion
 
-- CRUD `clients`
-- CRUD `workers`
-- CRUD `trucks`
-- CRUD `zones`
-- CRUD `routes`
-- `generate-week`
-- `operational-overview`
-- `start_route_day`
-- `finish_route_day`
-- `complete_stop`
-- `google-navigation`
-- CRUD `collections`
+- CRUD `/clients/`
+- CRUD `/workers/`
+- CRUD `/trucks/`
+- CRUD `/zones/`
+- CRUD `/routes/`
+- `GET /routes/{id}/zone-config/`
+- `PUT /routes/{id}/zone-config/`
+- `POST /routes/{id}/generate-week/`
+- `GET /routes/{id}/operational-overview/`
+- `POST /routes/{id}/route-days/{route_day_id}/start/`
+- `POST /routes/{id}/route-days/{route_day_id}/finish/`
+- `POST /routes/{id}/route-days/{route_day_id}/stops/{route_day_client_id}/complete/`
+- `GET /routes/{id}/route-days/{route_day_id}/google-navigation/`
+- CRUD `/collections/`
 - `GET /collections/requests/me/`
 - `POST /collections/requests/{id}/answer/`
 
@@ -649,8 +655,8 @@ Zonas donde la responsividad es especialmente critica:
 
 - `GET /companies/settings/`
 - `PUT /companies/settings/`
-- CRUD `buyers`
-- CRUD `sales`
+- CRUD `/buyers/`
+- CRUD `/sales/`
 - `GET /sales/{id}/invoice/download/`
 - `GET /sales/economic-summary/`
 
@@ -739,21 +745,28 @@ El frontend ya no depende solo de revision visual manual. Existe una base de tes
 
 ### Modulos actualmente cubiertos
 
+- `utils`
+  - normalizacion de nombres de zona
+- `oauth`
+  - errores visibles en login por credenciales
+  - espacio reservado para passwords largas
 - `workers`
   - alta sin exponer `role` ni `company`
   - edicion sin degradar perfiles ni enviar campos no permitidos
 - `buyers`
   - estado vacio sin duplicidad de mensajes
-- `dashboard`
-  - contadores plegables en movil
-  - badges largas adaptadas para estados tipo `Pendiente de medicion`
 - `sales`
   - formulario con numero de factura manual y fecha operativa unica
   - detalle sin textos legacy retirados
 - `collections`
+  - listado de cliente con tarjetas compactas y resumen
+  - listado interno mostrando cliente y ruta como campos principales
   - detalle con estado `Facturable` y motivo de deduccion traducido
+  - solicitudes de cliente sin exponer el campo final interno
 - `clients`
+  - listado con guiones para datos opcionales ausentes
   - historial con badge `Facturable / No facturable`
+  - alta flexible sin username, email ni CIF cuando no se concede acceso
 - `routes`
   - `GenerateWeekDialog` con/sin regeneracion segun contexto semanal
 - `settings`
@@ -766,6 +779,7 @@ El frontend ya no depende solo de revision visual manual. Existe una base de tes
   - estado vacio del listado
 - `profile`
   - el perfil `owner` no muestra atributos impropios como `Frecuencia`
+  - subida de imagen de perfil cuando existe campo `photo`
 
 ### Modulos que siguen dependiendo mas de validacion manual
 

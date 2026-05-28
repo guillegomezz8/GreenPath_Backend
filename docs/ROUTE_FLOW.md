@@ -1,6 +1,6 @@
 # Route Flow - Flujo de Rutas GreenPath
 
-Fecha de revision: 2026-04-30
+Fecha de revision: 2026-05-27
 
 ## 1. Objetivo del documento
 
@@ -105,7 +105,7 @@ Guarda cliente y orden planificado.
 
 ### `CollectionRequest`
 
-Solicitud previa de litros asociada a una parada.
+Solicitud previa de envases y litros calculados asociada a una parada.
 
 ### `Collection`
 
@@ -116,16 +116,20 @@ Recogida real resultante de operar una parada.
 ### Endpoint
 
 - `POST /routes/{id}/generate-week/`
+- `GET /routes/{id}/zone-config/`
+- `PUT /routes/{id}/zone-config/`
 
 ### Backend
 
 - View: `apps/route/api/viewsets/route_viewset.py` -> `generate_week`
 - Serializer: `GenerateWeekSerializer`
+- Configuracion de zonas: `RouteZoneConfigSerializer`
 - Servicio principal: `apps/route/utils.py` -> `generate_week_for_route(...)`
 
 ### Permisos
 
-- `generate-week` solo puede ejecutarlo `owner`
+- `generate-week` y `zone-config` solo puede ejecutarlos `owner`
+- el detalle operativo y las acciones de ejecucion pueden usarlos el `owner` de la empresa o el `worker` asignado a la ruta
 
 ## 6. Flujo funcional de generacion semanal
 
@@ -162,6 +166,22 @@ Reglas:
 - en `days[]` no puede haber fechas duplicadas
 - las fechas de `days[]` deben estar dentro de la semana solicitada
 - la semana debe estar dentro del rango de vigencia de la ruta
+- `auto_estimate_without_contact` es opcional y por defecto vale `false`
+- `max_clients_per_day` es opcional, tiene minimo `1`, maximo `100` y por defecto vale `10`
+- el frontend actual envia `auto_estimate_without_contact`, pero no expone `max_clients_per_day`; en ese caso backend usa el limite por defecto
+
+La configuracion de zonas por dia se guarda de forma separada mediante `zone-config`:
+
+```json
+{
+  "zone_days": [
+    {"weekday": 0, "zones": [1, 2]},
+    {"weekday": 2, "zones": [3]}
+  ]
+}
+```
+
+`weekday` usa valores `0..6`, donde `0` es lunes y `6` es domingo.
 
 ## 8. Reglas clave de la generacion semanal
 
@@ -355,9 +375,13 @@ Cuando la solicitud es nueva, se puede lanzar notificacion por email al cliente.
 
 El cliente puede interactuar con su solicitud mediante:
 
-- `GET /collections/requests/me`
-- `GET /collections/requests/{id}`
-- `POST /collections/requests/{id}/answer`
+- `GET /collections/requests/me/`
+- `GET /collections/requests/{id}/`
+- `POST /collections/requests/{id}/answer/`
+
+Owner o worker pueden resolver una solicitud manualmente mediante:
+
+- `POST /collections/requests/{id}/manual/`
 
 El sistema admite estos estados:
 

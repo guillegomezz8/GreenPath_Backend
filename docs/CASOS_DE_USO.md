@@ -1,6 +1,6 @@
 # Casos de Uso GreenPath
 
-Fecha de revision: 2026-04-30
+Fecha de revision: 2026-05-27
 
 ## 1. Objetivo del documento
 
@@ -547,6 +547,28 @@ La revision actual incorpora el alcance completo del TFG: gestion multiempresa, 
 **Resultado esperado:**
 
 - el client puede consultar su historico operativo
+
+### CU-018B. Actualizar perfil e imagen
+
+**Actor principal:** Client, Worker u Owner
+
+**Objetivo:** mantener actualizados los datos personales visibles en la aplicacion.
+
+**Precondiciones:**
+
+- el usuario esta autenticado
+- existe un perfil asociado que admite los campos editables
+
+**Flujo principal:**
+
+1. el usuario accede a su perfil
+2. edita email, nombre o telefono cuando procede
+3. sube una imagen de perfil si quiere actualizarla
+4. el sistema guarda los cambios en el perfil asociado
+
+**Resultado esperado:**
+
+- el perfil queda actualizado sin afectar al rol ni a los permisos del usuario
 
 ## 6. Casos de uso automaticos del sistema
 

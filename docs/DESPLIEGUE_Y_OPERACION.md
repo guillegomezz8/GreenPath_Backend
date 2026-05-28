@@ -1,6 +1,6 @@
 # Despliegue y Operacion GreenPath
 
-Fecha de revision: 2026-04-30
+Fecha de revision: 2026-05-27
 
 ## 1. Objetivo del documento
 
@@ -162,6 +162,16 @@ Notas operativas:
 - diferenciar credenciales de desarrollo, demo y produccion
 - validar siempre que la configuracion de Gmail y Google no bloquee el flujo principal si falla
 
+## 5.6 Variables del frontend
+
+El frontend React/Vite consume estas variables:
+
+- `VITE_APP_API_URL`: URL base del backend, por ejemplo `http://localhost:8000`
+- `VITE_GOOGLE_CLIENT_ID`: cliente web usado por Google Sign-In
+- `VITE_GOOGLE_SIGNATURE`: firma/metadato enviado desde `SocialLogin` al backend cuando esta configurado
+
+El cliente HTTP del frontend anade tambien el header `ngrok-skip-browser-warning` para facilitar demos cuando se usa ngrok.
+
 ## 6. Puesta en marcha recomendada
 
 ## 6.1 Arranque inicial
@@ -169,6 +179,8 @@ Notas operativas:
 ```bash
 docker-compose up --build
 ```
+
+El `docker-compose.yml` del backend levanta API, PostgreSQL/PostGIS, Redis, Celery, Celery Beat y Flower. El frontend tiene su propio `docker-compose.yml` en `D:\TFG\front\GreenPath_Frontend`.
 
 ## 6.2 Migraciones
 
@@ -203,6 +215,17 @@ python manage.py loaddata \
 - Redis accesible
 - Celery Worker levantado
 - Celery Beat levantado
+
+URLs locales del entorno actual:
+
+- frontend Vite: `http://localhost:5173/`
+- backend/API: `http://localhost:8000/`
+- Swagger UI: `http://localhost:8000/docs/`
+- OpenAPI schema: `http://localhost:8000/schema/`
+- Django Admin: `http://localhost:8000/admin/`
+- Flower: `http://localhost:5555/`
+- PostgreSQL/PostGIS expuesto en host: `localhost:5432`
+- Redis expuesto en host: `localhost:6379`
 
 ## 6.5 Verificaciones minimas tras arranque
 

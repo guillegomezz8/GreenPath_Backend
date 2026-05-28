@@ -1,6 +1,6 @@
 # Analisis profundo de generacion y optimizacion de rutas
 
-Fecha de revision: 2026-04-30
+Fecha de revision: 2026-05-27
 
 ## 1. Objetivo
 
@@ -184,7 +184,7 @@ Estas restricciones son importantes porque obligan a que una jornada no tenga do
 
 ### 4.5 `CollectionRequest`
 
-Es la solicitud previa al cliente para confirmar o estimar litros.
+Es la solicitud previa al cliente para confirmar envases y calcular litros equivalentes.
 
 Campos clave:
 

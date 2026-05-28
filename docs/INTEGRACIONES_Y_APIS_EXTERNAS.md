@@ -1,6 +1,6 @@
 # Integraciones y APIs Externas GreenPath
 
-Fecha de revision: 2026-04-30
+Fecha de revision: 2026-05-27
 
 ## 1. Objetivo del documento
 
@@ -13,6 +13,7 @@ Su objetivo es cubrir una parte importante de la memoria del TFG que a menudo qu
 | Integracion | Tipo | Uso principal | Modulos implicados | Criticidad |
 | --- | --- | --- | --- | --- |
 | Google Maps Platform | API externa | Geocodificacion y optimizacion de rutas | `user`, `route`, frontend de rutas | Media |
+| Google Identity Services | API externa | Login social con Google ID token | frontend `SocialLogin`, backend `auth` | Media |
 | Gmail API | API externa | Envio de correos operativos y de acceso | `base`, `collection`, `user` | Media |
 | WeasyPrint | Libreria de terceros | Generacion de facturas PDF | `sale` | Alta dentro del bloque de ventas |
 | Celery | Infraestructura de procesos | Tareas asincronas y automatizacion | `collection`, `base`, `route` | Alta en flujos diferidos |
@@ -133,6 +134,24 @@ Esto es importante porque evita que una integracion opcional tumbe el flujo prin
 - necesidad de custodiar correctamente la API key
 - dependencia de la calidad de la direccion aportada
 - comportamiento desigual si algunos clientes no tienen coordenadas validas
+
+## 4.6 Google Identity Services para login social
+
+El frontend carga el cliente de Google Sign-In desde `https://accounts.google.com/gsi/client` y obtiene un Google ID token. Despues llama al backend con:
+
+- endpoint: `POST /authenticate/login`
+- campo principal usado por el frontend: `token`
+- compatibilidad backend: tambien acepta `credential`
+
+El backend valida el token contra los client ids configurados y solo permite el acceso si existe un usuario GreenPath con el email verificado recibido desde Google.
+
+Variables implicadas:
+
+- backend: `GOOGLE_CLIENT_ID`
+- frontend: `VITE_GOOGLE_CLIENT_ID`
+- frontend opcional: `VITE_GOOGLE_SIGNATURE`
+
+Este flujo convive con el login por credenciales (`POST /login/`) y usa los mismos tokens JWT de sesion una vez autenticado el usuario.
 
 ## 5. Gmail API
 
@@ -289,9 +308,18 @@ Resumen de variables clave:
 | Variable | Uso |
 | --- | --- |
 | `GOOGLE_MAPS_API_KEY` | Geocodificacion y optimizacion con Google |
+| `GOOGLE_CLIENT_ID` | Validacion backend de Google ID tokens para login social |
 | `GMAIL_FROM` | Remitente de los correos |
 | `GMAIL_CLIENT_SECRET_JSON` | Cliente OAuth de Gmail API |
 | `GMAIL_TOKEN_JSON` | Token OAuth para envio real |
+
+Variables del frontend:
+
+| Variable | Uso |
+| --- | --- |
+| `VITE_APP_API_URL` | URL base de la API backend consumida por Axios |
+| `VITE_GOOGLE_CLIENT_ID` | Client id web usado por Google Sign-In |
+| `VITE_GOOGLE_SIGNATURE` | Metadato/firma enviado por `SocialLogin` cuando esta configurado |
 
 Variables relacionadas de infraestructura asíncrona:
 
@@ -364,6 +392,7 @@ Por ello se recomienda:
 Las integraciones elegidas responden a criterios concretos:
 
 - Google Maps aporta geocodificacion y optimizacion realista para un caso de uso logistico
+- Google Identity Services permite integrar login social sin sustituir el modelo propio de usuarios y roles
 - Gmail API permite un canal formal de notificacion sin depender de envio local improvisado
 - WeasyPrint permite facturas PDF mantenibles a partir de HTML y CSS versionables
 - Celery y Redis permiten desacoplar expiraciones y notificaciones del tiempo de respuesta normal

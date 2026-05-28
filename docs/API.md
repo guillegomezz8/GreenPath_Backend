@@ -1,6 +1,6 @@
 # API GreenPath (Backend Django)
 
-Fecha de revision: 2026-04-30
+Fecha de revision: 2026-05-27
 
 ## 1. Objetivo de este documento
 
@@ -169,13 +169,22 @@ Response 200:
 }
 ```
 
+Comportamiento:
+- si las credenciales son correctas, el backend actualiza `User.last_login`
+- si las credenciales fallan, no se modifica `last_login`
+
 ### `POST /authenticate/login`
 Login con Google ID token.
+
+El backend acepta el token en `credential` o en `token`. El frontend actual usa `token` y puede enviar metadatos adicionales no obligatorios para el backend, como `email`, `lang` o `signature`.
 
 Request:
 ```json
 {
-  "credential": "<google_id_token>"
+  "token": "<google_id_token>",
+  "email": "owner@example.com",
+  "lang": "es",
+  "signature": "<firma_frontend>"
 }
 ```
 
@@ -206,6 +215,9 @@ Request:
 }
 ```
 
+Nota:
+- el frontend actual cierra sesion limpiando tokens locales y redirigiendo a `/socialLogin`; este endpoint queda disponible para integraciones o evolucion posterior del cierre de sesion servidor.
+
 ## 6. Endpoints por modulo
 
 ### 6.1 Users (`/users/`)
@@ -216,6 +228,12 @@ Actions:
 - `POST /users/set_password/`
 - `GET /users/profile/`
 - `PUT /users/profile/`
+
+Perfil:
+- `PUT /users/profile/` permite actualizar `email`, `name`, `phone` y `photo`
+- para subir `photo` se debe usar `multipart/form-data`
+- la foto se guarda en el perfil asociado (`Worker` para owner/worker, `Client` para client)
+- la respuesta de `GET /users/profile/` devuelve el bloque `profile` enriquecido con los campos visibles del rol
 
 Filtros soportados:
 - `username`, `email`, `is_active`, `is_superuser`, `is_staff`
@@ -244,6 +262,12 @@ Actions:
 
 Filtros soportados:
 - `name`, `phone`, `cif`, `address`, `frequency`, `search`
+
+Reglas relevantes:
+- `cif` es opcional y admite cadena vacia
+- en alta, `user.username` y `user.email` son opcionales si `get_access=false`
+- si `get_access=true`, el email es obligatorio para enviar acceso a la plataforma
+- cuando faltan `username` o `email`, el backend genera credenciales internas a partir del nombre
 
 ### 6.4 Companies (`/companies/`)
 
@@ -298,6 +322,9 @@ Uso actual:
 - datos fiscales y bancarios usados para las facturas de venta PDF
 - configuracion del hub para operativa de rutas
 
+Nota:
+- el modelo conserva `billing_logo` para facturacion, aunque el endpoint actual de settings no lo expone en el payload principal
+
 ### 6.5 Zones (`/zones/`)
 
 CRUD base (`GET/POST /zones/`, `GET/PUT/PATCH/DELETE /zones/{id}/`).
@@ -336,6 +363,8 @@ CRUD base (`GET/POST /routes/`, `GET/PUT/PATCH/DELETE /routes/{id}/`).
 
 Actions:
 - `POST /routes/{id}/generate-week/`
+- `GET /routes/{id}/zone-config/`
+- `PUT /routes/{id}/zone-config/`
 - `GET /routes/{id}/operational-overview/`
 - `POST /routes/{id}/route-days/{route_day_id}/start/`
 - `POST /routes/{id}/route-days/{route_day_id}/finish/`
@@ -345,6 +374,10 @@ Actions:
 Filtros soportados:
 - `date`, `status`
 - `search`
+
+Acceso:
+- `create`, `update`, `destroy`, `zone-config` y `generate-week`: `owner`
+- lectura, detalle operativo y acciones de ejecucion diaria: `owner` de la empresa o `worker` asignado a la ruta
 
 `GET /routes/{id}/operational-overview/`:
 - query param opcional `week_start_date=YYYY-MM-DD` para cargar una semana concreta.
@@ -364,6 +397,44 @@ Filtros soportados:
   - `segments[]`
 - estos campos sirven de soporte para mapa, sugerencia de siguiente parada y navegacion; la UI actual no expone literalmente tarjetas tecnicas de `tramo` al usuario
 
+#### `GET /routes/{id}/zone-config/`
+
+Devuelve la configuracion de zonas por dia de la semana asociada a la ruta.
+
+Response 200:
+```json
+{
+  "zone_days": [
+    {
+      "weekday": 0,
+      "zones": [
+        {"id": 4, "name": "Coria del Rio"}
+      ]
+    }
+  ]
+}
+```
+
+#### `PUT /routes/{id}/zone-config/`
+
+Reemplaza la configuracion de zonas por weekday de la ruta. Si un weekday no aparece en `zone_days`, su configuracion anterior se elimina.
+
+Request:
+```json
+{
+  "zone_days": [
+    {"weekday": 0, "zones": [4, 7]},
+    {"weekday": 2, "zones": [5]}
+  ]
+}
+```
+
+Reglas:
+- `weekday` usa valores `0..6` (`0` lunes, `6` domingo).
+- no se permiten weekdays duplicados.
+- `zones` es una lista de ids de zonas existentes.
+- el frontend actual guarda esta configuracion despues de crear o editar la ruta.
+
 #### `POST /routes/{id}/generate-week/`
 Genera/actualiza los `RouteDay` de una semana y sus paradas (`RouteDayClient`), optimiza orden con Google Directions y crea/programa `CollectionRequest`.
 
@@ -379,12 +450,21 @@ Reglas:
 - el criterio funcional actual aplica tambien un maximo por defecto de `10` clientes por jornada.
 - Si ya existe una generacion en curso para misma ruta+semana, devuelve `409`.
 
+Campos de payload:
+- `week_start_date`: obligatorio, formato `YYYY-MM-DD`.
+- `regenerate`: opcional, por defecto `false`.
+- `auto_estimate_without_contact`: opcional, por defecto `false`; el frontend actual lo expone como `Autoestimar sin notificar al cliente`.
+- `daily_capacity_liters`: capacidad global para los dias generados.
+- `days`: alternativa a `daily_capacity_liters` para definir capacidad por fecha.
+- `max_clients_per_day`: opcional, minimo `1`, maximo `100`, por defecto `10`; el frontend actual no lo expone y deja que backend aplique el valor por defecto.
+
 Request modo A:
 ```json
 {
   "week_start_date": "2026-02-23",
   "regenerate": true,
-  "daily_capacity_liters": "1800.00"
+  "daily_capacity_liters": "1800.00",
+  "auto_estimate_without_contact": false
 }
 ```
 
@@ -396,7 +476,8 @@ Request modo B:
   "days": [
     {"date": "2026-02-23", "daily_capacity_liters": "1500.00"},
     {"date": "2026-02-25", "daily_capacity_liters": "1700.00"}
-  ]
+  ],
+  "max_clients_per_day": 10
 }
 ```
 
@@ -451,6 +532,7 @@ Filtros soportados:
 - `billable`
 - `start_date`
 - `end_date`
+- `search` (worker y fecha para client; worker, cliente, CIF, notas, estado y ruta para owner/worker)
 
 Notas de negocio:
 - si no se envia `price_per_liter` al crear una recogida manual, se usa `CompanySettings.default_price_per_liter`

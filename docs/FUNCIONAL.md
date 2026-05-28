@@ -1,6 +1,6 @@
 # Documento Funcional GreenPath
 
-Fecha de revision: 2026-04-30
+Fecha de revision: 2026-05-27
 Version funcional: 1.4
 
 ## 1. Proposito del documento
@@ -27,7 +27,7 @@ El sistema cubre el ciclo funcional principal del negocio:
 1. configuracion de empresa y datos maestros
 2. definicion geografica de zonas y rutas plantilla
 3. generacion semanal de jornadas y paradas
-4. solicitud previa de litros al cliente cuando aplica
+4. solicitud previa de envases al cliente con litros calculados
 5. ejecucion diaria de la ruta en calle
 6. medicion posterior en nave y consolidacion economica de la recogida
 7. registro de ventas a compradores
@@ -69,7 +69,7 @@ Los objetivos funcionales principales de GreenPath son:
 - centralizar en una sola plataforma los datos maestros del negocio
 - permitir planificar rutas semanales a partir de zonas y frecuencia de clientes
 - soportar una ejecucion diaria clara, usable y orientada a movilidad
-- permitir al cliente informar litros antes de la recogida cuando sea necesario
+- permitir al cliente informar bidones o IBC antes de la recogida cuando sea necesario
 - consolidar litros medidos y deducciones en nave
 - diferenciar claramente entre coste operativo e ingreso comercial
 - emitir facturas PDF de venta con datos fiscales configurables
@@ -119,7 +119,7 @@ Actualmente GreenPath cubre las siguientes areas:
 - generacion de facturas PDF de venta
 - configuracion fiscal y bancaria por empresa
 - dashboard ejecutivo para owner y estadisticas operativas/economicas
-- perfil de usuario y cambio de contrasena
+- perfil de usuario, imagen y cambio de contrasena
 
 ## 7. Fuera de alcance actual
 
@@ -219,7 +219,7 @@ El sistema parte de varios supuestos de negocio:
 - cada empresa trabaja con su propio conjunto de clientes, trabajadores, camiones, compradores y ventas
 - una ruta plantilla tiene un unico trabajador asignado en el modelo actual
 - una semana operativa se genera a partir de zonas y reglas de frecuencia
-- la empresa puede necesitar pedir litros al cliente antes de la recogida
+- la empresa puede necesitar pedir una estimacion por envases al cliente antes de la recogida
 - la medicion final y las deducciones se consolidan posteriormente
 - la operacion en calle trabaja con carga prevista, no con medicion final consolidada
 - una misma jornada puede implicar varios tramos y retornos a nave si la capacidad prevista se supera
@@ -484,6 +484,8 @@ Mantener el maestro de puntos de recogida y su informacion operativa.
 - un cliente necesita localizacion valida para entrar automaticamente en una ruta generada por zonas
 - la frecuencia de recogida condiciona cuando vuelve a ser elegible en generacion semanal
 - el historial economico del cliente solo toma recogidas confirmadas y facturables
+- `cif`, `email` y `username` no bloquean el alta si no se concede acceso por email
+- los listados y detalles muestran `-` cuando un dato opcional no existe
 
 ### 13.2 Modulo de trabajadores
 
@@ -794,7 +796,7 @@ Permitir que cada usuario gestione sus datos basicos y su acceso.
 - consulta de datos personales
 - actualizacion de email y telefono cuando aplica
 - cambio de contrasena
-- actualizacion de imagen en perfiles que lo soportan
+- actualizacion de imagen en perfiles de cliente, worker y owner cuando existe perfil asociado
 
 #### Reglas de negocio
 
@@ -1296,7 +1298,7 @@ No deberia operar sobre:
 Puede operar funcionalmente sobre:
 
 - solicitudes abiertas
-- respuesta de litros
+- respuesta por envases
 - historico de recogidas
 - perfil propio
 

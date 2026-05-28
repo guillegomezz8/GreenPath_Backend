@@ -1,6 +1,6 @@
 # Memoria Funcional TFG - GreenPath
 
-Fecha de revision: 2026-04-30
+Fecha de revision: 2026-05-27
 
 ## 1. Introduccion
 
@@ -126,7 +126,7 @@ GreenPath cubre el ciclo funcional principal del negocio:
 1. configuracion de empresa y datos maestros
 2. planificacion geografica de rutas
 3. generacion semanal de jornadas y paradas
-4. solicitud previa de litros al cliente
+4. solicitud previa de envases al cliente con litros calculados
 5. ejecucion diaria de la ruta
 6. medicion y cierre economico de recogidas
 7. gestion de compradores internos
@@ -346,10 +346,10 @@ A fecha de esta revision, el sistema cubre el flujo principal del negocio y disp
 - testing automatizado modular
 - una narrativa documental suficiente para explicar el sistema desde negocio, arquitectura, testing e integraciones
 
-### 7.1 Snapshot de testing actual a fecha 2026-04-30
+### 7.1 Snapshot de testing actual
 
-- backend: 31 tests automatizados
-- frontend: 17 tests automatizados
+- backend: 58 metodos `test_` en la suite principal documentada
+- frontend: 32 escenarios `it(...)` repartidos en 18 ficheros de test
 
 El detalle de estrategia, estructura y comandos se encuentra en `docs/TESTING.md`.
 

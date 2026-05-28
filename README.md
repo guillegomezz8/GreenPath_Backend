@@ -22,7 +22,7 @@ GreenPath cubre el ciclo funcional principal del negocio:
 1. configuracion de empresa y datos maestros
 2. definicion geografica de zonas y rutas plantilla
 3. generacion semanal de jornadas y paradas
-4. solicitud previa de litros al cliente cuando aplica
+4. solicitud previa de envases al cliente con litros calculados
 5. ejecucion diaria de la ruta
 6. medicion posterior en nave y consolidacion economica de la recogida
 7. gestion de compradores internos
@@ -51,12 +51,12 @@ La aplicacion se ha planteado como una solucion multiempresa. Cada empresa opera
 - configuracion fiscal y operativa
 - estadisticas
 
-Roles principales:
+Roles y entidades principales:
 
 - `owner`: control global del negocio, configuracion, rutas, economia, ventas y reporting
 - `worker`: operacion diaria, rutas y recogidas
 - `client`: solicitudes propias, historico y perfil
-- `buyer`: entidad comercial interna para ventas y facturacion, sin acceso a plataforma
+- `buyer`: entidad comercial interna para ventas y facturacion; no es un rol de acceso a la plataforma
 
 ## 4. Stack principal
 
@@ -164,7 +164,7 @@ Actualmente estan operativos:
 - generacion semanal de rutas operativas con `POST /routes/{id}/generate-week/`
 - ejecucion diaria de `RouteDay`
 - solicitudes previas al cliente con expiracion y trazabilidad
-- dashboard por rol y estadisticas economicas
+- dashboard ejecutivo para owner y estadisticas economicas
 - configuracion global por empresa
 - recogidas con control de `facturable`
 - compradores internos, ventas y facturas PDF
@@ -228,6 +228,7 @@ Se utiliza para:
 - `CELERY_BROKER_URL`
 - `CELERY_RESULT_BACKEND`
 - `GOOGLE_MAPS_API_KEY`
+- `GOOGLE_CLIENT_ID`
 - `GMAIL_FROM`
 - `GMAIL_CLIENT_SECRET_JSON`
 - `GMAIL_TOKEN_JSON`
@@ -236,6 +237,7 @@ Notas:
 
 - `GMAIL_CLIENT_SECRET_JSON` y `GMAIL_TOKEN_JSON` deben ir en una sola linea dentro de `.env`
 - `GMAIL_FROM` no debe llevar espacios adicionales
+- el frontend usa `VITE_APP_API_URL`, `VITE_GOOGLE_CLIENT_ID` y, si procede, `VITE_GOOGLE_SIGNATURE`
 
 ## 11. Puesta en marcha local
 
@@ -251,6 +253,8 @@ Servicios principales:
 - Swagger: `http://localhost:8000/docs/`
 - OpenAPI schema: `http://localhost:8000/schema/`
 - Admin Django: `http://localhost:8000/admin/`
+- Flower: `http://localhost:5555/`
+- Frontend Vite, levantado desde `D:\TFG\front\GreenPath_Frontend`: `http://localhost:5173/`
 
 ## 12. Fixtures de demo
 

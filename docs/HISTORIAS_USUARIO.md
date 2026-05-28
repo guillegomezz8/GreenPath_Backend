@@ -1,6 +1,6 @@
 # Historias de Usuario GreenPath
 
-Fecha de revision: 2026-04-30
+Fecha de revision: 2026-05-27
 
 ## 0. Contexto del backlog
 
@@ -514,6 +514,7 @@ Criterios de aceptacion:
 1. Solo se muestran atributos relevantes al rol.
 2. Puedo actualizar datos permitidos.
 3. Puedo cambiar contrasena desde seccion de seguridad.
+4. Puedo subir o sustituir mi imagen de perfil.
 
 ### US-CLI-009 (P2) Revisar trazabilidad temporal de solicitudes
 
@@ -734,6 +735,15 @@ Criterios de aceptacion:
 1. Config de admin usa campos reales del modelo.
 2. Pantallas de admin cargan sin `FieldError`.
 3. Cambios de modelo actualizan admin asociado.
+
+### US-PLT-019B (P2) Restablecer contrasenas desde admin
+
+Como equipo quiero restablecer contrasenas desde Django Admin para resolver incidencias de acceso sin tocar base de datos.
+
+Criterios de aceptacion:
+1. La ficha de usuario permite cambiar contrasena con el flujo seguro del admin.
+2. Se mantiene visible `last_login` como dato de soporte.
+3. El cambio no altera el rol ni el perfil asociado.
 
 ### US-PLT-020 (P2) Preparacion para pruebas E2E
 

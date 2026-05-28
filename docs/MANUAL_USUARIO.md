@@ -1,6 +1,6 @@
 # Manual de Usuario GreenPath
 
-Fecha de revision: 2026-04-30
+Fecha de revision: 2026-05-27
 
 ## 1. Objetivo del documento
 
@@ -28,6 +28,8 @@ El usuario accede mediante:
 
 Tras autenticarse, el sistema redirige al usuario a una experiencia adaptada a su rol.
 
+En un login correcto, el sistema actualiza internamente la fecha de ultimo acceso del usuario.
+
 ### 3.2 Cierre de sesion
 
 La aplicacion permite cerrar sesion desde la navegacion principal. Esta accion invalida la sesion activa en frontend y evita que otra persona reutilice la misma pantalla sin autenticacion.
@@ -51,6 +53,7 @@ El owner puede acceder, en general, a:
 - ventas
 - configuracion
 - estadisticas
+- perfil
 
 ### 4.2 Gestion de clientes
 
@@ -81,6 +84,7 @@ Desde el modulo de trabajadores, el owner puede:
 - consultar detalle e historico
 
 Los usuarios owner o administradores avanzados se recomiendan crear desde Django Admin, no desde el flujo normal del frontend.
+Desde Django Admin tambien se pueden restablecer contrasenas de usuarios cuando sea necesario.
 
 ### 4.4 Gestion de camiones
 
@@ -227,6 +231,10 @@ La lectura correcta del sistema economico es:
 - recogidas confirmadas y facturables = coste
 - ventas = ingreso
 
+### 4.14 Perfil
+
+El owner puede actualizar sus datos personales, cambiar contrasena y subir imagen de perfil desde la pantalla de perfil.
+
 ## 5. Manual del worker
 
 El worker esta orientado a la ejecucion operativa.
@@ -272,7 +280,7 @@ Si la capacidad prevista del dia obliga a dividir la jornada, la pantalla operat
 
 ### 5.5 Perfil
 
-El worker puede revisar y actualizar la informacion personal permitida desde su perfil.
+El worker puede revisar y actualizar la informacion personal permitida desde su perfil, incluida su imagen de perfil.
 
 ## 6. Manual del client
 
@@ -299,6 +307,10 @@ Cuando el sistema crea una `CollectionRequest`, el client puede:
 ### 6.3 Revisar historico
 
 El client puede consultar el historico de recogidas asociadas a su cuenta, incluyendo estados y datos basicos del servicio realizado.
+
+### 6.4 Perfil
+
+El client puede revisar sus datos personales, cambiar contrasena y subir o sustituir su imagen de perfil cuando lo necesite.
 
 ## 7. Recomendaciones de uso
 

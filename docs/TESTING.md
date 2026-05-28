@@ -1,6 +1,6 @@
 # Guia de Testing GreenPath
 
-Fecha de revision: 2026-04-30
+Fecha de revision: 2026-05-27
 
 ## 1. Objetivo del documento
 
@@ -110,7 +110,9 @@ Ese helper permite levantar contexto reusable de:
 
 Ubicaciones actuales:
 
+- `src/components/__tests__/`
 - `src/pages/workers/__tests__/`
+- `src/pages/oauth/__tests__/`
 - `src/pages/buyers/__tests__/`
 - `src/pages/sales/__tests__/`
 - `src/pages/collections/__tests__/`
@@ -134,6 +136,8 @@ La suite backend valida hoy, al menos, estos bloques:
 ### 5.1 Auth y base
 
 - login con credenciales
+- actualizacion de `last_login` en login correcto
+- no actualizacion de `last_login` en login fallido
 - login social con payload invalido
 - utilidades base
 - permisos dedicados
@@ -162,6 +166,7 @@ La suite backend valida hoy, al menos, estos bloques:
 - imposibilidad de degradar `owner`
 - bloqueo de cambio de `company` por API de workers
 - historial economico de cliente
+- subida de foto de perfil para worker y client desde `/users/profile/`
 
 ### 5.6 Collection
 
@@ -213,18 +218,25 @@ La suite frontend valida hoy estos puntos:
 
 ### 6.4 Collections
 
+- `CollectionsList` renderiza el historial de cliente con tarjetas compactas y resumen
+- `CollectionsList` muestra cliente y ruta como campos superiores en vista interna
+- `CollectionRequestsPage` muestra envases al cliente sin exponer el campo final interno
 - `CollectionDetail` muestra `Facturable / No facturable`
 - `CollectionDetail` muestra el motivo de deduccion traducido
+- `CollectionDetail` oculta informacion interna al cliente y normaliza precios con dos decimales
 
 ### 6.5 Clients
 
+- `ClientList` muestra guiones cuando faltan datos opcionales
 - `ClientDetail` muestra correctamente las badges facturables en historial
+- `ClientDetail` muestra guiones cuando faltan datos opcionales
+- `ClientCreate` permite alta sin username, email ni CIF cuando no se concede acceso
+- `ClientCreate` exige email si se marca envio de acceso
 
 ### 6.6 Routes
 
 - `GenerateWeekDialog` oculta o muestra `Regenerar paradas existentes` segun el contexto semanal
-- `RouteExecution` fija la semana operativa actual por defecto
-- la UX operativa no expone tarjetas tecnicas de tramo aunque mantenga logica interna de capacidad
+- la UX operativa de `RouteExecution` sigue dependiendo de validacion manual y pruebas futuras por su carga de mapa e interaccion
 
 ### 6.7 Settings
 
@@ -246,13 +258,22 @@ La suite frontend valida hoy estos puntos:
 ### 6.10 Profile
 
 - `ProfilePage` no muestra `Frecuencia` en perfiles `owner`
+- `ProfilePage` permite trabajar con foto de perfil cuando el perfil devuelve `photo`
+
+### 6.11 Auth y utilidades
+
+- `Login` muestra error visible ante credenciales incorrectas
+- `Login` reserva espacio para el boton de mostrar contrasena en passwords largas
+- utilidades comunes normalizan nombres de zonas con sufijos concatenados y fallback estable
 
 ## 7. Estado cuantitativo actual
 
-Snapshot validado en esta revision:
+Snapshot definido actualmente en codigo:
 
-- backend: `31` tests verdes
-- frontend: `17` tests verdes
+- backend: `58` metodos `test_` dentro de la suite principal documentada
+- frontend: `32` escenarios `it(...)` repartidos en `18` ficheros `*.test.*`
+
+Estas cifras indican escenarios automatizados presentes. Para confirmar estado verde en una maquina concreta hay que ejecutar las suites indicadas en este documento.
 
 Estas cifras no representan cobertura total de lineas, sino volumen de escenarios utiles ya protegidos.
 
@@ -344,6 +365,7 @@ Patron recomendado:
 Aunque la suite ya protege bastante, conviene seguir revisando manualmente:
 
 - `RouteExecution` con mapa real
+- seleccion de semana operativa actual en `RouteExecution`
 - `CollectionZonesList` y dibujo de poligonos
 - generacion y descarga visual de facturas PDF
 - login social real con Google

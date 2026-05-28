@@ -1,6 +1,6 @@
 # Bibliografia y Fuentes GreenPath
 
-Fecha de revision: 2026-04-30
+Fecha de revision: 2026-05-27
 
 ## 1. Objetivo del documento
 
@@ -75,6 +75,11 @@ Su finalidad es apoyar la parte academica del TFG y dejar trazabilidad sobre la 
 
 - Google. *Gmail API documentation*. https://developers.google.com/gmail/api
 - Google. *Using OAuth 2.0 to Access Google APIs*. https://developers.google.com/identity/protocols/oauth2
+
+### 4.3 Google Identity Services
+
+- Google. *Google Identity Services for Web*. https://developers.google.com/identity/gsi/web/guides/client-library
+- Google. *Display the Sign In With Google button*. https://developers.google.com/identity/gsi/web/guides/display-button
 
 ## 5. Generacion documental y PDF
 

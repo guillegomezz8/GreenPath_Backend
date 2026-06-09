@@ -2,7 +2,7 @@ from decimal import Decimal
 
 from django.test import TestCase
 
-from apps.base.enums import CollectionStatus, PickupFrequency
+from apps.base.enums import CollectionStatus, DeductionReason, PickupFrequency
 from apps.base.test_utils import BackendTestMixin
 from apps.collection.models import Collection
 from apps.user.models.client import Client
@@ -33,6 +33,7 @@ class ClientApiTests(BackendTestMixin, TestCase):
             collection_date=self.today(),
             measured_liters=Decimal("120.00"),
             deduction_liters=Decimal("20.00"),
+            deduction_reason=DeductionReason.OTHER,
             price_per_liter=Decimal("1.00"),
             status=CollectionStatus.CONFIRMED,
             billable=True,
@@ -43,6 +44,7 @@ class ClientApiTests(BackendTestMixin, TestCase):
             collection_date=self.today(),
             measured_liters=Decimal("80.00"),
             deduction_liters=Decimal("10.00"),
+            deduction_reason=DeductionReason.OTHER,
             price_per_liter=Decimal("1.00"),
             status=CollectionStatus.CONFIRMED,
             billable=False,

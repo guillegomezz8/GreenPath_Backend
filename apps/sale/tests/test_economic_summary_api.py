@@ -5,7 +5,7 @@ from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from apps.base.enums import CollectionStatus, ContainerType, Role
+from apps.base.enums import CollectionStatus, ContainerType, DeductionReason, Role
 from apps.collection.models import Collection
 from apps.company.models import Company
 from apps.sale.models import Buyer, Sale
@@ -111,6 +111,7 @@ class SaleEconomicSummaryApiTests(TestCase):
             container_number=2,
             measured_liters=Decimal("100.00"),
             deduction_liters=Decimal("10.00"),
+            deduction_reason=DeductionReason.OTHER,
             price_per_liter=Decimal("1.00"),
             billable=True,
             status=CollectionStatus.CONFIRMED,
@@ -209,6 +210,7 @@ class SaleEconomicSummaryApiTests(TestCase):
             container_number=2,
             measured_liters=Decimal("100.00"),
             deduction_liters=Decimal("10.00"),
+            deduction_reason=DeductionReason.OTHER,
             price_per_liter=Decimal("1.00"),
             billable=True,
             status=CollectionStatus.CONFIRMED,

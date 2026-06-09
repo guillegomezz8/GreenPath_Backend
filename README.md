@@ -1,264 +1,324 @@
 # GreenPath Backend
 
-Backend Django de GreenPath, una plataforma web multiempresa para la gestion integral de empresas dedicadas a la recogida de aceite usado. El sistema no se limita a registrar recogidas: conecta configuracion de empresa, clientes, trabajadores, zonas, rutas, operacion diaria, recogidas, ventas, facturacion PDF y analitica economica dentro de una unica solucion.
+Backend de GreenPath, una plataforma full-stack multiempresa para la gestion integral de empresas dedicadas a la recogida de aceite usado. La API centraliza configuracion de empresa, clientes, trabajadores, camiones, zonas, rutas, recogidas, ventas, facturacion y analitica economica en un unico flujo operativo.
 
-## 1. Contexto del proyecto
+El proyecto esta desarrollado como Trabajo de Fin de Grado y busca resolver un problema real de digitalizacion: sustituir procesos dispersos en hojas de calculo, llamadas, documentos sueltos y conocimiento informal por una solucion trazable, medible y conectada.
 
-GreenPath nace de una necesidad real de digitalizacion. En este tipo de empresas es habitual que una parte importante de la operacion se gestione con hojas de calculo, conversaciones telefonicas, conocimiento informal del responsable de ruta, documentos sueltos y herramientas externas no conectadas entre si. Eso dificulta responder con precision a preguntas basicas:
+## Indice
 
-- que clientes deben recogerse esta semana
-- que se ha ejecutado realmente en calle
-- cuanto volumen se ha recogido y cuanto se ha vendido
-- que parte de las recogidas computa economicamente
-- cual es el beneficio real del periodo
-- como justificar de forma trazable una factura o una ruta operativa
+- [Vision funcional](#vision-funcional)
+- [Stack tecnico](#stack-tecnico)
+- [Arquitectura del backend](#arquitectura-del-backend)
+- [Roles de usuario](#roles-de-usuario)
+- [Modulos principales](#modulos-principales)
+- [Integraciones externas](#integraciones-externas)
+- [Puesta en marcha](#puesta-en-marcha)
+- [Variables de entorno](#variables-de-entorno)
+- [Endpoints y documentacion API](#endpoints-y-documentacion-api)
+- [Fixtures de demo](#fixtures-de-demo)
+- [Comandos utiles](#comandos-utiles)
+- [Documentacion del TFG](#documentacion-del-tfg)
 
-El proyecto se plantea como una respuesta integral a ese problema. No es un CRUD academico aislado, sino una plataforma que intenta reflejar el trabajo diario de una empresa real y convertirlo en un flujo digital, trazable y medible.
+## Vision funcional
 
-## 2. Vision general
+GreenPath cubre el ciclo principal de una empresa de recogida de aceite usado:
 
-GreenPath cubre el ciclo funcional principal del negocio:
+1. Configuracion fiscal, operativa y geografica de la empresa.
+2. Alta de clientes, trabajadores, camiones y zonas de recogida.
+3. Definicion de rutas plantilla y asignacion de zonas por dia.
+4. Generacion semanal de jornadas operativas.
+5. Solicitud previa de estimacion de litros al cliente.
+6. Ejecucion diaria de rutas con paradas, incidencias y cierre.
+7. Consolidacion de recogidas, litros reales y coste asociado.
+8. Gestion de compradores y ventas.
+9. Generacion de facturas PDF bajo demanda.
+10. Consulta de estadisticas operativas y economicas.
 
-1. configuracion de empresa y datos maestros
-2. definicion geografica de zonas y rutas plantilla
-3. generacion semanal de jornadas y paradas
-4. solicitud previa de envases al cliente con litros calculados
-5. ejecucion diaria de la ruta
-6. medicion posterior en nave y consolidacion economica de la recogida
-7. gestion de compradores internos
-8. registro de ventas
-9. generacion bajo demanda de facturas PDF
-10. explotacion de estadisticas operativas y economicas
+La clave funcional del proyecto es unir tres capas que normalmente aparecen separadas:
 
-La idea clave es que el sistema una en una sola plataforma tres capas que en el negocio real suelen vivir separadas:
+- Administracion: usuarios, empresas, clientes, trabajadores y configuracion.
+- Operacion/logistica: zonas, rutas, jornadas, paradas y recogidas.
+- Economia/documentacion: costes, ventas, facturas PDF y resumen economico.
 
-- capa administrativa
-- capa operativa y logistica
-- capa economica y documental
+## Stack tecnico
 
-## 3. Enfoque multiempresa y roles
-
-La aplicacion se ha planteado como una solucion multiempresa. Cada empresa opera sobre su propio conjunto de datos y permisos:
-
-- clientes
-- trabajadores
-- camiones
-- zonas
-- rutas
-- recogidas
-- compradores
-- ventas
-- configuracion fiscal y operativa
-- estadisticas
-
-Roles y entidades principales:
-
-- `owner`: control global del negocio, configuracion, rutas, economia, ventas y reporting
-- `worker`: operacion diaria, rutas y recogidas
-- `client`: solicitudes propias, historico y perfil
-- `buyer`: entidad comercial interna para ventas y facturacion; no es un rol de acceso a la plataforma
-
-## 4. Stack principal
-
-### 4.1 Backend y persistencia
+### Backend
 
 - Python 3.11
-- Django
+- Django 5
 - Django REST Framework
 - Django Filter
+- Simple JWT
+- drf-spectacular
+- django-simple-history
+
+### Base de datos y geodatos
+
 - PostgreSQL
 - PostGIS
+- GDAL
+- Shapely
+- GeoJSON
+- pyproj
+- geopy
 
-### 4.2 Procesos e infraestructura
+### Procesos e infraestructura
 
-- Celery
-- Redis
 - Docker
 - Docker Compose
+- Celery
+- Celery Beat
+- Redis
 - Flower
+- Gunicorn
+- WhiteNoise
 
-### 4.3 Frontend relacionado
-
-- React
-- Vite
-- Tailwind CSS
-- Leaflet / React Leaflet
-
-### 4.4 APIs y librerias de terceros consumidas
+### Integraciones
 
 - Google Maps Platform / Directions API
+- Google OAuth
 - Gmail API
 - WeasyPrint
 
-Estas integraciones son parte importante del valor tecnico del TFG porque introducen geocodificacion, optimizacion de rutas, apertura de navegacion externa, envio real de correos y generacion documental en PDF con formato profesional.
+## Arquitectura del backend
 
-## 5. Modulos funcionales actuales
+El backend esta organizado por dominios funcionales dentro de `apps/`:
 
-- `clients`: clientes, frecuencia, geolocalizacion e historico
-- `workers`: trabajadores, rol operativo y relacion con empresa
-- `trucks`: flota y asignacion de conductor
-- `company`: empresa, hub y configuracion operativa/fiscal
-- `zones`: zonas geograficas de recogida
-- `routes`: rutas plantilla, dias operativos, paradas y ejecucion diaria
-- `collections`: solicitudes de recogida y recogidas reales
-- `sales`: compradores internos, ventas, facturacion PDF y resumen economico
+```text
+apps/
+  base/          Utilidades comunes, literales, paginacion, health check y Celery
+  user/          Usuarios, owners, workers, clients, autenticacion local y perfiles
+  company/       Empresas, hub logistico y configuracion fiscal/operativa
+  zone/          Zonas geograficas de recogida
+  route/         Rutas plantilla, jornadas operativas, paradas y navegacion
+  collection/    Solicitudes de recogida, recogidas reales y consolidacion
+  sale/          Compradores, ventas, importes y facturas PDF
+  truck/         Camiones y asignacion de conductores
+global/          Settings, urls, celery, wsgi/asgi
+templates/       Plantillas HTML para documentos
+static/          Recursos estaticos
+docs/            Documentacion funcional y tecnica del TFG
+```
 
-## 6. Capacidades funcionales destacadas
+La API usa autenticacion JWT, paginacion personalizada, filtros por query params y documentacion OpenAPI generada automaticamente.
 
-### 6.1 Rutas y operacion diaria
+## Roles de usuario
 
-- configuracion de rutas plantilla con trabajador asignado
-- zonas por dia mediante `RouteZoneDay`
-- generacion semanal con `generate-week`
-- proteccion de dias ya operados y uso controlado de `regenerate`
-- limite de capacidad diaria y maximo funcional de clientes por jornada
-- optimizacion opcional con Google Directions
-- plan operativo interno por capacidad cuando la carga prevista exige retorno al hub
-- navegacion exportada que sale del hub y vuelve al hub al cierre de la jornada
-- ejecucion diaria con inicio, registro de parada y cierre de jornada
+- `owner`: administra la empresa, usuarios, configuracion, rutas, economia, ventas, facturacion y estadisticas.
+- `worker`: opera rutas asignadas, registra paradas y gestiona recogidas durante la ejecucion diaria.
+- `client`: consulta sus solicitudes, responde estimaciones y revisa su historico.
+- `buyer`: entidad comercial interna usada para ventas y facturas; no es un rol de acceso a la aplicacion.
 
-### 6.2 Solicitudes al cliente
+## Modulos principales
 
-- creacion automatica de `CollectionRequest`
-- expiracion basada en la fecha de la jornada
-- respuesta del cliente desde su portal
-- cierre manual por owner o worker
-- autoestimacion asincrona con Celery
-- notificacion por email cuando Gmail API esta disponible
+### Empresa y configuracion
 
-### 6.3 Recogidas y cierre economico
+- Datos fiscales y de contacto.
+- Precio global por litro.
+- Hub logistico geolocalizado.
+- Codigo LER y pie de factura.
+- Configuracion usada por recogidas, ventas y facturas.
 
-- recogidas pendientes de medicion, confirmadas o canceladas
-- consolidacion posterior en nave
-- precio por litro precargado desde configuracion de empresa
-- bandera `billable` para separar dato operativo de impacto economico
-- solo las recogidas `CONFIRMED` y `billable=true` computan en costes y agregados
+### Clientes, trabajadores y camiones
 
-### 6.4 Ventas y facturacion
+- CRUD de clientes y trabajadores.
+- Perfil operativo por rol.
+- Geocodificacion de direcciones de clientes.
+- Alta y asignacion de camiones a conductores.
+- Historico mediante `django-simple-history`.
 
-- modulo owner-only de compradores (`Buyer`)
-- modulo owner-only de ventas (`Sale`)
-- numero de factura manual y unico por empresa
-- fecha funcional unica: `invoice_date`
-- recalculo backend de subtotal, IVA y total
-- generacion de factura PDF bajo demanda: el fichero no se persiste, se renderiza en cada descarga con el estado vigente de la venta y de la configuracion fiscal
+### Zonas
 
-### 6.5 Configuracion global de empresa
+- Gestion de zonas geograficas.
+- Asociacion de clientes a zonas.
+- Uso de zonas para construir rutas y jornadas semanales.
 
-- precio global por litro
-- hub geolocalizado
-- razon social y CIF
-- direccion fiscal
-- codigo postal, ciudad, provincia y pais
-- telefono y email
-- cuenta bancaria
-- codigo LER
-- pie de factura
+### Rutas y operacion diaria
 
-## 7. Estado funcional actual
+- Rutas plantilla con trabajador asignado.
+- Configuracion de zonas por dia mediante `RouteZoneDay`.
+- Generacion semanal con `POST /routes/{id}/generate-week/`.
+- Proteccion de jornadas ya operadas.
+- Uso controlado de `regenerate`.
+- Capacidad diaria y limite funcional de clientes por jornada.
+- Optimizacion opcional con Google Directions.
+- Plan operativo con retornos al hub cuando la capacidad lo exige.
+- Exportacion de enlaces de navegacion a Google Maps.
+- Inicio, registro de parada y cierre de jornada.
 
-Actualmente estan operativos:
+### Solicitudes y recogidas
 
-- CRUD de clientes, trabajadores, camiones y zonas
-- configuracion de rutas y zonas por dia
-- generacion semanal de rutas operativas con `POST /routes/{id}/generate-week/`
-- ejecucion diaria de `RouteDay`
-- solicitudes previas al cliente con expiracion y trazabilidad
-- dashboard ejecutivo para owner y estadisticas economicas
-- configuracion global por empresa
-- recogidas con control de `facturable`
-- compradores internos, ventas y facturas PDF
-- resumen economico con costes, ingresos y beneficio neto
-- documentacion unificada del proyecto en `docs/`
+- Creacion automatica de `CollectionRequest`.
+- Respuesta del cliente desde su portal.
+- Expiracion de solicitudes segun fecha de jornada.
+- Autoestimacion asincrona con Celery.
+- Cierre manual por owner o worker.
+- Recogidas pendientes de medicion, confirmadas o canceladas.
+- Campo `billable` para separar dato operativo de impacto economico.
 
-## 8. Reglas de negocio clave
+### Ventas y facturacion
 
-- solo owner puede generar semana operativa
-- `regenerate=true` solo se admite si la semana sigue siendo editable
-- los dias ya operados se preservan cuando no se regenera
-- la capacidad diaria se aplica de forma estricta
-- una parada cancelada cuenta como procesada para cerrar la jornada
-- una recogida no facturable sigue existiendo, pero no entra en estadisticas economicas
-- las ventas computan como ingreso
-- las recogidas confirmadas y facturables computan como coste
-- el PDF de factura siempre se genera con los datos vigentes en el momento de descarga
+- CRUD owner-only de compradores (`Buyer`).
+- CRUD owner-only de ventas (`Sale`).
+- Numero de factura manual y unico por empresa.
+- Fecha funcional `invoice_date`.
+- Recalculo backend de subtotal, IVA y total.
+- Descarga de factura PDF generada al vuelo con WeasyPrint.
 
-## 9. Integraciones externas y valor tecnico
+### Estadisticas
 
-### 9.1 Google Maps / Directions
+- Resumen economico.
+- Costes por recogidas confirmadas y facturables.
+- Ingresos por ventas.
+- Beneficio neto.
+- Indicadores operativos para dashboard.
 
-Se utiliza para:
+## Integraciones externas
 
-- geocodificar direcciones de clientes
-- optimizar el orden de paradas en la generacion semanal
-- abrir navegacion desde la pantalla de ejecucion de ruta
-- exportar navegacion alineada con el `operational_plan` y con retornos intermedios al hub cuando la capacidad lo exige
+### Google Maps Platform
 
-### 9.2 Gmail API
+Se utiliza para geocodificar clientes, optimizar el orden de paradas, generar planes de navegacion y abrir enlaces externos de Google Maps desde la ejecucion de rutas.
 
-Se utiliza para:
+### Google OAuth
 
-- envio de credenciales de acceso
-- envio de notificaciones de solicitud de estimacion al cliente
+Permite autenticacion social mediante ID token de Google, validado en backend contra los client IDs configurados.
 
-### 9.3 Celery y Redis
+### Gmail API
 
-Se utilizan para:
+Se usa para enviar credenciales y notificaciones asociadas a solicitudes de estimacion cuando la configuracion esta disponible.
 
-- autoestimacion de solicitudes expiradas
-- envio de notificaciones asincronas
-- tareas programadas y periodicas
+### Celery, Redis y Flower
 
-### 9.4 WeasyPrint
+Celery ejecuta tareas asincronas y periodicas, Redis actua como broker/backend de resultados y Flower permite monitorizar workers y tareas.
 
-Se utiliza para:
+### WeasyPrint
 
-- renderizar facturas PDF desde plantillas HTML/CSS
-- mantener una salida documental profesional
-- generar documentos al vuelo sin almacenar binarios innecesarios
+Renderiza facturas PDF desde plantillas HTML/CSS sin persistir binarios innecesarios.
 
-## 10. Variables de entorno relevantes
+## Puesta en marcha
 
-- `DB_ENGINE`
-- `DB_NAME`
-- `DB_USER`
-- `DB_PASSWORD`
-- `DB_HOST`
-- `DB_PORT`
-- `CELERY_BROKER_URL`
-- `CELERY_RESULT_BACKEND`
-- `GOOGLE_MAPS_API_KEY`
-- `GOOGLE_CLIENT_ID`
-- `GMAIL_FROM`
-- `GMAIL_CLIENT_SECRET_JSON`
-- `GMAIL_TOKEN_JSON`
+### Requisitos
 
-Notas:
+- Docker Desktop
+- Docker Compose o Docker Compose V2
+- Archivo `.env` configurado en la raiz del backend
+- `ngrok.exe` en la raiz del backend si se quiere exponer la API con el lanzador del escritorio
 
-- `GMAIL_CLIENT_SECRET_JSON` y `GMAIL_TOKEN_JSON` deben ir en una sola linea dentro de `.env`
-- `GMAIL_FROM` no debe llevar espacios adicionales
-- el frontend usa `VITE_APP_API_URL`, `VITE_GOOGLE_CLIENT_ID` y, si procede, `VITE_GOOGLE_SIGNATURE`
+### Arranque con Docker
 
-## 11. Puesta en marcha local
-
-Levantar servicios:
+Desde `E:\UNIVERSIDAD\TFG\GreenPath_Backend`:
 
 ```bash
 docker-compose up --build
 ```
 
+Para arrancar contenedores ya creados:
+
+```bash
+docker-compose start
+```
+
 Servicios principales:
 
 - API: `http://localhost:8000/`
+- Health check: `http://localhost:8000/health/`
 - Swagger: `http://localhost:8000/docs/`
 - OpenAPI schema: `http://localhost:8000/schema/`
 - Admin Django: `http://localhost:8000/admin/`
 - Flower: `http://localhost:5555/`
-- Frontend Vite, levantado desde `D:\TFG\front\GreenPath_Frontend`: `http://localhost:5173/`
 
-## 12. Fixtures de demo
+### Arranque conjunto con frontend y ngrok
 
-Para poblar un entorno de pruebas se recomienda cargar, al menos, en este orden:
+El archivo `start_greenpath.bat` del escritorio levanta backend, frontend y ngrok:
+
+```text
+C:\Users\usuario\OneDrive\Escritorio\start_greenpath.bat
+```
+
+URLs esperadas:
+
+- Backend local: `http://localhost:8000`
+- Frontend local: `http://localhost:5173`
+- Ngrok backend: `https://epic-supreme-panther.ngrok-free.app`
+
+Si falla el arranque por puertos ocupados, revisa si hay otros proyectos usando `8000`, `5432`, `6379`, `5555` o `5173`.
+
+## Variables de entorno
+
+Variables principales del backend:
+
+```env
+SECRET_KEY=
+DEBUG=
+ALLOWED_HOSTS=
+CSRF_TRUSTED_ORIGINS=
+
+DB_ENGINE=
+DB_NAME=
+DB_USER=
+DB_PASSWORD=
+DB_HOST=
+DB_PORT=
+
+CELERY_BROKER_URL=
+CELERY_RESULT_BACKEND=
+
+GOOGLE_CLIENT_ID=
+GOOGLE_MAPS_API_KEY=
+
+SMTP_SERVER=
+SMTP_PORT=
+EMAIL_USER=
+EMAIL_PASSWORD=
+EMAIL_USE_TLS=
+EMAIL_USE_SSL=
+
+GMAIL_FROM=
+GMAIL_CLIENT_SECRET_JSON=
+GMAIL_TOKEN_JSON=
+```
+
+Notas:
+
+- `GMAIL_CLIENT_SECRET_JSON` y `GMAIL_TOKEN_JSON` deben guardarse en una sola linea dentro de `.env`.
+- `ALLOWED_HOSTS` y `CSRF_TRUSTED_ORIGINS` deben incluir el dominio de ngrok si se expone la API.
+- En Docker, `DB_HOST` y las URLs de Redis deben apuntar a los nombres de servicio del `docker-compose.yml`.
+- El frontend consume la API mediante `VITE_APP_API_URL`.
+
+## Endpoints y documentacion API
+
+Entradas principales del backend:
+
+- `POST /login/`
+- `POST /logout/`
+- `POST /token/refresh/`
+- `POST /authenticate/login`
+- `/users/`
+- `/workers/`
+- `/clients/`
+- `/companies/`
+- `/zones/`
+- `/trucks/`
+- `/routes/`
+- `/collections/`
+- `/buyers/`
+- `/sales/`
+
+Documentacion generada:
+
+- Swagger UI: `http://localhost:8000/docs/`
+- OpenAPI schema: `http://localhost:8000/schema/`
+
+Documentacion escrita:
+
+- `docs/API.md`
+- `docs/FUNCIONAL.md`
+- `docs/ARQUITECTURA_TECNICA.md`
+- `docs/FRONTEND_PANTALLAS.md`
+
+## Fixtures de demo
+
+Para poblar un entorno de pruebas se recomienda cargar los fixtures en este orden:
 
 ```bash
 python manage.py loaddata \
@@ -277,34 +337,84 @@ python manage.py loaddata \
   apps/user/fixtures/13-sales.json
 ```
 
-Consulta `apps/user/fixtures/README.md` para el detalle.
+Consulta `apps/user/fixtures/README.md` para el detalle del dataset.
 
-Notas del dataset de demo actual:
+El dataset incluye vehiculos, clientes por zonas, rutas, recogidas, configuracion de empresa, compradores y ventas coherentes con las estadisticas economicas.
 
-- 2 vehiculos operativos de ejemplo
-- clientes repartidos por zonas reales sin solapes funcionales entre municipios
-- recogidas recientes concentradas en fechas cercanas para probar generacion y estadisticas
-- ventas de ejemplo ajustadas para mantener coherencia entre volumen comprado confirmado/facturable y volumen vendido
+## Comandos utiles
 
-## 13. Estado de la documentacion
+Comprobar configuracion Django:
 
-La documentacion principal del proyecto se mantiene unificada en la carpeta `docs/` del backend. No se limita a explicar endpoints, sino que cubre negocio, requisitos, arquitectura, testing, despliegue, integraciones, frontend, manual de usuario, planificacion y modelo de datos.
+```bash
+python manage.py check
+```
 
-Documentos especialmente importantes:
+Aplicar migraciones:
 
+```bash
+python manage.py migrate
+```
+
+Crear superusuario:
+
+```bash
+python manage.py createsuperuser
+```
+
+Levantar servidor Django sin Docker:
+
+```bash
+python manage.py runserver 0.0.0.0:8000
+```
+
+Ejecutar worker Celery:
+
+```bash
+celery -A global worker --loglevel=info
+```
+
+Ejecutar beat Celery:
+
+```bash
+celery -A global beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+```
+
+Abrir Flower:
+
+```bash
+celery -A global flower --port=5555 --basic_auth=admin:adminpassword
+```
+
+## Reglas de negocio destacadas
+
+- Solo `owner` puede generar semanas operativas.
+- `regenerate=true` solo se admite cuando la semana sigue siendo editable.
+- Los dias ya operados se preservan si no se regenera.
+- La capacidad diaria se aplica de forma estricta.
+- Una parada cancelada cuenta como procesada para poder cerrar la jornada.
+- Una recogida no facturable existe a nivel operativo, pero no entra en estadisticas economicas.
+- Las ventas computan como ingreso.
+- Las recogidas confirmadas y facturables computan como coste.
+- La factura PDF siempre se genera con los datos vigentes en el momento de descarga.
+
+## Documentacion del TFG
+
+La documentacion principal se mantiene en `docs/`. Documentos recomendados:
+
+- `docs/INDICE_DOCUMENTACION.md`
 - `docs/FUNCIONAL.md`
 - `docs/REQUISITOS.md`
 - `docs/ARQUITECTURA_TECNICA.md`
 - `docs/API.md`
 - `docs/FRONTEND_PANTALLAS.md`
 - `docs/INTEGRACIONES_Y_APIS_EXTERNAS.md`
+- `docs/ROUTE_FLOW.md`
+- `docs/TESTING.md`
 - `docs/MEMORIA_FUNCIONAL_TFG.md`
 - `docs/PLANIFICACION_Y_COSTES.md`
 - `docs/UML_BD.md`
 
-## 14. Mapa de lectura recomendado
-
-Si vienes nuevo al proyecto:
+Lectura recomendada para entender el proyecto completo:
 
 1. `README.md`
 2. `docs/INDICE_DOCUMENTACION.md`
@@ -313,16 +423,9 @@ Si vienes nuevo al proyecto:
 5. `docs/API.md`
 6. `docs/FRONTEND_PANTALLAS.md`
 7. `docs/INTEGRACIONES_Y_APIS_EXTERNAS.md`
-8. `docs/REQUISITOS.md`
-9. `docs/TESTING.md`
-10. `docs/MEMORIA_FUNCIONAL_TFG.md`
+8. `docs/TESTING.md`
+9. `docs/MEMORIA_FUNCIONAL_TFG.md`
 
-## 15. Valor del proyecto
+## Valor del proyecto
 
-GreenPath tiene valor por tres razones principales:
-
-- resuelve un problema real de digitalizacion empresarial
-- combina operacion, logistica, economia y documentacion en una sola herramienta
-- incorpora varias librerias y APIs consumidas que elevan claramente la complejidad tecnica del TFG
-
-En conjunto, el proyecto ya no debe leerse como una API de gestion basica, sino como una plataforma full-stack con alcance funcional amplio, integraciones reales y una base documental suficiente para una memoria de TFG extensa y defendible.
+GreenPath no es un CRUD aislado. Es una plataforma que conecta operacion real, logistica, economia, documentacion e integraciones externas. Su valor tecnico esta en la combinacion de API REST, geolocalizacion, optimizacion de rutas, procesos asincronos, facturacion PDF, autenticacion por roles y una base documental preparada para justificar el alcance funcional de un TFG.

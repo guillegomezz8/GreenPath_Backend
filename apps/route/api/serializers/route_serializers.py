@@ -19,6 +19,7 @@ from apps.base.literals import MAX_CLIENTS_PER_DAY
 from apps.route.models import Route
 from apps.zone.models import Zone
 from apps.base.enums import Weekday, ContainerType
+from apps.company.utils import resolve_user_company
 
 configure_logging()
 
@@ -184,9 +185,27 @@ class GenerateWeekSerializer(serializers.Serializer):
         return attrs
 
 
+class CompanyZonePrimaryKeyRelatedField(serializers.PrimaryKeyRelatedField):
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        company = self.context.get("company")
+
+        if company is None:
+            request = self.context.get("request")
+            if request is None:
+                return queryset.none()
+            if request.user.is_staff or request.user.is_superuser:
+                return queryset
+            company = resolve_user_company(request.user)
+
+        if company is None:
+            return queryset.none()
+        return queryset.filter(company=company)
+
+
 class RouteZoneDayConfigItemSerializer(serializers.Serializer):
     weekday = serializers.IntegerField(min_value=0, max_value=6)
-    zones = serializers.PrimaryKeyRelatedField(queryset=Zone.objects.all(), many=True, required=False)
+    zones = CompanyZonePrimaryKeyRelatedField(queryset=Zone.objects.all(), many=True, required=False)
 
 
 class RouteZoneConfigSerializer(serializers.Serializer):

@@ -57,8 +57,48 @@ class RouteApiTests(BackendTestMixin, TestCase):
         self.assertEqual(created_route.company_id, self.company.id)
         self.assertEqual(created_route.worker_id, worker.id)
 
+    def test_zone_config_rejects_zones_from_another_company(self):
+        _, _, other_company = self.create_owner_context("route-zone-other")
+        other_zone = self.create_zone(other_company, "Zona Externa")
+
+        response = self.owner_client.put(
+            f"/routes/{self.route.id}/zone-config/",
+            {
+                "zone_days": [
+                    {
+                        "weekday": self.today().weekday(),
+                        "zones": [other_zone.id],
+                    },
+                ],
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(RouteZoneDay.objects.filter(route=self.route).exists())
+
+    def test_zone_config_accepts_zones_from_route_company(self):
+        zone = self.create_zone(self.company, "Zona Interna")
+
+        response = self.owner_client.put(
+            f"/routes/{self.route.id}/zone-config/",
+            {
+                "zone_days": [
+                    {
+                        "weekday": self.today().weekday(),
+                        "zones": [zone.id],
+                    },
+                ],
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        route_zone_day = RouteZoneDay.objects.get(route=self.route, weekday=self.today().weekday())
+        self.assertEqual(list(route_zone_day.zones.values_list("id", flat=True)), [zone.id])
+
     def test_generate_week_creates_route_day_stops_and_collection_requests(self):
-        zone = self.create_zone("Zona Generacion")
+        zone = self.create_zone(self.company, "Zona Generacion")
         RouteZoneDay.objects.create(route=self.route, weekday=self.today().weekday()).zones.add(zone)
         _, client = self.create_client(
             self.company,
@@ -106,7 +146,7 @@ class RouteApiTests(BackendTestMixin, TestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_generate_week_uses_same_company_history_for_planned_liters(self):
-        zone = self.create_zone("Zona Scope Historia")
+        zone = self.create_zone(self.company, "Zona Scope Historia")
         RouteZoneDay.objects.create(route=self.route, weekday=self.today().weekday()).zones.add(zone)
         _, client = self.create_client(
             self.company,
@@ -153,7 +193,7 @@ class RouteApiTests(BackendTestMixin, TestCase):
         self.assertEqual(route_day.ordered_clients.count(), 1)
 
     def test_generate_week_falls_back_to_estimated_liters_when_no_confirmed_history_exists(self):
-        zone = self.create_zone("Zona Estimacion Fallback")
+        zone = self.create_zone(self.company, "Zona Estimacion Fallback")
         RouteZoneDay.objects.create(route=self.route, weekday=self.today().weekday()).zones.add(zone)
         _, client = self.create_client(
             self.company,
@@ -187,7 +227,7 @@ class RouteApiTests(BackendTestMixin, TestCase):
         self.assertEqual(route_day.ordered_clients.count(), 0)
 
     def test_generate_week_uses_consistent_default_max_clients_per_day(self):
-        zone = self.create_zone("Zona Max Clientes")
+        zone = self.create_zone(self.company, "Zona Max Clientes")
         RouteZoneDay.objects.create(route=self.route, weekday=self.today().weekday()).zones.add(zone)
 
         for index in range(20):
@@ -212,7 +252,7 @@ class RouteApiTests(BackendTestMixin, TestCase):
         self.assertEqual(route_day.ordered_clients.count(), 10)
 
     def test_generate_week_orders_clients_by_effective_reference_date(self):
-        zone = self.create_zone("Zona Fecha Referencia")
+        zone = self.create_zone(self.company, "Zona Fecha Referencia")
         RouteZoneDay.objects.create(route=self.route, weekday=self.today().weekday()).zones.add(zone)
         _, client_recent_plan = self.create_client(
             self.company,

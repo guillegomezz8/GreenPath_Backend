@@ -5,8 +5,9 @@ from apps.zone.models import Zone
 
 @admin.register(Zone)
 class ZoneAdmin(admin.GISModelAdmin):
-    list_display = ('id', 'name')
-    search_fields = ('name',)
+    list_display = ('id', 'name', 'company')
+    list_filter = ('company',)
+    search_fields = ('name', 'company__name')
 
     formfield_overrides = {
         geomodels.PolygonField: {

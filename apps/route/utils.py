@@ -508,7 +508,7 @@ def generate_route_day_clients(route_day, regenerate=False, reserved_client_ids=
             logging.info(f"[route_utils - generate_route_day_clients] Sin paradas en route_day {route_day.id}: no hay RouteZoneDay configurado para weekday {route_day.weekday}")
             return []
 
-        zones = list(zone_day.zones.all())
+        zones = list(zone_day.zones.filter(company=route_day.route.company))
         if not zones:
             logging.info(f"[route_utils - generate_route_day_clients] Sin paradas en route_day {route_day.id}: RouteZoneDay sin zonas asignadas")
             return []

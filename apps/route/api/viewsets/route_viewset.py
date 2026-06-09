@@ -185,14 +185,17 @@ class RouteViewSet(viewsets.ModelViewSet):
                 zone_days_qs = RouteZoneDay.objects.filter(route=route).prefetch_related('zones').order_by('weekday')
                 payload = []
                 for zone_day in zone_days_qs:
-                    zones = zone_day.zones.all()
+                    zones = zone_day.zones.filter(company=route.company)
                     payload.append({
                         'weekday': zone_day.weekday,
                         'zones': [{'id': zone.id, 'name': zone.name} for zone in zones],
                     })
                 return Response({'zone_days': payload}, status=status.HTTP_200_OK)
 
-            serializer = self.get_serializer(data=request.data)
+            serializer = self.get_serializer(
+                data=request.data,
+                context={**self.get_serializer_context(), "company": route.company},
+            )
             serializer.is_valid(raise_exception=True)
             zone_days_data = serializer.validated_data.get('zone_days') or []
 
@@ -213,7 +216,7 @@ class RouteViewSet(viewsets.ModelViewSet):
             zone_days_qs = RouteZoneDay.objects.filter(route=route).prefetch_related('zones').order_by('weekday')
             payload = []
             for zone_day in zone_days_qs:
-                zones = zone_day.zones.all()
+                zones = zone_day.zones.filter(company=route.company)
                 payload.append({
                     'weekday': zone_day.weekday,
                     'zones': [{'id': zone.id, 'name': zone.name} for zone in zones],
@@ -346,7 +349,7 @@ class RouteViewSet(viewsets.ModelViewSet):
             zone_days_qs = RouteZoneDay.objects.filter(route=route).prefetch_related('zones').order_by('weekday')
             zone_days_payload = []
             for zone_day in zone_days_qs:
-                zones = zone_day.zones.all()
+                zones = zone_day.zones.filter(company=route.company)
                 zone_days_payload.append({
                     'weekday': zone_day.weekday,
                     'zones': [{'id': zone.id, 'name': zone.name} for zone in zones],

@@ -114,9 +114,9 @@ class BackendTestMixin:
             driver=driver,
         )
 
-    def create_zone(self, name="Zona Demo", polygon=None):
+    def create_zone(self, company, name="Zona Demo", polygon=None):
         polygon = polygon or self.default_polygon()
-        return Zone.objects.create(name=name, polygon=polygon)
+        return Zone.objects.create(company=company, name=name, polygon=polygon)
 
     def default_polygon(self):
         return Polygon(

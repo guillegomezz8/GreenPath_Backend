@@ -1,3 +1,5 @@
+import json
+
 from rest_framework import serializers
 from django.db.models import Sum, Count, Q
 import logging
@@ -24,6 +26,7 @@ class WorkerSerializer(serializers.ModelSerializer):
     canceled_collections = serializers.SerializerMethodField()
     total_incomes = serializers.SerializerMethodField()
     role = serializers.CharField(source="get_role_display", read_only=True)
+    role_code = serializers.CharField(source="role", read_only=True)
     photo = serializers.ImageField(required=False, allow_null=True)
 
     disabled = serializers.BooleanField(read_only=True)
@@ -55,7 +58,7 @@ class WorkerSerializer(serializers.ModelSerializer):
             pending_collections=Count("id", filter=Q(status=CollectionStatus.PENDING_MEASUREMENT)),
             canceled_collections=Count("id", filter=Q(status=CollectionStatus.CANCELED)),
             total_liters_collected=Sum("net_liters", filter=Q(status=CollectionStatus.CONFIRMED)),
-            total_incomes=Sum("total_price", filter=Q(status=CollectionStatus.CONFIRMED)),
+            total_incomes=Sum("total_price", filter=Q(status=CollectionStatus.CONFIRMED, billable=True)),
         )
         obj._collection_stats_cache = stats_cache
         return stats_cache
@@ -98,15 +101,11 @@ class CreateWorkerSerializer(serializers.ModelSerializer):
 
     get_access = serializers.BooleanField(required=True, write_only=True)
 
-    role = serializers.CharField(required=False, allow_blank=False, max_length=10)
-
     class Meta:
         model = Worker
         fields = (
             "get_access",
             "user",
-            "role",
-            "company",
             "name",
             "surname",
             "address",
@@ -115,6 +114,16 @@ class CreateWorkerSerializer(serializers.ModelSerializer):
             "birth_date",
             "photo",
         )
+
+    def to_internal_value(self, data):
+        normalized_data = {key: data.get(key) for key in data.keys()} if hasattr(data, "keys") else dict(data)
+        user_data = normalized_data.get("user")
+        if isinstance(user_data, str):
+            try:
+                normalized_data["user"] = json.loads(user_data)
+            except json.JSONDecodeError:
+                pass
+        return super().to_internal_value(normalized_data)
 
     def validate_phone(self, v):
         v = (v or "").strip()
@@ -134,13 +143,9 @@ class UpdateWorkerSerializer(serializers.ModelSerializer):
     birth_date = serializers.DateField(required=False, allow_null=True)
     photo = serializers.ImageField(required=False, allow_null=True)
 
-    role = serializers.CharField(required=False, allow_blank=False, max_length=10)
-
     class Meta:
         model = Worker
         fields = (
-            "role",
-            "company",
             "name",
             "surname",
             "address",
@@ -180,13 +185,10 @@ class PartialUpdateWorkerSerializer(serializers.ModelSerializer):
     dni = serializers.CharField(required=False, max_length=255, trim_whitespace=True)
     birth_date = serializers.DateField(required=False, allow_null=True)
     photo = serializers.ImageField(required=False, allow_null=True)
-    role = serializers.CharField(required=False, allow_blank=False, max_length=10)
 
     class Meta:
         model = Worker
         fields = (
-            "role",
-            "company",
             "name",
             "surname",
             "address",

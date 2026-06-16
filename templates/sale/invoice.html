@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Factura {{ numero_factura }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 15mm;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Calibri, Arial, sans-serif;
+            font-size: 9.5pt;
+            line-height: 1.3;
+            color: #000000;
+        }
+
+        .container {
+            width: 100%;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 22px;
+        }
+
+        .empresa-info {
+            width: 46%;
+        }
+
+        .empresa-box {
+            border: 1px solid #000000;
+            padding: 6px 8px;
+            min-height: 118px;
+        }
+
+        .empresa-nombre {
+            font-size: 9.5pt;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .empresa-detalle {
+            font-size: 9.5pt;
+            line-height: 1.35;
+            overflow-wrap: anywhere;
+        }
+
+        .empresa-detalle .bold {
+            font-weight: bold;
+        }
+
+        .factura-info {
+            width: 30%;
+            padding-top: 2px;
+        }
+
+        .factura-titulo {
+            font-size: 9.5pt;
+            font-weight: bold;
+            text-align: left;
+            margin-bottom: 20px;
+            padding-left: 6px;
+        }
+
+        .factura-box {
+            border: 1px solid #000000;
+        }
+
+        .factura-row {
+            border-bottom: 1px solid #000000;
+            padding: 4px 6px;
+            font-size: 9.5pt;
+            line-height: 1.2;
+        }
+
+        .factura-row:last-child {
+            border-bottom: 0;
+        }
+
+        .destinatario {
+            margin-bottom: 20px;
+        }
+
+        .destinatario-label {
+            font-size: 9.5pt;
+            margin: 0 0 4px 6px;
+        }
+
+        .destinatario-box {
+            border: 1px solid #000000;
+            min-height: 82px;
+            padding: 6px 8px;
+        }
+
+        .destinatario-info {
+            font-size: 9.5pt;
+            line-height: 1.35;
+            overflow-wrap: anywhere;
+        }
+
+        .destinatario-nombre {
+            font-weight: bold;
+        }
+
+        .tabla-items {
+            width: 100%;
+            border-collapse: collapse;
+            border: 2px solid #000000;
+            table-layout: fixed;
+            margin-bottom: 16px;
+        }
+
+        .tabla-items th {
+            background-color: #ffffff;
+            border: 1px solid #000000;
+            border-bottom: 2px solid #000000;
+            padding: 2px 6px;
+            font-size: 9.5pt;
+            font-weight: normal;
+            text-align: center;
+            line-height: 1.1;
+        }
+
+        .tabla-items td {
+            border: 1px solid #000000;
+            padding: 2px 6px;
+            font-size: 9.5pt;
+            line-height: 1.1;
+        }
+
+        .tabla-items .col-cantidad {
+            width: 14%;
+            text-align: center;
+        }
+
+        .tabla-items .col-descripcion {
+            width: 60%;
+            text-align: left;
+        }
+
+        .tabla-items .col-precio {
+            width: 13%;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .tabla-items .col-suma {
+            width: 13%;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .tabla-items .empty-row td {
+            height: 22px;
+        }
+
+        .totales-section {
+            display: flex;
+            align-items: flex-start;
+            margin-top: 6px;
+        }
+
+        .cuenta-bancaria {
+            font-size: 9.5pt;
+            width: auto;
+            margin-right: 18px;
+            padding-left: 4px;
+        }
+
+        .totales {
+            width: 325px;
+            margin-left: auto;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 2px 0;
+            font-size: 9.5pt;
+            line-height: 1.2;
+        }
+
+        .total-row .label {
+            text-align: left;
+            flex: 1;
+        }
+
+        .total-row .valor {
+            text-align: right;
+            min-width: 110px;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="empresa-info">
+                <div class="empresa-box">
+                    <div class="empresa-nombre">{{ empresa_nombre }}</div>
+                    <div class="empresa-detalle">
+                        <div class="bold">{{ empresa_cif }}</div>
+                        {% for line in company_address_lines %}
+                        <div class="bold">{{ line }}</div>
+                        {% endfor %}
+                        <div>Telf. {{ empresa_telefono }}</div>
+                        <div>email: {{ empresa_email }}</div>
+                        {% if codigo_ler %}
+                        <div>C&oacute;digo LER: {{ codigo_ler }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="factura-info">
+                <div class="factura-titulo">FACTURA</div>
+                <div class="factura-box">
+                    <div class="factura-row">N&ordm; de Factura {{ numero_factura }}</div>
+                    <div class="factura-row">Fecha Factura: {{ fecha_factura }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="destinatario">
+            <div class="destinatario-label">Destinatario</div>
+            <div class="destinatario-box">
+                <div class="destinatario-info">
+                    <div class="destinatario-nombre">{{ cliente_nombre }}</div>
+                    <div>{{ cliente_cif }}</div>
+                    {% for line in buyer_address_lines %}
+                    <div>{{ line }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <table class="tabla-items">
+            <thead>
+                <tr>
+                    <th class="col-cantidad">CANTIDAD</th>
+                    <th class="col-descripcion">DESCRIPCI&Oacute;N</th>
+                    <th class="col-precio">PRECIO</th>
+                    <th class="col-suma">SUMA</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td class="col-cantidad">{{ item.cantidad }}</td>
+                    <td class="col-descripcion">{{ item.descripcion }}</td>
+                    <td class="col-precio">{{ item.precio_unitario }}</td>
+                    <td class="col-suma">{{ item.total }}</td>
+                </tr>
+                {% endfor %}
+
+                {% for _ in empty_rows %}
+                <tr class="empty-row">
+                    <td class="col-cantidad">&nbsp;</td>
+                    <td class="col-descripcion">&nbsp;</td>
+                    <td class="col-precio">&nbsp;</td>
+                    <td class="col-suma">&nbsp;</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="totales-section">
+            <div class="cuenta-bancaria">
+                {% if cuenta_bancaria %}
+                N&ordm; CTA.: {{ cuenta_bancaria }}
+                {% endif %}
+            </div>
+
+            <div class="totales">
+                <div class="total-row">
+                    <span class="label">Base imponible</span>
+                    <span class="valor">{{ base_imponible }}</span>
+                </div>
+                <div class="total-row">
+                    <span class="label">IVA {{ iva_porcentaje }} %</span>
+                    <span class="valor">{{ iva_cantidad }}</span>
+                </div>
+                <div class="total-row">
+                    <span class="label">TOTAL EUROS</span>
+                    <span class="valor">{{ total }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

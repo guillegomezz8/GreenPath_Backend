@@ -1,0 +1,23 @@
+[
+  {
+    "model": "company.companysettings",
+    "pk": 1,
+    "fields": {
+      "company": 1,
+      "default_price_per_liter": "1.200",
+      "billing_business_name": "Servicios Coria S.L.",
+      "billing_tax_id": "B12345678",
+      "billing_address": "Poligono Industrial La Estrella, Nave 12",
+      "billing_postal_code": "41110",
+      "billing_city": "Bollullos de la Mitacion",
+      "billing_province": "Sevilla",
+      "billing_country": "Espana",
+      "billing_phone": "955123456",
+      "billing_email": "facturacion@servicioscoria.es",
+      "billing_bank_account": "ES7620770024003102575766",
+      "billing_ler_code": "20 01 25",
+      "billing_footer": "Factura generada desde GreenPath para entorno de demo.",
+      "disabled": false
+    }
+  }
+]

@@ -1,8 +1,9 @@
 import logging
+from datetime import datetime
 
 from django.utils import timezone
 from django.db.models import Q
-from django_filters.rest_framework import FilterSet, CharFilter, DjangoFilterBackend
+from django_filters.rest_framework import FilterSet, CharFilter, BooleanFilter, DateFilter, DjangoFilterBackend
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -48,22 +49,46 @@ class CollectionFilter(FilterSet):
     worker = CharFilter(field_name="worker__name", lookup_expr="icontains")
     status = CharFilter(field_name="status", lookup_expr="icontains")
     worker_id = CharFilter(field_name="worker__id", lookup_expr="exact")
+    billable = BooleanFilter(field_name="billable")
+    start_date = DateFilter(field_name="collection_date", lookup_expr="gte")
+    end_date = DateFilter(field_name="collection_date", lookup_expr="lte")
     search = CharFilter(method="filter_search")
 
     class Meta:
         model = Collection
-        fields = ["client", "worker", "status", "worker_id", "search"]
+        fields = ["client", "worker", "status", "worker_id", "billable", "start_date", "end_date", "search"]
 
     def filter_search(self, queryset, name, value):
-        return queryset.filter(
-            Q(client__name__icontains=value) |
-            Q(client__cif__icontains=value) |
-            Q(worker__name__icontains=value) |
-            Q(worker__surname__icontains=value) |
-            Q(notes__icontains=value) |
-            Q(status__icontains=value) |
-            Q(route_day_client__route_day__route__name__icontains=value)
-        ).distinct()
+        search_value = (value or "").strip()
+        if not search_value:
+            return queryset
+
+        date_value = self._parse_search_date(search_value)
+        user = getattr(self.request, "user", None)
+        query = Q(worker__name__icontains=search_value) | Q(worker__surname__icontains=search_value)
+        if date_value:
+            query |= Q(collection_date=date_value)
+
+        if getattr(user, "role_type", None) == "client":
+            return queryset.filter(query).distinct()
+
+        query |= (
+            Q(client__name__icontains=search_value) |
+            Q(client__cif__icontains=search_value) |
+            Q(notes__icontains=search_value) |
+            Q(status__icontains=search_value) |
+            Q(route_day_client__route_day__route__name__icontains=search_value)
+        )
+        return queryset.filter(query).distinct()
+
+    @staticmethod
+    def _parse_search_date(value):
+        for date_format in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%d.%m.%Y"):
+            try:
+                return datetime.strptime(value, date_format).date()
+            except ValueError:
+                continue
+        return None
 
 
 def _user_company_id(user):
@@ -165,8 +190,9 @@ class CollectionViewSet(viewsets.ModelViewSet):
 
             request_status = request.query_params.get("status")
             queryset = CollectionRequest.objects.filter(route_day_client__client=request.user.client_profile).select_related("route_day_client", "route_day_client__client", "route_day_client__route_day", "route_day_client__route_day__route")
-            queryset = queryset.filter(status=request_status) if request_status else queryset.filter(status__in=[CollectionRequestStatus.PENDING, CollectionRequestStatus.AUTO_ESTIMATED])
-            queryset = queryset.order_by("route_day_client__route_day__date", "expires_at")
+            if request_status and request_status != "ALL":
+                queryset = queryset.filter(status=request_status)
+            queryset = queryset.order_by("-created_date", "-id")
             page = self.paginate_queryset(queryset)
 
             if page is not None:
@@ -220,14 +246,16 @@ class CollectionViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
 
+            collection_request.container_type = serializer.validated_data.get("container_type", collection_request.container_type)
+            if serializer.validated_data.get("container_number") is not None:
+                collection_request.container_number = serializer.validated_data["container_number"]
             collection_request.final_liters = serializer.validated_data["final_liters"]
-            if collection_request.estimated_liters is None:
-                collection_request.estimated_liters = collection_request.final_liters
+            collection_request.estimated_liters = collection_request.final_liters
             collection_request.final_source = PlannedSource.CLIENT
             collection_request.status = CollectionRequestStatus.ANSWERED
             collection_request.answered_by = request.user
             collection_request.answered_at = timezone.now()
-            collection_request.save(update_fields=["final_liters", "estimated_liters", "final_source", "status", "answered_by", "answered_at", "modified_date"])
+            collection_request.save(update_fields=["container_type", "container_number", "final_liters", "estimated_liters", "final_source", "status", "answered_by", "answered_at", "modified_date"])
             logging.info(f"[collection_viewset - answer_request] Solicitud {collection_request.id} respondida por cliente {request.user.id}")
             return Response({MESSAGE: COLLECTION_REQUEST_ANSWERED_SUCCESS, "request": CollectionRequestSerializer(collection_request).data}, status=status.HTTP_200_OK)
         except ValidationError:

@@ -24,6 +24,8 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost 127.0.0.1').split(' ')
 CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'https://localhost:8000').split(' ')
 CORS_ALLOW_ALL_ORIGINS = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+# Keep same-origin URL privacy while still sending the site origin to external map tiles.
+SECURE_REFERRER_POLICY = os.getenv("SECURE_REFERRER_POLICY", "strict-origin-when-cross-origin")
 
 CORS_ALLOW_HEADERS = [
     'Content-Type',
@@ -56,6 +58,7 @@ LOCAL_APPS = [
     'apps.company',
     'apps.route',
     'apps.collection',
+    'apps.sale',
     'apps.zone',
     'apps.truck',
 ]
@@ -187,7 +190,7 @@ SIMPLE_JWT = {
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_DIRS = [BASE_DIR / "global" / "static"]
+STATICFILES_DIRS = [BASE_DIR / "static"]
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -223,5 +226,3 @@ CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:80
 
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
-
-STATICFILES_DIRS = (BASE_DIR, 'static')

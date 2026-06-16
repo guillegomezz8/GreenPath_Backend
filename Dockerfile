@@ -8,8 +8,13 @@ RUN apt-get update && apt-get install -y \
     libgeos-dev \
     postgresql-client \
     libpq-dev \
-    libgl1 \ 
-    libglib2.0-0 \ 
+    libgl1 \
+    libglib2.0-0 \
+    libcairo2 \
+    libpango-1.0-0 \
+    libgdk-pixbuf-2.0-0 \
+    shared-mime-info \
+    fonts-dejavu-core \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 

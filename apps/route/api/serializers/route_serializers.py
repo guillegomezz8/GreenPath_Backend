@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import timedelta
 from decimal import Decimal
 import logging
 
@@ -9,36 +9,46 @@ from apps.base.literals import (
     GENERATE_WEEK_CAPACITY_MUTUALLY_EXCLUSIVE,
     GENERATE_WEEK_DAYS_DUPLICATED,
     GENERATE_WEEK_DAYS_OUTSIDE_WEEK,
-    ROUTE_DAY_DATE_PAST_INVALID,
-    ROUTE_ZONE_CONFIG_DAY_INVALID,
-    ROUTE_ZONE_CONFIG_KEY_INVALID,
     ROUTE_END_DATE_BEFORE_START_DATE,
     ROUTE_WORKER_COMPANY_INVALID,
     ROUTE_ZONE_DAYS_DUPLICATED,
     ROUTE_ZONE_WEEKDAY_INVALID,
 )
 from apps.base.logger import configure_logging
-from apps.route.models import Route, RouteDay, RouteDayClient
-from apps.user.api.serializers.client_serializers import ClientSerializer
+from apps.base.literals import MAX_CLIENTS_PER_DAY
+from apps.route.models import Route
 from apps.zone.models import Zone
 from apps.base.enums import Weekday, ContainerType
+from apps.company.utils import resolve_user_company
 
 configure_logging()
 
 
 class RouteSerializer(serializers.ModelSerializer):
+    company_name = serializers.SerializerMethodField()
+
     class Meta:
         model = Route
         exclude = ('modified_date', 'deleted_date', 'created_date')
 
+    def get_company_name(self, obj):
+        try:
+            if obj.company_id and obj.company:
+                return obj.company.name
+            return ""
+        except Exception as e:
+            logging.error(f"[route_serializers - get_company_name] Error obteniendo nombre de empresa para ruta {obj.id}: {str(e)}")
+            return ""
+
 
 class CreateRouteSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
     start_date = serializers.DateField(required=True)
     end_date = serializers.DateField(required=False, allow_null=True)
 
     class Meta:
         model = Route
-        fields = ('name', 'worker', 'start_date', 'end_date', 'week_start', 'week_end')
+        fields = ('id', 'name', 'worker', 'start_date', 'end_date', 'week_start', 'week_end')
         extra_kwargs = {'worker': {'required': False}}
 
     def validate(self, attrs):
@@ -137,48 +147,6 @@ class PartialUpdateRouteSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(f"Error updating route: {str(e)}")
 
 
-class RouteDayClientSerializer(serializers.ModelSerializer):
-    client = ClientSerializer()
-
-    class Meta:
-        model = RouteDayClient
-        fields = ['client', 'order']
-
-
-class RouteDaySerializer(serializers.ModelSerializer):
-    ordered_clients = RouteDayClientSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = RouteDay
-        fields = ['id', 'route', 'date', 'ordered_clients']
-
-
-class GenerateWeeklyZoneRoutesInputSerializer(serializers.Serializer):
-    zone_config = serializers.DictField(child=serializers.ListField(child=serializers.CharField(max_length=100)), help_text='Configuracion de zonas por dia. Clave: dia de semana (0-6), Valor: lista de zonas')
-    max_clients_per_day = serializers.IntegerField(default=25, min_value=1, max_value=50, help_text='Maximo numero de clientes por dia')
-
-    def validate_zone_config(self, value):
-        for key in value.keys():
-            try:
-                day = int(key)
-                if day < 0 or day > 6:
-                    raise serializers.ValidationError(ROUTE_ZONE_CONFIG_DAY_INVALID)
-            except ValueError:
-                raise serializers.ValidationError(ROUTE_ZONE_CONFIG_KEY_INVALID)
-        return value
-
-
-class GenerateDailyZoneRouteInputSerializer(serializers.Serializer):
-    date = serializers.DateField(help_text='Fecha para la ruta (formato: YYYY-MM-DD)')
-    zones = serializers.ListField(child=serializers.CharField(max_length=100), help_text='Lista de zonas para incluir en la ruta')
-    max_clients = serializers.IntegerField(default=25, min_value=1, max_value=50, help_text='Maximo numero de clientes para esta ruta')
-
-    def validate_date(self, value):
-        if value < date.today():
-            raise serializers.ValidationError(ROUTE_DAY_DATE_PAST_INVALID)
-        return value
-
-
 class GenerateWeekDayCapacitySerializer(serializers.Serializer):
     date = serializers.DateField()
     daily_capacity_liters = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=Decimal('0.00'))
@@ -188,7 +156,7 @@ class GenerateWeekSerializer(serializers.Serializer):
     week_start_date = serializers.DateField()
     regenerate = serializers.BooleanField(default=False, required=False)
     auto_estimate_without_contact = serializers.BooleanField(default=False, required=False)
-    max_clients_per_day = serializers.IntegerField(required=False, min_value=1, max_value=100, default=10)
+    max_clients_per_day = serializers.IntegerField(required=False, min_value=1, max_value=100, default=MAX_CLIENTS_PER_DAY)
     daily_capacity_liters = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=Decimal('0.00'), required=False, allow_null=True)
     days = GenerateWeekDayCapacitySerializer(many=True, required=False, allow_empty=False)
 
@@ -217,9 +185,27 @@ class GenerateWeekSerializer(serializers.Serializer):
         return attrs
 
 
+class CompanyZonePrimaryKeyRelatedField(serializers.PrimaryKeyRelatedField):
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        company = self.context.get("company")
+
+        if company is None:
+            request = self.context.get("request")
+            if request is None:
+                return queryset.none()
+            if request.user.is_staff or request.user.is_superuser:
+                return queryset
+            company = resolve_user_company(request.user)
+
+        if company is None:
+            return queryset.none()
+        return queryset.filter(company=company)
+
+
 class RouteZoneDayConfigItemSerializer(serializers.Serializer):
     weekday = serializers.IntegerField(min_value=0, max_value=6)
-    zones = serializers.PrimaryKeyRelatedField(queryset=Zone.objects.all(), many=True, required=False)
+    zones = CompanyZonePrimaryKeyRelatedField(queryset=Zone.objects.all(), many=True, required=False)
 
 
 class RouteZoneConfigSerializer(serializers.Serializer):

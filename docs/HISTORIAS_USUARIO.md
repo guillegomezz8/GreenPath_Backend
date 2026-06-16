@@ -1,6 +1,30 @@
 # Historias de Usuario GreenPath
 
-Fecha: 2026-03-04
+Fecha de revision: 2026-05-27
+
+## 0. Contexto del backlog
+
+Este documento recoge el backlog funcional consolidado de GreenPath en su estado actual de TFG. No describe ideas teoricas aisladas, sino necesidades reales derivadas del problema que el proyecto pretende resolver: la digitalizacion integral de empresas de recogida de aceites usados que tradicionalmente operan con un alto componente manual, poca trazabilidad y una separacion muy debil entre operacion diaria, control economico y documentacion.
+
+El valor de estas historias no esta solo en enumerar pantallas o formularios. Sirven para explicar:
+
+- como se transforma un negocio tradicional en una plataforma multiempresa
+- como se conectan los flujos de oficina, calle, planificacion y analitica
+- que capacidades son imprescindibles para `owner`, `worker` y `client`
+- que piezas tecnicas elevan la complejidad del proyecto mas alla de un CRUD convencional
+
+GreenPath no se limita a registrar clientes o recogidas. El sistema cubre:
+
+- configuracion empresarial y fiscal por empresa
+- planificacion semanal de rutas con seleccion geografica de clientes
+- ejecucion diaria en movilidad
+- solicitudes previas de recogida con respuesta del cliente y autoestimacion
+- recogidas reales con impacto economico condicionado por `billable`
+- compradores, ventas y facturacion PDF bajo demanda
+- estadisticas operativas y economicas
+- integraciones externas como Google Maps, Gmail API, Celery, Redis, Leaflet y WeasyPrint
+
+Por ello, las historias de usuario funcionan tambien como puente entre la memoria funcional, el modelo de datos, la arquitectura tecnica y los casos de uso.
 
 ## 1. Convenciones
 
@@ -17,10 +41,10 @@ Fecha: 2026-03-04
 
 ### US-OWN-001 (P0) Crear y mantener rutas plantilla
 
-Como Owner quiero crear/editar rutas plantilla con trabajadores y rango operativo para planificar semanas de trabajo.
+Como Owner quiero crear/editar rutas plantilla con un trabajador asignado y rango operativo para planificar semanas de trabajo.
 
 Criterios de aceptacion:
-1. Puedo crear ruta con nombre, fechas, `week_start`, `week_end` y trabajadores.
+1. Puedo crear ruta con nombre, fechas, `week_start`, `week_end` y un trabajador asignado.
 2. Puedo editar una ruta existente sin perder configuracion valida.
 3. Si faltan datos obligatorios, el sistema bloquea guardado y muestra error.
 
@@ -60,6 +84,60 @@ Criterios de aceptacion:
 2. Si hay paradas pendientes al finalizar, se exige decision (`PARTIAL` o `CANCELED`).
 3. Puedo abrir enlace de navegacion Google por dia.
 
+### US-OWN-005G (P1) Entender retornos al hub por capacidad
+
+Como Owner quiero que la operativa me indique cuando una jornada requiere volver a nave para supervisar mejor la ruta real.
+
+Criterios de aceptacion:
+1. El sistema calcula tramos operativos dentro de un `RouteDay`.
+2. El resumen operativo muestra numero de tramos y retornos previstos.
+3. La navegacion de Google incorpora el hub entre segmentos cuando la capacidad lo exige.
+
+### US-OWN-005B (P1) Configurar precio global de empresa
+
+Como Owner quiero definir un precio global por litro para que las recogidas nazcan con un valor economico coherente.
+
+Criterios de aceptacion:
+1. Existe una pantalla de configuracion accesible solo para owner.
+2. Puedo guardar un `default_price_per_liter` por empresa.
+3. Las nuevas recogidas toman ese valor por defecto sin impedir ajuste manual posterior.
+
+### US-OWN-005C (P0) Gestionar compradores internos
+
+Como Owner quiero mantener una cartera interna de compradores para reutilizar sus datos fiscales al crear ventas.
+
+Criterios de aceptacion:
+1. Puedo crear, editar, listar y consultar compradores.
+2. Los compradores guardan razon social, CIF, direccion fiscal y datos de contacto.
+3. Los compradores no tienen acceso a la plataforma.
+
+### US-OWN-005D (P0) Registrar ventas con factura
+
+Como Owner quiero registrar ventas con numero de factura manual para controlar ingresos reales del negocio.
+
+Criterios de aceptacion:
+1. Puedo crear una venta seleccionando comprador y fecha de factura.
+2. El sistema calcula base imponible, IVA y total.
+3. Puedo descargar el PDF de factura y el sistema lo reconstruye con los datos vigentes de la venta y de la configuracion fiscal de la empresa.
+
+### US-OWN-005E (P1) Configurar datos fiscales de empresa
+
+Como Owner quiero editar los datos fiscales y bancarios de mi empresa sin tocar codigo.
+
+Criterios de aceptacion:
+1. Existe una pantalla de configuracion solo para owner.
+2. Puedo guardar razon social, CIF, direccion fiscal, cuenta bancaria y Codigo LER.
+3. Las facturas nuevas reutilizan esos datos automaticamente.
+
+### US-OWN-005F (P1) Ver beneficio neto real
+
+Como Owner quiero ver costes, ingresos y beneficio neto para entender la rentabilidad real del negocio.
+
+Criterios de aceptacion:
+1. Las recogidas confirmadas computan como coste.
+2. Las ventas computan como ingreso.
+3. Las estadisticas muestran balance neto y evolucion mensual.
+
 ## 3. Historias Worker
 
 ### US-WRK-001 (P0) Ver solo rutas asignadas
@@ -98,9 +176,18 @@ Criterios de aceptacion:
 2. Existe barra de progreso por dia.
 3. El estado del dia es visible con badge.
 
+### US-WRK-005 (P1) Entender si debo volver a nave durante la jornada
+
+Como Worker quiero que la app me diga si debo volver a nave antes de seguir recogiendo para poder operar sin interpretar logica tecnica interna.
+
+Criterios de aceptacion:
+1. La pantalla operativa simplifica la informacion tecnica y prioriza la siguiente parada sugerida.
+2. El mapa y la navegacion reflejan cuando la jornada exige retorno al hub.
+3. La informacion visible no depende de exponer tarjetas tecnicas de `tramo`, sino de decisiones operativas comprensibles para el trabajador.
+
 ## 4. Historias Client
 
-### US-CLI-001 (P0) Ver mis solicitudes de litros
+### US-CLI-001 (P0) Ver mis solicitudes de recogida
 
 Como Client quiero ver mis `CollectionRequest` para responder antes del limite.
 
@@ -108,15 +195,17 @@ Criterios de aceptacion:
 1. Solo veo solicitudes propias.
 2. Veo estado y `expires_at` de cada solicitud.
 3. Puedo filtrar por estado.
+4. Por defecto veo todos los estados ordenados por creacion descendente.
 
-### US-CLI-002 (P0) Responder litros
+### US-CLI-002 (P0) Responder envases
 
-Como Client quiero responder litros finales para evitar autoestimaciones no deseadas.
+Como Client quiero indicar bidones o IBC disponibles para evitar autoestimaciones no deseadas.
 
 Criterios de aceptacion:
 1. Solo puedo responder solicitudes abiertas (`PENDING` o `AUTO_ESTIMATED`) no expiradas.
 2. Al responder, estado cambia a `ANSWERED`.
-3. Queda trazabilidad de respuesta.
+3. El backend calcula los litros equivalentes segun tipo y cantidad de envases.
+4. Queda trazabilidad de respuesta.
 
 ### US-CLI-003 (P1) Consultar historial de recogidas
 
@@ -156,6 +245,15 @@ Criterios de aceptacion:
 2. Si Google falla o falta API key, se mantiene orden actual.
 3. El flujo de generacion no se interrumpe por este fallo.
 
+### US-PLT-003B (P1) Alinear plan operativo y navegacion externa
+
+Como sistema quiero que mapa operativo y enlace Google usen el mismo criterio de segmentacion para no mostrar recorridos contradictorios.
+
+Criterios de aceptacion:
+1. El backend genera un `operational_plan` reutilizable.
+2. El frontend usa ese plan para resaltar tramos y parada activa.
+3. La URL de Google inserta el hub entre segmentos cuando la capacidad obliga a ello.
+
 ### US-PLT-004 (P1) Programacion automatica de solicitudes
 
 Como sistema quiero programar autoestimacion en `expires_at` para mantener continuidad operativa.
@@ -172,7 +270,7 @@ Como equipo quiero documentacion actualizada para acelerar mantenimiento y onboa
 Criterios de aceptacion:
 1. API, flujo de rutas y pantallas reflejan estado real.
 2. Existe inventario de historias de usuario con prioridad.
-3. Cada repaso funcional deja evidencia fechada.
+3. Cada revision documental relevante deja evidencia fechada.
 
 ## 6. Historias UX movil (transversal)
 
@@ -184,6 +282,7 @@ Criterios de aceptacion:
 1. Puedo iniciar dia, registrar paradas y finalizar sin cambiar a desktop.
 2. El detalle de parada muestra informacion minima necesaria (cliente, estado, limite, plan base).
 3. Los controles criticos son visibles y tocables con una mano.
+4. El usuario entiende rapidamente si la jornada exige un retorno a nave antes de continuar.
 
 ### US-UXM-002 (P1) Resumen rapido en pantalla pequena
 
@@ -196,12 +295,12 @@ Criterios de aceptacion:
 
 ## 7. Historias Owner (ampliacion)
 
-### US-OWN-006 (P1) Reasignar trabajadores sin romper plan operativo
+### US-OWN-006 (P1) Reasignar trabajador sin romper plan operativo
 
-Como Owner quiero reasignar trabajadores de una ruta para cubrir bajas o cambios de turno.
+Como Owner quiero reasignar el trabajador de una ruta para cubrir bajas o cambios de turno.
 
 Criterios de aceptacion:
-1. Puedo editar trabajadores asignados desde formulario de ruta.
+1. Puedo editar el trabajador asignado desde formulario de ruta.
 2. La ruta mantiene su configuracion de zonas y rango semanal.
 3. El cambio queda reflejado en listado y detalle de ruta.
 
@@ -268,6 +367,15 @@ Criterios de aceptacion:
 2. Si falla enlace, recibo mensaje claro.
 3. El error no rompe la pantalla operativa.
 
+### US-OWN-015 (P2) Revisar capacidad diaria en contexto operativo
+
+Como Owner quiero ver capacidad, carga prevista y carga ya registrada para decidir si la planificacion diaria es razonable.
+
+Criterios de aceptacion:
+1. La jornada muestra `capacity_liters`.
+2. Se informa del contexto operativo de la jornada sin exponer tecnicismos internos innecesarios.
+3. La informacion visible distingue entre planificacion y ejecucion en curso.
+
 ### US-OWN-014 (P2) Vista ejecutiva de estados de semana
 
 Como Owner quiero una lectura ejecutiva por estado para reportar operacion.
@@ -277,7 +385,7 @@ Criterios de aceptacion:
 2. Los contadores cambian al cambiar de semana.
 3. Los filtros de estado aplican sobre ese conjunto.
 
-### US-OWN-015 (P2) Tener control rapido de expansion de dias
+### US-OWN-016 (P2) Tener control rapido de expansion de dias
 
 Como Owner quiero expandir u ocultar todos los dias para navegar rapido entre semanas largas.
 
@@ -406,6 +514,7 @@ Criterios de aceptacion:
 1. Solo se muestran atributos relevantes al rol.
 2. Puedo actualizar datos permitidos.
 3. Puedo cambiar contrasena desde seccion de seguridad.
+4. Puedo subir o sustituir mi imagen de perfil.
 
 ### US-CLI-009 (P2) Revisar trazabilidad temporal de solicitudes
 
@@ -416,12 +525,12 @@ Criterios de aceptacion:
 2. Se puede inferir si hubo autoestimacion.
 3. Las fechas se muestran en formato local legible.
 
-### US-CLI-010 (P2) Reducir errores al responder litros
+### US-CLI-010 (P2) Reducir errores al responder envases
 
 Como Client quiero validaciones claras para no enviar datos incorrectos.
 
 Criterios de aceptacion:
-1. El formulario valida dato numerico positivo.
+1. El formulario valida cantidad numerica positiva.
 2. Si hay error, se muestra mensaje especifico.
 3. Tras envio correcto, la lista refleja nuevo estado.
 
@@ -546,6 +655,15 @@ Criterios de aceptacion:
 2. Predominan casos reales de bidones.
 3. Hay cobertura de frecuencias y estados diversos.
 
+### US-PLT-012B (P1) Fixtures economicas utiles
+
+Como equipo quiero fixtures de compradores, ventas y datos fiscales para probar el modulo economico desde el primer arranque.
+
+Criterios de aceptacion:
+1. Existen compradores demo listos para seleccionar en ventas.
+2. Existen ventas demo con numero de factura manual y fechas coherentes.
+3. La configuracion global incluye datos fiscales basicos para generar PDFs bajo demanda sin edicion previa.
+
 ### US-PLT-013 (P2) Observabilidad de tareas Celery
 
 Como equipo quiero visibilidad de tareas para actuar ante retrasos o fallos.
@@ -561,7 +679,7 @@ Como equipo quiero registrar cambios de reglas para evitar regresiones.
 
 Criterios de aceptacion:
 1. Cambios relevantes quedan en docs fechados.
-2. Existe historial de repaso funcional.
+2. Existe historial de revisiones documentales del proyecto.
 3. El equipo puede reconstruir por que se cambio una regla.
 
 ### US-PLT-015 (P2) Calidad de respuestas para frontend
@@ -572,6 +690,15 @@ Criterios de aceptacion:
 1. Estados y etiquetas devueltos son consistentes.
 2. Campos clave no cambian forma inesperadamente.
 3. Las pantallas no dependen de hardcodes fragiles.
+
+### US-PLT-015B (P1) Parametros globales extensibles por empresa
+
+Como sistema quiero centralizar parametros globales de empresa para evitar hardcodes dispersos y facilitar evolucion futura.
+
+Criterios de aceptacion:
+1. Existe un modelo dedicado de configuracion global por empresa.
+2. El precio por litro se resuelve desde esa configuracion cuando no se informa manualmente.
+3. La estructura permite ampliar despues con IVA, IRPF u otras reglas.
 
 ### US-PLT-016 (P2) Limites de seguridad de API key externa
 
@@ -608,6 +735,15 @@ Criterios de aceptacion:
 1. Config de admin usa campos reales del modelo.
 2. Pantallas de admin cargan sin `FieldError`.
 3. Cambios de modelo actualizan admin asociado.
+
+### US-PLT-019B (P2) Restablecer contrasenas desde admin
+
+Como equipo quiero restablecer contrasenas desde Django Admin para resolver incidencias de acceso sin tocar base de datos.
+
+Criterios de aceptacion:
+1. La ficha de usuario permite cambiar contrasena con el flujo seguro del admin.
+2. Se mantiene visible `last_login` como dato de soporte.
+3. El cambio no altera el rol ni el perfil asociado.
 
 ### US-PLT-020 (P2) Preparacion para pruebas E2E
 
@@ -684,6 +820,33 @@ Criterios de aceptacion:
 1. Solo estados validos impactan ingresos.
 2. Los importes se agregan sin duplicados.
 3. El dato mensual es consistente con historico.
+
+### US-DAT-002B (P1) Consistencia del precio por defecto en recogidas
+
+Como Owner quiero que el precio usado por defecto en recogidas sea estable y auditable.
+
+Criterios de aceptacion:
+1. Existe un valor global visible para la empresa.
+2. Las recogidas nuevas lo usan salvo override manual.
+3. El detalle de recogida sigue mostrando el valor finalmente guardado.
+
+### US-DAT-002C (P1) Consistencia economica entre compras y ventas
+
+Como Owner quiero que el panel economico combine correctamente costes de recogidas e ingresos de ventas.
+
+Criterios de aceptacion:
+1. El resumen economico separa `total_cost` y `total_income`.
+2. El beneficio neto se calcula como `income - cost`.
+3. El volumen comprado y el volumen vendido se muestran por separado.
+
+### US-DAT-002D (P1) Controlar si una recogida computa economicamente
+
+Como Owner quiero decidir si una recogida es facturable para excluir casos internos o excepcionales del reporting economico.
+
+Criterios de aceptacion:
+1. Una recogida puede marcarse como `Facturable` o `No facturable` en alta y edicion.
+2. El detalle y el listado muestran claramente ese estado.
+3. Solo las recogidas confirmadas y facturables computan como coste en estadisticas.
 
 ### US-DAT-003 (P2) Auditoria de acciones manuales
 
@@ -806,12 +969,12 @@ Criterios de aceptacion:
 2. Se documentan acciones custom y filtros.
 3. Se incluyen ejemplos minimos de uso.
 
-### US-DOC-003 (P2) Publicar repaso funcional por fecha
+### US-DOC-003 (P2) Publicar revisiones documentales por fecha
 
 Como equipo quiero snapshots de estado para trazabilidad de proyecto.
 
 Criterios de aceptacion:
-1. Cada repaso genera archivo fechado.
+1. Cada revision documental relevante deja referencia fechada.
 2. Incluye cambios, validacion y riesgos.
 3. Sirve de base para siguiente iteracion.
 
@@ -832,3 +995,49 @@ Criterios de aceptacion:
 1. Historias se agrupan por rol y dominio.
 2. Se distinguen historias funcionales y tecnicas.
 3. Se facilita estimacion y planificacion por sprint.
+
+## 16. Observaciones de mantenimiento del backlog
+
+Este documento combina historias:
+
+- funcionales
+- tecnicas
+- de calidad
+- de UX movil
+- de documentacion y gobierno
+
+Por ello conviene leerlo junto con:
+
+- `docs/REQUISITOS.md`
+- `docs/CASOS_DE_USO.md`
+- `docs/FUNCIONAL.md`
+- `docs/TESTING.md`
+
+## 17. Lectura global del backlog
+
+Este backlog pone de manifiesto que GreenPath combina varias capas de valor dentro de un mismo sistema:
+
+- una capa administrativa, centrada en empresa, clientes, trabajadores, camiones, compradores y configuracion
+- una capa logistica, centrada en zonas, rutas, generacion semanal, capacidad diaria y criterio territorial
+- una capa operativa, centrada en la ejecucion real de jornadas y recogidas desde movil
+- una capa economica, centrada en costes, ingresos, ventas, facturacion y estadisticas
+- una capa tecnica de integracion, donde intervienen servicios y librerias externas que aumentan la complejidad del TFG
+
+En particular, varias historias dependen directamente de integraciones y componentes que aportan valor tecnico real:
+
+- `Google Maps` para optimizacion del orden, navegacion externa y geocodificacion
+- `Leaflet / React Leaflet` para representacion cartografica de zonas, clientes, hub y recorridos
+- `Celery` y `Redis` para programar autoestimaciones, notificaciones y automatismos desacoplados del flujo sincrono
+- `Gmail API` para el envio de correos transaccionales sin bloquear la operacion principal
+- `WeasyPrint` para generar facturas PDF bajo demanda con datos fiscales actuales
+
+Esto refuerza que el sistema no es un prototipo de interfaz, sino una plataforma que coordina reglas de negocio, procesos asincronos, geografia operativa y documentacion comercial.
+
+## 18. Uso recomendado del documento
+
+Este documento resulta especialmente util para:
+
+- justificar el alcance funcional del TFG
+- mapear historias a casos de uso, pruebas y pantallas
+- demostrar trazabilidad entre necesidad de negocio y solucion implementada
+- defender que la complejidad del proyecto viene tanto de la logica funcional como de las integraciones tecnicas

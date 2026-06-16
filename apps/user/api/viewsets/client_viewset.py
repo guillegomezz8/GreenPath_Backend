@@ -2,6 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.decorators import action
+from rest_framework.exceptions import APIException, ValidationError
 
 import django_filters
 from django.shortcuts import get_object_or_404
@@ -12,7 +13,7 @@ from django_filters.rest_framework import FilterSet, CharFilter, DjangoFilterBac
 import logging
 
 from apps.base.logger import configure_logging
-from apps.base.utils import gen_password, send_access_email, send_access_email_google_api
+from apps.base.utils import gen_password, send_access_email_google_api
 from apps.user.models.client import Client
 from apps.user.models.user import User
 from apps.collection.models import Collection
@@ -20,7 +21,7 @@ from apps.base.enums import PickupFrequency, CollectionStatus
 from apps.base.permissions import IsOwnerUser
 from apps.collection.api.serializers.collection_serializers import CollectionSerializer
 from apps.user.api.serializers.client_serializers import ClientSerializer,CreateClientSerializer,UpdateClientSerializer,PartialUpdateClientSerializer
-from apps.user.utils import sync_client_location_from_address
+from apps.user.utils import resolve_client_user_credentials, sync_client_location_from_address
 from apps.base.literals import (
     DETAILS,
     INTERNAL_ERROR
@@ -44,7 +45,12 @@ class ClientFilter(FilterSet):
 
     def filter_search(self, queryset, name, value):
         return queryset.filter(
-            Q(name__icontains=value) | Q(address__icontains=value)
+            Q(name__icontains=value)
+            | Q(cif__icontains=value)
+            | Q(phone__icontains=value)
+            | Q(address__icontains=value)
+            | Q(user__username__icontains=value)
+            | Q(user__email__icontains=value)
         )
 
 
@@ -100,9 +106,14 @@ class ClientViewSet(viewsets.ModelViewSet):
             company = self.request.user.worker_profile.company if hasattr(self.request.user, "worker_profile") else None
 
             with transaction.atomic():
+                resolved_username, resolved_email = resolve_client_user_credentials(
+                    name=client_data.get("name"),
+                    username=user_data.get("username"),
+                    email=user_data.get("email"),
+                )
                 user = User.objects.create_user(
-                    username=user_data["username"],
-                    email=user_data["email"],
+                    username=resolved_username,
+                    email=resolved_email,
                     password=None,
                 )
 
@@ -110,7 +121,13 @@ class ClientViewSet(viewsets.ModelViewSet):
                 if get_access:
                     temp_password = gen_password()
                     user.set_password(temp_password)
-                    transaction.on_commit(lambda: send_access_email_google_api.delay(user.id, temp_password, subject="Acceso a GreenPath como Cliente"))
+                    transaction.on_commit(
+                        lambda user_id=user.id, password=temp_password: send_access_email_google_api.delay(
+                            user_id,
+                            password,
+                            subject="Acceso a GreenPath como Cliente",
+                        )
+                    )
                 else:
                     user.set_unusable_password()
 
@@ -128,9 +145,11 @@ class ClientViewSet(viewsets.ModelViewSet):
 
             sync_client_location_from_address(client, clear_on_failure=True)
             logging.info(f"[client_viewset - perform_create] Cliente creado con éxito: {client.id}")
+        except ValidationError:
+            raise
         except Exception as e:
             logging.error(f"[client_viewset - perform_create] Error creando cliente: {str(e)}")
-            return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            raise APIException({DETAILS: {INTERNAL_ERROR: str(e)}})
         
     def perform_destroy(self, instance):
         try:
@@ -138,9 +157,11 @@ class ClientViewSet(viewsets.ModelViewSet):
             instance.disabled = True
             instance.save(update_fields=['disabled'])
             logging.info(f"[client_viewset - perform_destroy] Cliente deshabilitado con éxito: {instance.id}")
+        except ValidationError:
+            raise
         except Exception as e:
             logging.error(f"[client_viewset - perform_destroy] Error eliminando cliente: {str(e)}")
-            return Response({DETAILS: {INTERNAL_ERROR: str(e)}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            raise APIException({DETAILS: {INTERNAL_ERROR: str(e)}})
 
     def list(self, request):
         try:
@@ -208,7 +229,7 @@ class ClientViewSet(viewsets.ModelViewSet):
                 canceled_collections=Count("id", filter=Q(status=CollectionStatus.CANCELED)),
                 total_liters=Sum("net_liters", filter=~Q(status=CollectionStatus.CANCELED)),
                 avg_liters=Avg("net_liters", filter=~Q(status=CollectionStatus.CANCELED)),
-                total_paid=Sum("total_price", filter=Q(status=CollectionStatus.CONFIRMED)),
+                total_paid=Sum("total_price", filter=Q(status=CollectionStatus.CONFIRMED, billable=True)),
             )
 
             serializer = CollectionSerializer(historial, many=True)

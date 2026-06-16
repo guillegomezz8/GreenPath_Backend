@@ -3,7 +3,7 @@ from django.utils.html import format_html
 from django.urls import reverse
 from django.contrib.gis.admin import GISModelAdmin
 
-from apps.company.models import Company, CompanyHub
+from apps.company.models import Company, CompanyHub, CompanySettings
 
 
 class CompanyHubInline(admin.StackedInline):
@@ -11,7 +11,29 @@ class CompanyHubInline(admin.StackedInline):
     extra = 0
     max_num = 1
     can_delete = False
-    fields = ("name", "address", "location")
+    fields = ("name", "location")
+
+
+class CompanySettingsInline(admin.StackedInline):
+    model = CompanySettings
+    extra = 0
+    max_num = 1
+    can_delete = False
+    fields = (
+        "default_price_per_liter",
+        "billing_business_name",
+        "billing_tax_id",
+        "billing_address",
+        "billing_postal_code",
+        "billing_city",
+        "billing_province",
+        "billing_country",
+        "billing_phone",
+        "billing_email",
+        "billing_bank_account",
+        "billing_ler_code",
+        "billing_footer",
+    )
 
 
 @admin.register(Company)
@@ -20,7 +42,7 @@ class CompanyAdmin(admin.ModelAdmin):
     search_fields = ("name", "cif", "email", "phone", "owner__email", "owner__username")
     list_filter = ()
     autocomplete_fields = ("owner",)
-    inlines = (CompanyHubInline,)
+    inlines = (CompanyHubInline, CompanySettingsInline)
     ordering = ("name",)
 
     @admin.display(description="Hub")
@@ -50,3 +72,11 @@ class CompanyHubAdmin(GISModelAdmin):
     def edit_company_link(self, obj):
         url = reverse("admin:company_company_change", args=[obj.company.id])
         return format_html('<a href="{}">Editar empresa</a>', url)
+
+
+@admin.register(CompanySettings)
+class CompanySettingsAdmin(admin.ModelAdmin):
+    list_display = ("id", "company", "default_price_per_liter", "billing_business_name", "billing_tax_id")
+    search_fields = ("company__name",)
+    autocomplete_fields = ("company",)
+    ordering = ("company__name",)

@@ -1,0 +1,78 @@
+[
+  {
+    "model": "sale.buyer",
+    "pk": 1001,
+    "fields": {
+      "company": 1,
+      "fiscal_name": "Biocombustibles del Sur S.L.",
+      "tax_id": "B91000011",
+      "fiscal_address": "Poligono PISA, Calle Innovacion 14",
+      "postal_code": "41927",
+      "city": "Mairena del Aljarafe",
+      "province": "Sevilla",
+      "country": "Espana",
+      "email": "compras@biocombustiblesur.es",
+      "phone": "954100200",
+      "contact_person": "Laura Medina",
+      "notes": "Comprador recurrente para lotes tratados y filtrados.",
+      "disabled": false
+    }
+  },
+  {
+    "model": "sale.buyer",
+    "pk": 1002,
+    "fields": {
+      "company": 1,
+      "fiscal_name": "Moon Moles S.L.",
+      "tax_id": "B13864459",
+      "fiscal_address": "C/ Malaga, 21",
+      "postal_code": "41800",
+      "city": "Sanlucar La Mayor",
+      "province": "Sevilla",
+      "country": "Espana",
+      "email": "operaciones@moonmoles.es",
+      "phone": "600000000",
+      "contact_person": "Antonio Munoz",
+      "notes": "Comprador usado para pruebas de factura con kilos.",
+      "disabled": false
+    }
+  },
+  {
+    "model": "sale.buyer",
+    "pk": 1003,
+    "fields": {
+      "company": 1,
+      "fiscal_name": "Oleos Industriales Andaluces S.L.",
+      "tax_id": "B91567823",
+      "fiscal_address": "Parque Industrial La Red, Calle Dos 8",
+      "postal_code": "41500",
+      "city": "Alcala de Guadaira",
+      "province": "Sevilla",
+      "country": "Espana",
+      "email": "administracion@oleosandaluces.es",
+      "phone": "955880112",
+      "contact_person": "Maria Rios",
+      "notes": "Comprador industrial con pedidos de volumen medio.",
+      "disabled": false
+    }
+  },
+  {
+    "model": "sale.buyer",
+    "pk": 1004,
+    "fields": {
+      "company": 1,
+      "fiscal_name": "Ecofuel Trading S.L.",
+      "tax_id": "B90222456",
+      "fiscal_address": "Avenida de la Industria 7",
+      "postal_code": "41703",
+      "city": "Dos Hermanas",
+      "province": "Sevilla",
+      "country": "Espana",
+      "email": "compras@ecofueltrading.es",
+      "phone": "955440321",
+      "contact_person": "Javier Campos",
+      "notes": "Comprador con operaciones mixtas en kilos y litros.",
+      "disabled": false
+    }
+  }
+]

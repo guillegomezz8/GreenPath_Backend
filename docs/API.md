@@ -661,19 +661,22 @@ Campos de escritura:
 - `buyer`
 - `invoice_number`
 - `invoice_date`
-- `product_description`
-- `quantity`
-- `unit`
-- `unit_price`
-- `tax_rate`
 - `currency`
 - `notes`
+- `lines`: lista no vacia de conceptos, cada uno con:
+  - `product_description`
+  - `quantity`
+  - `unit`
+  - `unit_price`
+  - `tax_rate`
 
 Reglas:
 - `invoice_number` es manual y obligatorio.
 - `invoice_date` es la unica fecha visible y funcional del modulo.
 - internamente `sale_date` se sincroniza con `invoice_date` para mantener compatibilidad del modelo.
-- `subtotal`, `tax_amount` y `total` se recalculan en backend.
+- cada linea calcula su base, IVA y total.
+- `subtotal`, `tax_amount` y `total` de la venta se obtienen sumando sus lineas.
+- los payloads antiguos de un solo concepto siguen siendo compatibles.
 - el PDF no se almacena: se genera bajo demanda cuando se descarga.
 
 #### `GET /sales/{id}/invoice/download/`

@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib import admin
 from django.core.exceptions import ValidationError
-from apps.sale.models import Buyer, Sale
+from apps.sale.models import Buyer, Sale, SaleLine
 
 
 class SaleAdminForm(forms.ModelForm):
@@ -37,6 +37,23 @@ class SaleAdminForm(forms.ModelForm):
             instance.save()
             self.save_m2m()
         return instance
+
+
+class SaleLineInline(admin.TabularInline):
+    model = SaleLine
+    extra = 0
+    fields = (
+        "position",
+        "product_description",
+        "quantity",
+        "unit",
+        "unit_price",
+        "tax_rate",
+        "subtotal",
+        "tax_amount",
+        "total",
+    )
+    readonly_fields = ("subtotal", "tax_amount", "total")
 
 
 @admin.register(Buyer)
@@ -80,6 +97,7 @@ class BuyerAdmin(admin.ModelAdmin):
 @admin.register(Sale)
 class SaleAdmin(admin.ModelAdmin):
     form = SaleAdminForm
+    inlines = (SaleLineInline,)
     list_display = ("id", "invoice_number", "invoice_date", "buyer", "company", "total", "currency")
     search_fields = ("invoice_number", "buyer__fiscal_name", "buyer__tax_id", "product_description", "notes")
     list_filter = ("company", "invoice_date", "currency", "tax_rate")
@@ -103,5 +121,68 @@ class SaleAdmin(admin.ModelAdmin):
         }),
         ("Notas", {
             "fields": ("notes",),
+        }),
+    )
+
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        sale = form.instance
+        if sale.lines.exists():
+            sale.recalculate_from_lines()
+            return
+
+        line = SaleLine(
+            sale=sale,
+            position=0,
+            product_description=sale.product_description,
+            quantity=sale.quantity,
+            unit=sale.unit,
+            unit_price=sale.unit_price,
+            tax_rate=sale.tax_rate,
+        )
+        line.save()
+
+
+@admin.register(SaleLine)
+class SaleLineAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "sale",
+        "position",
+        "product_description",
+        "quantity",
+        "unit",
+        "unit_price",
+        "tax_rate",
+        "subtotal",
+        "tax_amount",
+        "total",
+    )
+    search_fields = (
+        "sale__invoice_number",
+        "sale__buyer__fiscal_name",
+        "sale__buyer__tax_id",
+        "product_description",
+    )
+    list_filter = ("sale__company", "unit", "tax_rate")
+    autocomplete_fields = ("sale",)
+    list_select_related = ("sale", "sale__company", "sale__buyer")
+    ordering = ("-sale__invoice_date", "sale_id", "position")
+    readonly_fields = ("subtotal", "tax_amount", "total")
+    fieldsets = (
+        ("Factura", {
+            "fields": ("sale", "position"),
+        }),
+        ("Concepto", {
+            "fields": (
+                "product_description",
+                "quantity",
+                "unit",
+                "unit_price",
+                "tax_rate",
+            ),
+        }),
+        ("Totales calculados", {
+            "fields": ("subtotal", "tax_amount", "total"),
         }),
     )

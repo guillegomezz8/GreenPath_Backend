@@ -287,10 +287,12 @@
                     <span class="label">Base imponible</span>
                     <span class="valor">{{ base_imponible }}</span>
                 </div>
+                {% for tax in tax_breakdown %}
                 <div class="total-row">
-                    <span class="label">IVA {{ iva_porcentaje }} %</span>
-                    <span class="valor">{{ iva_cantidad }}</span>
+                    <span class="label">IVA {{ tax.rate }} %</span>
+                    <span class="valor">{{ tax.amount }}</span>
                 </div>
+                {% endfor %}
                 <div class="total-row">
                     <span class="label">TOTAL EUROS</span>
                     <span class="valor">{{ total }}</span>

@@ -292,11 +292,13 @@ La revision actual incorpora el alcance completo del TFG: gestion multiempresa, 
 1. el owner accede al modulo de ventas
 2. crea una nueva venta
 3. selecciona comprador
-4. introduce numero de factura, fecha de factura, concepto, cantidad, unidad y precio; el formulario muestra como ayuda el numero de la ultima factura y la unidad inicial aparece como `kg`
-5. si quiere reutilizar una descripcion, abre `Reusar concepto` y selecciona un concepto anterior
-6. el sistema recalcula subtotal, impuesto y total
-7. la venta queda disponible en listado, detalle y descarga documental
-8. el PDF se renderiza en el momento de la descarga
+4. introduce numero de factura y fecha de factura
+5. completa el primer concepto con descripcion, cantidad, unidad, precio e IVA
+6. si necesita mas conceptos, pulsa `Añadir concepto`; las lineas se mantienen dentro de una zona con scroll
+7. si quiere reutilizar una descripcion, abre `Reusar concepto` en la linea correspondiente y selecciona un concepto anterior
+8. el sistema recalcula subtotal, impuesto y total de cada linea y de la factura
+9. la venta queda disponible en listado, detalle y descarga documental
+10. el PDF se renderiza en el momento de la descarga con todos los conceptos
 
 **Flujos alternativos:**
 

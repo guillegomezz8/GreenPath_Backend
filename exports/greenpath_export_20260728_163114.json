@@ -1,0 +1,1693 @@
+[
+    {
+        "model": "user.user",
+        "pk": 1,
+        "fields": {
+            "password": "pbkdf2_sha256$870000$F33r2BHtnqZEIlAE5TdHqT$AA8P+9xxBy6LUzuxChWE0b2QQ1u2DJknTosHmCtbkgI=",
+            "last_login": "2026-07-28T16:23:44.004Z",
+            "is_superuser": true,
+            "username": "antoniomanuelgomez",
+            "email": "antoniomanuelgomez@gmail.com",
+            "is_active": true,
+            "is_staff": true
+        }
+    },
+    {
+        "model": "user.user",
+        "pk": 2,
+        "fields": {
+            "password": "ggrguilleggrpassword",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "ggrguilleggr",
+            "email": "ggrguilleggr@gmail.com",
+            "is_active": true,
+            "is_staff": false
+        }
+    },
+    {
+        "model": "user.user",
+        "pk": 3,
+        "fields": {
+            "password": "!RGdxgccleP7iwrC5U3uUeQd04ePRcmRgxXzFYEBv",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "restaurante_esturion",
+            "email": "restaurante_esturion@gmail.com",
+            "is_active": true,
+            "is_staff": false
+        }
+    },
+    {
+        "model": "user.user",
+        "pk": 4,
+        "fields": {
+            "password": "!5fCiRgtFUu5W2r7DHfVrNOPsA8QqUpKEiNqodYVD",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "bar_jarrita",
+            "email": "bar_jarrita@gmail.com",
+            "is_active": true,
+            "is_staff": false
+        }
+    },
+    {
+        "model": "user.user",
+        "pk": 5,
+        "fields": {
+            "password": "!jvKKRINB66UBzptwgdfISNMZhozsmGj8WN0uacCH",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "sevruga",
+            "email": "sevruga@gmail.com",
+            "is_active": true,
+            "is_staff": false
+        }
+    },
+    {
+        "model": "user.user",
+        "pk": 6,
+        "fields": {
+            "password": "!eXre7aZIKqPQvtJp2EiP9jHGz3dvnhAM3NWMmUSj",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "casa_blanco",
+            "email": "casa_blanco@gmail.com",
+            "is_active": true,
+            "is_staff": false
+        }
+    },
+    {
+        "model": "user.user",
+        "pk": 7,
+        "fields": {
+            "password": "!oG5PXQH1URWEAo2r9X7kEITxoVtCt8knXAnSD844",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "asador_la_puebla",
+            "email": "asador_la_puebla@gmail.com",
+            "is_active": true,
+            "is_staff": false
+        }
+    },
+    {
+        "model": "user.user",
+        "pk": 8,
+        "fields": {
+            "password": "!jLkJIIsMPeIGmDluTX8sDLoEOZ24T8W9zHkaMgAJ",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "las-lozas",
+            "email": "las-lozas@clients.greenpath.local",
+            "is_active": true,
+            "is_staff": false
+        }
+    },
+    {
+        "model": "user.user",
+        "pk": 9,
+        "fields": {
+            "password": "!zrbtQhCWxR1288RMgwfTQYLaP4Fz744W0OqkovSw",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "casa-pompa",
+            "email": "casa-pompa@clients.greenpath.local",
+            "is_active": true,
+            "is_staff": false
+        }
+    },
+    {
+        "model": "user.user",
+        "pk": 10,
+        "fields": {
+            "password": "!hUEQe7f9eQ66aVKYFUJTAZwBGrsp2FtlqCljxKrH",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "la-caponata",
+            "email": "la-caponata@clients.greenpath.local",
+            "is_active": true,
+            "is_staff": false
+        }
+    },
+    {
+        "model": "user.user",
+        "pk": 11,
+        "fields": {
+            "password": "!7OTJnfrbU0VBJxEJdWVQCnk8qqdCUbZY8pLBzXtu",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "la-capocha",
+            "email": "la-capocha@clients.greenpath.local",
+            "is_active": true,
+            "is_staff": false
+        }
+    },
+    {
+        "model": "user.user",
+        "pk": 12,
+        "fields": {
+            "password": "!1jfH1u8quFWPnwrstz5JOvOE7YlMoNefYQoUW5iQ",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "la-calita",
+            "email": "la-calita@clients.greenpath.local",
+            "is_active": true,
+            "is_staff": false
+        }
+    },
+    {
+        "model": "user.user",
+        "pk": 13,
+        "fields": {
+            "password": "!xtrr5oFhD6OrUZtKYRBz8LyAeTV3iQJW2DZUfKqe",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "taberna-alambique",
+            "email": "taberna-alambique@clients.greenpath.local",
+            "is_active": true,
+            "is_staff": false
+        }
+    },
+    {
+        "model": "user.user",
+        "pk": 14,
+        "fields": {
+            "password": "!eOkvoY6sAyHoEUx5HhBFbheJvSnl83TljpvyIlH5",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "el-mercado-de-enma",
+            "email": "el-mercado-de-enma@clients.greenpath.local",
+            "is_active": true,
+            "is_staff": false
+        }
+    },
+    {
+        "model": "user.user",
+        "pk": 15,
+        "fields": {
+            "password": "!2E0Vw5EFiKSx9Y29D0TvXccAksrqaGXZoRKwBNRw",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "maria-trifulca",
+            "email": "maria-trifulca@clients.greenpath.local",
+            "is_active": true,
+            "is_staff": false
+        }
+    },
+    {
+        "model": "user.user",
+        "pk": 16,
+        "fields": {
+            "password": "!gzTSF76RJTQV8BM8tkF0V5cmVtSQj5UvYZa0ZdY4",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "el-sella",
+            "email": "el-sella@clients.greenpath.local",
+            "is_active": true,
+            "is_staff": false
+        }
+    },
+    {
+        "model": "user.user",
+        "pk": 17,
+        "fields": {
+            "password": "!T1bilO89Wv63QTmbrjJVMJ5b2aCOqi4AJs1Czyrd",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "casa-anibal",
+            "email": "casa-anibal@clients.greenpath.local",
+            "is_active": true,
+            "is_staff": false
+        }
+    },
+    {
+        "model": "user.user",
+        "pk": 18,
+        "fields": {
+            "password": "!S7ooOL3nVViAPT7zi9kvrXCvIwJhoPfBrloC2wAA",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "abades-triana",
+            "email": "abades-triana@clients.greenpath.local",
+            "is_active": true,
+            "is_staff": false
+        }
+    },
+    {
+        "model": "user.user",
+        "pk": 19,
+        "fields": {
+            "password": "!A9GXxlFEyqhUzM0GU3F6AGhE09sgHkaZ2Af0bIKh",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "marisqueria-el-espigon",
+            "email": "marisqueria-el-espigon@clients.greenpath.local",
+            "is_active": true,
+            "is_staff": false
+        }
+    },
+    {
+        "model": "company.company",
+        "pk": 1,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-03-19T14:46:40.255Z",
+            "modified_date": "2026-03-19T14:46:40.255Z",
+            "deleted_date": "2026-03-19T14:46:40.255Z",
+            "name": "RECICLADOS MARTO, S.L.U.",
+            "address": "C / HERMENEGILDO 7, 41100 CORIA DEL RIO, SEVILLA",
+            "phone": "626424257",
+            "email": "corporativoamgm@gmail.com",
+            "cif": "B67629501",
+            "logo": "",
+            "owner": 1
+        }
+    },
+    {
+        "model": "company.companyhub",
+        "pk": 1,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-03-19T14:47:26.801Z",
+            "modified_date": "2026-03-19T14:47:30.134Z",
+            "deleted_date": "2026-03-19T14:47:30.134Z",
+            "company": 1,
+            "name": "RECICLADOS MARTO, S.L.U.",
+            "location": "SRID=4326;POINT (-5.973620668827453 37.45361599400587)"
+        }
+    },
+    {
+        "model": "company.companysettings",
+        "pk": 1,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-03-19T14:48:14.400Z",
+            "modified_date": "2026-07-28T16:27:19.513Z",
+            "deleted_date": "2026-07-28T16:27:19.513Z",
+            "company": 1,
+            "default_price_per_liter": "1.200",
+            "billing_business_name": "RECICLADOS MARTO, S.L.U.",
+            "billing_tax_id": "B67629501",
+            "billing_address": "Calle Hermenegildo 7",
+            "billing_postal_code": "41100",
+            "billing_city": "Coria del Río",
+            "billing_province": "Sevilla",
+            "billing_country": "Espana",
+            "billing_phone": "626424257",
+            "billing_email": "corporativoamgm@gmail.com",
+            "billing_bank_account": "ES64-0128-0700-7501-0019-2834",
+            "billing_logo": "",
+            "billing_ler_code": "200125",
+            "billing_footer": ""
+        }
+    },
+    {
+        "model": "sale.buyer",
+        "pk": 1,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-04-23T08:54:55.619Z",
+            "modified_date": "2026-04-23T16:03:38.479Z",
+            "deleted_date": "2026-04-23T16:03:38.479Z",
+            "company": 1,
+            "fiscal_name": "MOON MOLES S.L.",
+            "tax_id": "B13864459",
+            "fiscal_address": "C/ Málaga, 21",
+            "postal_code": "41800",
+            "city": "Sanlúcar La Mayor",
+            "province": "Sevilla",
+            "country": "España",
+            "email": "",
+            "phone": "",
+            "contact_person": "",
+            "notes": ""
+        }
+    },
+    {
+        "model": "sale.buyer",
+        "pk": 2,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-04-23T09:07:08.288Z",
+            "modified_date": "2026-04-23T09:07:18.555Z",
+            "deleted_date": "2026-04-23T09:07:18.555Z",
+            "company": 1,
+            "fiscal_name": "RECICLADOS PAR S.L.",
+            "tax_id": "B67786558",
+            "fiscal_address": "Poligono Industrial Principe Felipe, C/ Toledo nº 1, Nave 2, Buzón 19",
+            "postal_code": "14900",
+            "city": "Lucena",
+            "province": "Cordoba",
+            "country": "España",
+            "email": "",
+            "phone": "",
+            "contact_person": "",
+            "notes": ""
+        }
+    },
+    {
+        "model": "sale.buyer",
+        "pk": 3,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-06-12T17:55:40.167Z",
+            "modified_date": "2026-06-12T17:55:40.167Z",
+            "deleted_date": "2026-06-12T17:55:40.167Z",
+            "company": 1,
+            "fiscal_name": "RECILECTRIC GLOBAL SL",
+            "tax_id": "B02779866",
+            "fiscal_address": "AV. 3 NAVE 22 PG. IND BASE 2000",
+            "postal_code": "30564",
+            "city": "LORQUI",
+            "province": "MURCIA",
+            "country": "España",
+            "email": "",
+            "phone": "",
+            "contact_person": "",
+            "notes": ""
+        }
+    },
+    {
+        "model": "sale.buyer",
+        "pk": 4,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-06-12T18:00:05.094Z",
+            "modified_date": "2026-06-12T18:00:13.101Z",
+            "deleted_date": "2026-06-12T18:00:13.101Z",
+            "company": 1,
+            "fiscal_name": "ECOVERY RECYCLING CENTER S.L.",
+            "tax_id": "B19562537",
+            "fiscal_address": "C/ ISLAS CANARIAS, 17 - P.I. ZARATE",
+            "postal_code": "18210",
+            "city": "PELIGROS",
+            "province": "GRANADA",
+            "country": "España",
+            "email": "",
+            "phone": "",
+            "contact_person": "",
+            "notes": ""
+        }
+    },
+    {
+        "model": "user.client",
+        "pk": 1,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-04-23T14:21:40.203Z",
+            "modified_date": "2026-04-23T14:35:07.050Z",
+            "deleted_date": "2026-04-23T14:35:07.050Z",
+            "user": 3,
+            "name": "Esturion",
+            "phone": "955 23 56 44",
+            "photo": "",
+            "cif": "B90200635",
+            "address": "Avda. de la Merlina s/n",
+            "city": "Coria del Río",
+            "postal_code": "41100",
+            "country": "España",
+            "frequency": "WEEKLY",
+            "location": "SRID=4326;POINT (-6.0316381 37.3160903)",
+            "companies": [
+                1
+            ]
+        }
+    },
+    {
+        "model": "user.client",
+        "pk": 2,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-04-23T14:23:32.368Z",
+            "modified_date": "2026-04-23T14:35:16.738Z",
+            "deleted_date": "2026-04-23T14:35:16.738Z",
+            "user": 4,
+            "name": "Bar Jarrita",
+            "phone": "954770454",
+            "photo": "",
+            "cif": "",
+            "address": "Calle Batán, 97, b",
+            "city": "Coria del Río",
+            "postal_code": "41100",
+            "country": "España",
+            "frequency": "WEEKLY",
+            "location": "SRID=4326;POINT (-6.0461111 37.2941667)",
+            "companies": [
+                1
+            ]
+        }
+    },
+    {
+        "model": "user.client",
+        "pk": 3,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-04-23T14:30:01.576Z",
+            "modified_date": "2026-04-23T14:35:22.068Z",
+            "deleted_date": "2026-04-23T14:35:22.068Z",
+            "user": 5,
+            "name": "Sevruga",
+            "phone": "954776695",
+            "photo": "",
+            "cif": "",
+            "address": "Av. de Andalucia, 5",
+            "city": "Coria del Río",
+            "postal_code": "41100",
+            "country": "España",
+            "frequency": "WEEKLY",
+            "location": "SRID=4326;POINT (-6.0485077 37.2865195)",
+            "companies": [
+                1
+            ]
+        }
+    },
+    {
+        "model": "user.client",
+        "pk": 4,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-04-23T14:31:34.055Z",
+            "modified_date": "2026-04-23T14:35:29.451Z",
+            "deleted_date": "2026-04-23T14:35:29.451Z",
+            "user": 6,
+            "name": "Casa Blanco",
+            "phone": "644283211",
+            "photo": "",
+            "cif": "",
+            "address": "Av. de Andalucia, 93",
+            "city": "Coria del Río",
+            "postal_code": "41100",
+            "country": "España",
+            "frequency": "WEEKLY",
+            "location": "SRID=4326;POINT (-6.0504042 37.2835807)",
+            "companies": [
+                1
+            ]
+        }
+    },
+    {
+        "model": "user.client",
+        "pk": 5,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-04-23T14:33:16.148Z",
+            "modified_date": "2026-04-23T14:35:35.016Z",
+            "deleted_date": "2026-04-23T14:35:35.016Z",
+            "user": 7,
+            "name": "Asador La Puebla",
+            "phone": "955770018",
+            "photo": "",
+            "cif": "",
+            "address": "C. Matadero, 12",
+            "city": "La Puebla Del Rio",
+            "postal_code": "41130",
+            "country": "España",
+            "frequency": "WEEKLY",
+            "location": "SRID=4326;POINT (-6.0632704 37.2709169)",
+            "companies": [
+                1
+            ]
+        }
+    },
+    {
+        "model": "user.client",
+        "pk": 6,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-04-23T14:34:58.971Z",
+            "modified_date": "2026-04-23T14:34:58.985Z",
+            "deleted_date": "2026-04-23T14:34:58.985Z",
+            "user": 8,
+            "name": "Las Lozas",
+            "phone": "955771083",
+            "photo": "",
+            "cif": "",
+            "address": "C. Doña Manuela Álvarez, 6",
+            "city": "La Puebla Del Rio",
+            "postal_code": "41130",
+            "country": "España",
+            "frequency": "2_WEEKS",
+            "location": "SRID=4326;POINT (-6.0619226 37.2720839)",
+            "companies": [
+                1
+            ]
+        }
+    },
+    {
+        "model": "user.client",
+        "pk": 7,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-04-23T14:37:02.251Z",
+            "modified_date": "2026-04-23T14:37:02.270Z",
+            "deleted_date": "2026-04-23T14:37:02.270Z",
+            "user": 9,
+            "name": "Casa Pompa",
+            "phone": "955295547",
+            "photo": "",
+            "cif": "",
+            "address": "C. Larga, 34",
+            "city": "La Puebla Del Rio",
+            "postal_code": "41130",
+            "country": "España",
+            "frequency": "4_WEEKS",
+            "location": "SRID=4326;POINT (-6.0618272 37.2701945)",
+            "companies": [
+                1
+            ]
+        }
+    },
+    {
+        "model": "user.client",
+        "pk": 8,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-04-23T14:38:00.958Z",
+            "modified_date": "2026-04-23T14:38:00.972Z",
+            "deleted_date": "2026-04-23T14:38:00.972Z",
+            "user": 10,
+            "name": "La Caponata",
+            "phone": "955671725",
+            "photo": "",
+            "cif": "",
+            "address": "Av. de la Arboleda, 32",
+            "city": "Tomares",
+            "postal_code": "41940",
+            "country": "España",
+            "frequency": "2_WEEKS",
+            "location": "SRID=4326;POINT (-6.0384717 37.3726428)",
+            "companies": [
+                1
+            ]
+        }
+    },
+    {
+        "model": "user.client",
+        "pk": 9,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-04-23T14:38:50.040Z",
+            "modified_date": "2026-04-23T14:40:23.794Z",
+            "deleted_date": "2026-04-23T14:40:23.794Z",
+            "user": 11,
+            "name": "La Capocha",
+            "phone": "954963663",
+            "photo": "",
+            "cif": "",
+            "address": "Av. de la Sabiduría, 25",
+            "city": "Mairena del Aljarafe",
+            "postal_code": "41927",
+            "country": "España",
+            "frequency": "WEEKLY",
+            "location": "SRID=4326;POINT (-6.0602209999999985 37.34202189999999)",
+            "companies": [
+                1
+            ]
+        }
+    },
+    {
+        "model": "user.client",
+        "pk": 10,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-04-23T14:39:34.654Z",
+            "modified_date": "2026-04-23T14:39:34.673Z",
+            "deleted_date": "2026-04-23T14:39:34.673Z",
+            "user": 12,
+            "name": "La Calita",
+            "phone": "955051110",
+            "photo": "",
+            "cif": "",
+            "address": "Av. de las Civilizaciones, 15D",
+            "city": "Mairena del Aljarafe",
+            "postal_code": "41927",
+            "country": "España",
+            "frequency": "WEEKLY",
+            "location": "SRID=4326;POINT (-6.061984 37.3397647)",
+            "companies": [
+                1
+            ]
+        }
+    },
+    {
+        "model": "user.client",
+        "pk": 11,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-04-23T14:42:06.452Z",
+            "modified_date": "2026-04-23T14:42:06.467Z",
+            "deleted_date": "2026-04-23T14:42:06.467Z",
+            "user": 13,
+            "name": "Taberna Alambique",
+            "phone": "954586874",
+            "photo": "",
+            "cif": "",
+            "address": "Av. del Jardinillo, 0, Bloque 29 Local 4",
+            "city": "Mairena del Aljarafe",
+            "postal_code": "41927",
+            "country": "España",
+            "frequency": "WEEKLY",
+            "location": "SRID=4326;POINT (-6.0590131 37.3407815)",
+            "companies": [
+                1
+            ]
+        }
+    },
+    {
+        "model": "user.client",
+        "pk": 12,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-04-23T14:43:05.931Z",
+            "modified_date": "2026-04-23T14:43:05.946Z",
+            "deleted_date": "2026-04-23T14:43:05.946Z",
+            "user": 14,
+            "name": "El Mercado de Enma",
+            "phone": "955414190",
+            "photo": "",
+            "cif": "",
+            "address": "Av. de la Filosofía, 70",
+            "city": "Mairena del Aljarafe",
+            "postal_code": "41927",
+            "country": "España",
+            "frequency": "WEEKLY",
+            "location": "SRID=4326;POINT (-6.0549474 37.3432173)",
+            "companies": [
+                1
+            ]
+        }
+    },
+    {
+        "model": "user.client",
+        "pk": 13,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-04-23T14:45:14.150Z",
+            "modified_date": "2026-04-23T14:45:14.162Z",
+            "deleted_date": "2026-04-23T14:45:14.162Z",
+            "user": 15,
+            "name": "María Trifulca",
+            "phone": "954330347",
+            "photo": "",
+            "cif": "",
+            "address": "Puente de Triana, Pl. del Altozano, 1",
+            "city": "Sevilla",
+            "postal_code": "41010",
+            "country": "España",
+            "frequency": "WEEKLY",
+            "location": "SRID=4326;POINT (-6.0033866 37.3856305)",
+            "companies": [
+                1
+            ]
+        }
+    },
+    {
+        "model": "user.client",
+        "pk": 14,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-04-23T14:45:53.062Z",
+            "modified_date": "2026-04-23T14:45:53.075Z",
+            "deleted_date": "2026-04-23T14:45:53.076Z",
+            "user": 16,
+            "name": "El Sella",
+            "phone": "636474561",
+            "photo": "",
+            "cif": "",
+            "address": "C. Pureza, 4",
+            "city": "Sevilla",
+            "postal_code": "41010",
+            "country": "España",
+            "frequency": "3_WEEKS",
+            "location": "SRID=4326;POINT (-6.002742599999999 37.3847373)",
+            "companies": [
+                1
+            ]
+        }
+    },
+    {
+        "model": "user.client",
+        "pk": 15,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-04-23T14:46:51.661Z",
+            "modified_date": "2026-04-23T14:46:51.674Z",
+            "deleted_date": "2026-04-23T14:46:51.674Z",
+            "user": 17,
+            "name": "Casa Aníbal",
+            "phone": "691510512",
+            "photo": "",
+            "cif": "",
+            "address": "C. Reyes Católicos, 22",
+            "city": "Sevilla",
+            "postal_code": "41001",
+            "country": "España",
+            "frequency": "4_WEEKS",
+            "location": "SRID=4326;POINT (-6.0015752 37.38767259999999)",
+            "companies": [
+                1
+            ]
+        }
+    },
+    {
+        "model": "user.client",
+        "pk": 16,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-04-23T14:47:36.194Z",
+            "modified_date": "2026-04-23T14:47:36.206Z",
+            "deleted_date": "2026-04-23T14:47:36.206Z",
+            "user": 18,
+            "name": "Abades Triana",
+            "phone": "954286459",
+            "photo": "",
+            "cif": "",
+            "address": "C. Betis, 69",
+            "city": "Sevilla",
+            "postal_code": "41010",
+            "country": "España",
+            "frequency": "3_WEEKS",
+            "location": "SRID=4326;POINT (-5.9978832 37.3815462)",
+            "companies": [
+                1
+            ]
+        }
+    },
+    {
+        "model": "user.client",
+        "pk": 17,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-04-23T14:50:20.682Z",
+            "modified_date": "2026-04-23T14:50:20.697Z",
+            "deleted_date": "2026-04-23T14:50:20.697Z",
+            "user": 19,
+            "name": "Marisquería El Espigón",
+            "phone": "954239256",
+            "photo": "",
+            "cif": "",
+            "address": "C. Bogotá, 1",
+            "city": "Sevilla",
+            "postal_code": "41013",
+            "country": "España",
+            "frequency": "2_WEEKS",
+            "location": "SRID=4326;POINT (-5.9840345 37.3685235)",
+            "companies": [
+                1
+            ]
+        }
+    },
+    {
+        "model": "user.worker",
+        "pk": 1,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-03-19T14:46:37.090Z",
+            "modified_date": "2026-03-19T14:46:47.089Z",
+            "deleted_date": "2026-03-19T14:46:47.089Z",
+            "user": 1,
+            "company": 1,
+            "role": "owner",
+            "name": "Antonio Manuel",
+            "surname": "Gomez Martin",
+            "address": "Calle Hermenegildo 7",
+            "phone": "615 187 186",
+            "dni": "",
+            "photo": "",
+            "birth_date": null
+        }
+    },
+    {
+        "model": "user.worker",
+        "pk": 2,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-03-19T14:49:04.654Z",
+            "modified_date": "2026-03-19T14:49:04.654Z",
+            "deleted_date": "2026-03-19T14:49:04.654Z",
+            "user": 2,
+            "company": 1,
+            "role": "worker",
+            "name": "Guillermo",
+            "surname": "Gómez Romero",
+            "address": "Calle Hermenegildo 7",
+            "phone": "684180679",
+            "dni": "45813076C",
+            "photo": "",
+            "birth_date": null
+        }
+    },
+    {
+        "model": "zone.zone",
+        "pk": 1,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-04-23T08:55:30.197Z",
+            "modified_date": "2026-04-23T08:58:12.693Z",
+            "deleted_date": "2026-04-23T08:58:12.693Z",
+            "company": 1,
+            "name": "Sevilla",
+            "polygon": "SRID=4326;POLYGON ((-5.943775 37.364018, -5.905495 37.365791, -5.900173 37.379161, -5.8885 37.385844, -5.901375 37.404119, -5.919743 37.420617, -5.978966 37.440383, -6.007977 37.43016, -6.01347 37.401937, -6.018791 37.386526, -6.020679 37.37766, -6.021838 37.373056, -6.016731 37.371249, -6.00523 37.354057, -5.999565 37.329492, -5.991325 37.336999, -5.986862 37.330311, -5.982056 37.32799, -5.943775 37.364018))"
+        }
+    },
+    {
+        "model": "zone.zone",
+        "pk": 2,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-04-23T08:56:56.159Z",
+            "modified_date": "2026-04-23T08:58:12.588Z",
+            "deleted_date": "2026-04-23T08:58:12.588Z",
+            "company": 1,
+            "name": "Aljarafe",
+            "polygon": "SRID=4326;POLYGON ((-6.017246 37.32799, -6.023254 37.346279, -6.023362 37.373636, -6.010895 37.423617, -6.041107 37.448969, -6.126251 37.428797, -6.202469 37.434249, -6.234398 37.386799, -6.204185 37.333314, -6.172428 37.307922, -6.126251 37.3127, -6.064796 37.256293, -6.044025 37.293174, -6.027203 37.304918, -6.017246 37.317752, -6.017246 37.32799))"
+        }
+    },
+    {
+        "model": "zone.zone",
+        "pk": 3,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-04-23T08:58:30.459Z",
+            "modified_date": "2026-04-23T09:00:12.797Z",
+            "deleted_date": "2026-04-23T09:00:12.797Z",
+            "company": 1,
+            "name": "Dos Hermanas",
+            "polygon": "SRID=4326;POLYGON ((-5.990639 37.241262, -6.026001 37.247548, -5.981455 37.321233, -5.979481 37.325806, -5.977464 37.330106, -5.975103 37.334269, -5.970511 37.338534, -5.96652 37.341025, -5.94871 37.358697, -5.94429 37.362142, -5.939913 37.363711, -5.927939 37.363745, -5.916095 37.363609, -5.905495 37.364086, -5.883265 37.353375, -5.874081 37.320892, -5.859833 37.305601, -5.84198 37.299183, -5.845413 37.276785, -5.94326 37.253287, -5.990639 37.241262))"
+        }
+    },
+    {
+        "model": "route.route",
+        "pk": 1,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-04-23T15:18:25.608Z",
+            "modified_date": "2026-04-23T15:18:25.608Z",
+            "deleted_date": "2026-04-23T15:18:25.608Z",
+            "name": "Ruta Principal",
+            "company": 1,
+            "worker": 1,
+            "start_date": "2026-01-01",
+            "end_date": "2026-12-31",
+            "week_start": 0,
+            "week_end": 4
+        }
+    },
+    {
+        "model": "sale.sale",
+        "pk": 1,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-04-23T09:11:28.767Z",
+            "modified_date": "2026-04-23T09:11:28.767Z",
+            "deleted_date": "2026-04-23T09:11:28.767Z",
+            "company": 1,
+            "buyer": 1,
+            "sale_date": "2026-01-07",
+            "invoice_date": "2026-01-07",
+            "product_description": "ACEITE VEGETAL USADO SIN FILTRAR",
+            "quantity": "13640.00",
+            "unit": "kg",
+            "unit_price": "0.9946",
+            "subtotal": "13566.34",
+            "tax_rate": "21.00",
+            "tax_amount": "2848.93",
+            "total": "16415.27",
+            "currency": "EUR",
+            "invoice_year": 2026,
+            "invoice_sequence": null,
+            "invoice_number": "001",
+            "invoice_pdf": "",
+            "invoice_generated_at": null,
+            "notes": ""
+        }
+    },
+    {
+        "model": "sale.sale",
+        "pk": 2,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-04-23T09:12:30.619Z",
+            "modified_date": "2026-04-23T09:12:30.619Z",
+            "deleted_date": "2026-04-23T09:12:30.619Z",
+            "company": 1,
+            "buyer": 2,
+            "sale_date": "2026-01-19",
+            "invoice_date": "2026-01-19",
+            "product_description": "ACEITE VEGETAL USADO SIN FILTRAR",
+            "quantity": "18829.00",
+            "unit": "kg",
+            "unit_price": "1.0400",
+            "subtotal": "19582.16",
+            "tax_rate": "21.00",
+            "tax_amount": "4112.25",
+            "total": "23694.41",
+            "currency": "EUR",
+            "invoice_year": 2026,
+            "invoice_sequence": null,
+            "invoice_number": "002",
+            "invoice_pdf": "",
+            "invoice_generated_at": null,
+            "notes": ""
+        }
+    },
+    {
+        "model": "sale.sale",
+        "pk": 3,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-04-23T09:13:53.407Z",
+            "modified_date": "2026-04-23T09:13:53.407Z",
+            "deleted_date": "2026-04-23T09:13:53.407Z",
+            "company": 1,
+            "buyer": 2,
+            "sale_date": "2026-01-19",
+            "invoice_date": "2026-01-19",
+            "product_description": "ACEITE USADO DE ALTA ACIDEZ",
+            "quantity": "1126.00",
+            "unit": "L",
+            "unit_price": "0.5000",
+            "subtotal": "563.00",
+            "tax_rate": "21.00",
+            "tax_amount": "118.23",
+            "total": "681.23",
+            "currency": "EUR",
+            "invoice_year": 2026,
+            "invoice_sequence": null,
+            "invoice_number": "003",
+            "invoice_pdf": "",
+            "invoice_generated_at": null,
+            "notes": ""
+        }
+    },
+    {
+        "model": "sale.sale",
+        "pk": 4,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-04-23T09:14:37.970Z",
+            "modified_date": "2026-04-23T09:14:37.970Z",
+            "deleted_date": "2026-04-23T09:14:37.970Z",
+            "company": 1,
+            "buyer": 1,
+            "sale_date": "2026-02-10",
+            "invoice_date": "2026-02-10",
+            "product_description": "ACEITE VEGETAL USADO SIN FILTRAR",
+            "quantity": "25430.00",
+            "unit": "kg",
+            "unit_price": "1.1500",
+            "subtotal": "29244.50",
+            "tax_rate": "21.00",
+            "tax_amount": "6141.34",
+            "total": "35385.84",
+            "currency": "EUR",
+            "invoice_year": 2026,
+            "invoice_sequence": null,
+            "invoice_number": "004",
+            "invoice_pdf": "",
+            "invoice_generated_at": null,
+            "notes": ""
+        }
+    },
+    {
+        "model": "sale.sale",
+        "pk": 5,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-04-23T09:15:23.459Z",
+            "modified_date": "2026-04-23T09:15:23.459Z",
+            "deleted_date": "2026-04-23T09:15:23.459Z",
+            "company": 1,
+            "buyer": 1,
+            "sale_date": "2026-03-02",
+            "invoice_date": "2026-03-02",
+            "product_description": "ACEITE USADO DE ALTA ACIDEZ",
+            "quantity": "29470.00",
+            "unit": "kg",
+            "unit_price": "0.9800",
+            "subtotal": "28880.60",
+            "tax_rate": "21.00",
+            "tax_amount": "6064.93",
+            "total": "34945.53",
+            "currency": "EUR",
+            "invoice_year": 2026,
+            "invoice_sequence": null,
+            "invoice_number": "005",
+            "invoice_pdf": "",
+            "invoice_generated_at": null,
+            "notes": ""
+        }
+    },
+    {
+        "model": "sale.sale",
+        "pk": 6,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-04-23T09:16:15.305Z",
+            "modified_date": "2026-04-23T09:16:15.305Z",
+            "deleted_date": "2026-04-23T09:16:15.305Z",
+            "company": 1,
+            "buyer": 1,
+            "sale_date": "2026-04-08",
+            "invoice_date": "2026-04-08",
+            "product_description": "ACEITE VEGETAL USADO SIN FILTRAR",
+            "quantity": "32557.00",
+            "unit": "L",
+            "unit_price": "1.0150",
+            "subtotal": "33045.36",
+            "tax_rate": "21.00",
+            "tax_amount": "6939.53",
+            "total": "39984.89",
+            "currency": "EUR",
+            "invoice_year": 2026,
+            "invoice_sequence": null,
+            "invoice_number": "006",
+            "invoice_pdf": "",
+            "invoice_generated_at": null,
+            "notes": ""
+        }
+    },
+    {
+        "model": "sale.sale",
+        "pk": 7,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-04-29T08:56:55.060Z",
+            "modified_date": "2026-04-29T08:56:55.060Z",
+            "deleted_date": "2026-04-29T08:56:55.060Z",
+            "company": 1,
+            "buyer": 1,
+            "sale_date": "2026-04-27",
+            "invoice_date": "2026-04-27",
+            "product_description": "ACEITE VEGETAL USADO SIN FILTRAR",
+            "quantity": "20240.00",
+            "unit": "kg",
+            "unit_price": "1.0350",
+            "subtotal": "20948.40",
+            "tax_rate": "21.00",
+            "tax_amount": "4399.16",
+            "total": "25347.56",
+            "currency": "EUR",
+            "invoice_year": 2026,
+            "invoice_sequence": null,
+            "invoice_number": "007",
+            "invoice_pdf": "",
+            "invoice_generated_at": null,
+            "notes": ""
+        }
+    },
+    {
+        "model": "sale.sale",
+        "pk": 8,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-06-12T17:56:30.959Z",
+            "modified_date": "2026-06-12T17:56:30.959Z",
+            "deleted_date": "2026-06-12T17:56:30.959Z",
+            "company": 1,
+            "buyer": 3,
+            "sale_date": "2026-06-10",
+            "invoice_date": "2026-06-10",
+            "product_description": "ACEITE VEGETAL USADO SIN FILTRAR",
+            "quantity": "6329.00",
+            "unit": "kg",
+            "unit_price": "1.1000",
+            "subtotal": "6961.90",
+            "tax_rate": "21.00",
+            "tax_amount": "1462.00",
+            "total": "8423.90",
+            "currency": "EUR",
+            "invoice_year": 2026,
+            "invoice_sequence": null,
+            "invoice_number": "011",
+            "invoice_pdf": "",
+            "invoice_generated_at": null,
+            "notes": ""
+        }
+    },
+    {
+        "model": "sale.sale",
+        "pk": 9,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-06-12T17:59:24.119Z",
+            "modified_date": "2026-06-12T17:59:24.119Z",
+            "deleted_date": "2026-06-12T17:59:24.119Z",
+            "company": 1,
+            "buyer": 1,
+            "sale_date": "2026-05-11",
+            "invoice_date": "2026-05-11",
+            "product_description": "ACEITE VEGETAL USADO SIN FILTRAR",
+            "quantity": "26108.00",
+            "unit": "kg",
+            "unit_price": "1.0150",
+            "subtotal": "26499.62",
+            "tax_rate": "21.00",
+            "tax_amount": "5564.92",
+            "total": "32064.54",
+            "currency": "EUR",
+            "invoice_year": 2026,
+            "invoice_sequence": null,
+            "invoice_number": "008",
+            "invoice_pdf": "",
+            "invoice_generated_at": null,
+            "notes": ""
+        }
+    },
+    {
+        "model": "sale.sale",
+        "pk": 10,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-06-12T18:01:02.871Z",
+            "modified_date": "2026-06-12T18:01:02.871Z",
+            "deleted_date": "2026-06-12T18:01:02.871Z",
+            "company": 1,
+            "buyer": 4,
+            "sale_date": "2026-05-25",
+            "invoice_date": "2026-05-25",
+            "product_description": "ACEITE VEGETAL USADO SIN FILTRAR",
+            "quantity": "14720.00",
+            "unit": "kg",
+            "unit_price": "1.0055",
+            "subtotal": "14800.96",
+            "tax_rate": "21.00",
+            "tax_amount": "3108.20",
+            "total": "17909.16",
+            "currency": "EUR",
+            "invoice_year": 2026,
+            "invoice_sequence": null,
+            "invoice_number": "009",
+            "invoice_pdf": "",
+            "invoice_generated_at": null,
+            "notes": ""
+        }
+    },
+    {
+        "model": "sale.sale",
+        "pk": 11,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-06-12T18:01:53.223Z",
+            "modified_date": "2026-06-12T18:01:53.223Z",
+            "deleted_date": "2026-06-12T18:01:53.223Z",
+            "company": 1,
+            "buyer": 4,
+            "sale_date": "2026-05-29",
+            "invoice_date": "2026-05-29",
+            "product_description": "ACEITE VEGETAL USADO SIN FILTRAR",
+            "quantity": "2188.00",
+            "unit": "kg",
+            "unit_price": "1.0055",
+            "subtotal": "2200.03",
+            "tax_rate": "21.00",
+            "tax_amount": "462.01",
+            "total": "2662.04",
+            "currency": "EUR",
+            "invoice_year": 2026,
+            "invoice_sequence": null,
+            "invoice_number": "010",
+            "invoice_pdf": "",
+            "invoice_generated_at": null,
+            "notes": ""
+        }
+    },
+    {
+        "model": "sale.sale",
+        "pk": 12,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-06-18T10:39:53.512Z",
+            "modified_date": "2026-06-18T10:39:53.512Z",
+            "deleted_date": "2026-06-18T10:39:53.512Z",
+            "company": 1,
+            "buyer": 1,
+            "sale_date": "2026-06-18",
+            "invoice_date": "2026-06-18",
+            "product_description": "ACEITE VEGETAL USADO SIN FILTRAR",
+            "quantity": "24480.00",
+            "unit": "kg",
+            "unit_price": "1.0400",
+            "subtotal": "25459.20",
+            "tax_rate": "21.00",
+            "tax_amount": "5346.43",
+            "total": "30805.63",
+            "currency": "EUR",
+            "invoice_year": 2026,
+            "invoice_sequence": null,
+            "invoice_number": "013",
+            "invoice_pdf": "",
+            "invoice_generated_at": null,
+            "notes": ""
+        }
+    },
+    {
+        "model": "sale.sale",
+        "pk": 13,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-06-18T10:43:13.126Z",
+            "modified_date": "2026-06-18T10:43:13.126Z",
+            "deleted_date": "2026-06-18T10:43:13.126Z",
+            "company": 1,
+            "buyer": 4,
+            "sale_date": "2026-06-16",
+            "invoice_date": "2026-06-16",
+            "product_description": "ACEITE VEGETAL USADO SIN FILTRAR",
+            "quantity": "2401.00",
+            "unit": "kg",
+            "unit_price": "1.0163",
+            "subtotal": "2440.14",
+            "tax_rate": "21.00",
+            "tax_amount": "512.43",
+            "total": "2952.57",
+            "currency": "EUR",
+            "invoice_year": 2026,
+            "invoice_sequence": null,
+            "invoice_number": "012",
+            "invoice_pdf": "",
+            "invoice_generated_at": null,
+            "notes": ""
+        }
+    },
+    {
+        "model": "sale.sale",
+        "pk": 14,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-07-09T08:43:30.128Z",
+            "modified_date": "2026-07-09T08:43:30.128Z",
+            "deleted_date": "2026-07-09T08:43:30.128Z",
+            "company": 1,
+            "buyer": 3,
+            "sale_date": "2026-06-25",
+            "invoice_date": "2026-06-25",
+            "product_description": "ACEITE VEGETAL USADO SIN FILTRAR",
+            "quantity": "5006.00",
+            "unit": "kg",
+            "unit_price": "1.1300",
+            "subtotal": "5656.78",
+            "tax_rate": "21.00",
+            "tax_amount": "1187.92",
+            "total": "6844.70",
+            "currency": "EUR",
+            "invoice_year": 2026,
+            "invoice_sequence": null,
+            "invoice_number": "014",
+            "invoice_pdf": "",
+            "invoice_generated_at": null,
+            "notes": ""
+        }
+    },
+    {
+        "model": "sale.sale",
+        "pk": 15,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-07-09T08:43:59.718Z",
+            "modified_date": "2026-07-09T08:43:59.718Z",
+            "deleted_date": "2026-07-09T08:43:59.718Z",
+            "company": 1,
+            "buyer": 1,
+            "sale_date": "2026-07-08",
+            "invoice_date": "2026-07-08",
+            "product_description": "ACEITE VEGETAL USADO SIN FILTRAR",
+            "quantity": "24500.00",
+            "unit": "kg",
+            "unit_price": "1.0650",
+            "subtotal": "26092.50",
+            "tax_rate": "21.00",
+            "tax_amount": "5479.42",
+            "total": "31571.92",
+            "currency": "EUR",
+            "invoice_year": 2026,
+            "invoice_sequence": null,
+            "invoice_number": "015",
+            "invoice_pdf": "",
+            "invoice_generated_at": null,
+            "notes": ""
+        }
+    },
+    {
+        "model": "sale.sale",
+        "pk": 16,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-07-09T08:56:05.562Z",
+            "modified_date": "2026-07-09T09:12:57.143Z",
+            "deleted_date": "2026-07-09T09:12:57.129Z",
+            "company": 1,
+            "buyer": 1,
+            "sale_date": "2026-07-02",
+            "invoice_date": "2026-07-02",
+            "product_description": "MES DE JULIO IVECO  9063 MBW\nMES DE JULIO IVECO  8550 KGZ\nMES DE JULIO IVECO 5060 KJR",
+            "quantity": "3.00",
+            "unit": "ud",
+            "unit_price": "825.0000",
+            "subtotal": "2475.00",
+            "tax_rate": "21.00",
+            "tax_amount": "519.75",
+            "total": "2994.75",
+            "currency": "EUR",
+            "invoice_year": 2026,
+            "invoice_sequence": null,
+            "invoice_number": "A8/2026",
+            "invoice_pdf": "",
+            "invoice_generated_at": null,
+            "notes": ""
+        }
+    },
+    {
+        "model": "sale.sale",
+        "pk": 17,
+        "fields": {
+            "disabled": false,
+            "created_date": "2026-07-28T16:28:27.596Z",
+            "modified_date": "2026-07-28T16:29:45.826Z",
+            "deleted_date": "2026-07-28T16:29:45.813Z",
+            "company": 1,
+            "buyer": 3,
+            "sale_date": "2026-07-27",
+            "invoice_date": "2026-07-27",
+            "product_description": "ACEITE VEGETAL USADO SIN FILTRAR",
+            "quantity": "2910.68",
+            "unit": "kg",
+            "unit_price": "1.1400",
+            "subtotal": "3318.18",
+            "tax_rate": "21.00",
+            "tax_amount": "696.82",
+            "total": "4015.00",
+            "currency": "EUR",
+            "invoice_year": 2026,
+            "invoice_sequence": null,
+            "invoice_number": "016",
+            "invoice_pdf": "",
+            "invoice_generated_at": null,
+            "notes": ""
+        }
+    },
+    {
+        "model": "sale.saleline",
+        "pk": 1,
+        "fields": {
+            "sale": 15,
+            "position": 0,
+            "product_description": "ACEITE VEGETAL USADO SIN FILTRAR",
+            "quantity": "24500.00",
+            "unit": "kg",
+            "unit_price": "1.0650",
+            "tax_rate": "21.00",
+            "subtotal": "26092.50",
+            "tax_amount": "5479.42",
+            "total": "31571.92"
+        }
+    },
+    {
+        "model": "sale.saleline",
+        "pk": 3,
+        "fields": {
+            "sale": 14,
+            "position": 0,
+            "product_description": "ACEITE VEGETAL USADO SIN FILTRAR",
+            "quantity": "5006.00",
+            "unit": "kg",
+            "unit_price": "1.1300",
+            "tax_rate": "21.00",
+            "subtotal": "5656.78",
+            "tax_amount": "1187.92",
+            "total": "6844.70"
+        }
+    },
+    {
+        "model": "sale.saleline",
+        "pk": 4,
+        "fields": {
+            "sale": 12,
+            "position": 0,
+            "product_description": "ACEITE VEGETAL USADO SIN FILTRAR",
+            "quantity": "24480.00",
+            "unit": "kg",
+            "unit_price": "1.0400",
+            "tax_rate": "21.00",
+            "subtotal": "25459.20",
+            "tax_amount": "5346.43",
+            "total": "30805.63"
+        }
+    },
+    {
+        "model": "sale.saleline",
+        "pk": 5,
+        "fields": {
+            "sale": 13,
+            "position": 0,
+            "product_description": "ACEITE VEGETAL USADO SIN FILTRAR",
+            "quantity": "2401.00",
+            "unit": "kg",
+            "unit_price": "1.0163",
+            "tax_rate": "21.00",
+            "subtotal": "2440.14",
+            "tax_amount": "512.43",
+            "total": "2952.57"
+        }
+    },
+    {
+        "model": "sale.saleline",
+        "pk": 6,
+        "fields": {
+            "sale": 8,
+            "position": 0,
+            "product_description": "ACEITE VEGETAL USADO SIN FILTRAR",
+            "quantity": "6329.00",
+            "unit": "kg",
+            "unit_price": "1.1000",
+            "tax_rate": "21.00",
+            "subtotal": "6961.90",
+            "tax_amount": "1462.00",
+            "total": "8423.90"
+        }
+    },
+    {
+        "model": "sale.saleline",
+        "pk": 7,
+        "fields": {
+            "sale": 11,
+            "position": 0,
+            "product_description": "ACEITE VEGETAL USADO SIN FILTRAR",
+            "quantity": "2188.00",
+            "unit": "kg",
+            "unit_price": "1.0055",
+            "tax_rate": "21.00",
+            "subtotal": "2200.03",
+            "tax_amount": "462.01",
+            "total": "2662.04"
+        }
+    },
+    {
+        "model": "sale.saleline",
+        "pk": 8,
+        "fields": {
+            "sale": 10,
+            "position": 0,
+            "product_description": "ACEITE VEGETAL USADO SIN FILTRAR",
+            "quantity": "14720.00",
+            "unit": "kg",
+            "unit_price": "1.0055",
+            "tax_rate": "21.00",
+            "subtotal": "14800.96",
+            "tax_amount": "3108.20",
+            "total": "17909.16"
+        }
+    },
+    {
+        "model": "sale.saleline",
+        "pk": 9,
+        "fields": {
+            "sale": 9,
+            "position": 0,
+            "product_description": "ACEITE VEGETAL USADO SIN FILTRAR",
+            "quantity": "26108.00",
+            "unit": "kg",
+            "unit_price": "1.0150",
+            "tax_rate": "21.00",
+            "subtotal": "26499.62",
+            "tax_amount": "5564.92",
+            "total": "32064.54"
+        }
+    },
+    {
+        "model": "sale.saleline",
+        "pk": 10,
+        "fields": {
+            "sale": 7,
+            "position": 0,
+            "product_description": "ACEITE VEGETAL USADO SIN FILTRAR",
+            "quantity": "20240.00",
+            "unit": "kg",
+            "unit_price": "1.0350",
+            "tax_rate": "21.00",
+            "subtotal": "20948.40",
+            "tax_amount": "4399.16",
+            "total": "25347.56"
+        }
+    },
+    {
+        "model": "sale.saleline",
+        "pk": 11,
+        "fields": {
+            "sale": 6,
+            "position": 0,
+            "product_description": "ACEITE VEGETAL USADO SIN FILTRAR",
+            "quantity": "32557.00",
+            "unit": "L",
+            "unit_price": "1.0150",
+            "tax_rate": "21.00",
+            "subtotal": "33045.36",
+            "tax_amount": "6939.53",
+            "total": "39984.89"
+        }
+    },
+    {
+        "model": "sale.saleline",
+        "pk": 12,
+        "fields": {
+            "sale": 5,
+            "position": 0,
+            "product_description": "ACEITE USADO DE ALTA ACIDEZ",
+            "quantity": "29470.00",
+            "unit": "kg",
+            "unit_price": "0.9800",
+            "tax_rate": "21.00",
+            "subtotal": "28880.60",
+            "tax_amount": "6064.93",
+            "total": "34945.53"
+        }
+    },
+    {
+        "model": "sale.saleline",
+        "pk": 13,
+        "fields": {
+            "sale": 4,
+            "position": 0,
+            "product_description": "ACEITE VEGETAL USADO SIN FILTRAR",
+            "quantity": "25430.00",
+            "unit": "kg",
+            "unit_price": "1.1500",
+            "tax_rate": "21.00",
+            "subtotal": "29244.50",
+            "tax_amount": "6141.34",
+            "total": "35385.84"
+        }
+    },
+    {
+        "model": "sale.saleline",
+        "pk": 14,
+        "fields": {
+            "sale": 3,
+            "position": 0,
+            "product_description": "ACEITE USADO DE ALTA ACIDEZ",
+            "quantity": "1126.00",
+            "unit": "L",
+            "unit_price": "0.5000",
+            "tax_rate": "21.00",
+            "subtotal": "563.00",
+            "tax_amount": "118.23",
+            "total": "681.23"
+        }
+    },
+    {
+        "model": "sale.saleline",
+        "pk": 15,
+        "fields": {
+            "sale": 2,
+            "position": 0,
+            "product_description": "ACEITE VEGETAL USADO SIN FILTRAR",
+            "quantity": "18829.00",
+            "unit": "kg",
+            "unit_price": "1.0400",
+            "tax_rate": "21.00",
+            "subtotal": "19582.16",
+            "tax_amount": "4112.25",
+            "total": "23694.41"
+        }
+    },
+    {
+        "model": "sale.saleline",
+        "pk": 16,
+        "fields": {
+            "sale": 1,
+            "position": 0,
+            "product_description": "ACEITE VEGETAL USADO SIN FILTRAR",
+            "quantity": "13640.00",
+            "unit": "kg",
+            "unit_price": "0.9946",
+            "tax_rate": "21.00",
+            "subtotal": "13566.34",
+            "tax_amount": "2848.93",
+            "total": "16415.27"
+        }
+    },
+    {
+        "model": "sale.saleline",
+        "pk": 18,
+        "fields": {
+            "sale": 16,
+            "position": 0,
+            "product_description": "MES DE JULIO IVECO  9063 MBW",
+            "quantity": "1.00",
+            "unit": "ud",
+            "unit_price": "825.0000",
+            "tax_rate": "21.00",
+            "subtotal": "825.00",
+            "tax_amount": "173.25",
+            "total": "998.25"
+        }
+    },
+    {
+        "model": "sale.saleline",
+        "pk": 19,
+        "fields": {
+            "sale": 16,
+            "position": 1,
+            "product_description": "MES DE JULIO IVECO  8550 KGZ",
+            "quantity": "1.00",
+            "unit": "ud",
+            "unit_price": "825.0000",
+            "tax_rate": "21.00",
+            "subtotal": "825.00",
+            "tax_amount": "173.25",
+            "total": "998.25"
+        }
+    },
+    {
+        "model": "sale.saleline",
+        "pk": 20,
+        "fields": {
+            "sale": 16,
+            "position": 2,
+            "product_description": "MES DE JULIO IVECO 5060 KJR",
+            "quantity": "1.00",
+            "unit": "ud",
+            "unit_price": "825.0000",
+            "tax_rate": "21.00",
+            "subtotal": "825.00",
+            "tax_amount": "173.25",
+            "total": "998.25"
+        }
+    },
+    {
+        "model": "sale.saleline",
+        "pk": 22,
+        "fields": {
+            "sale": 17,
+            "position": 0,
+            "product_description": "ACEITE VEGETAL USADO SIN FILTRAR",
+            "quantity": "2910.68",
+            "unit": "kg",
+            "unit_price": "1.1400",
+            "tax_rate": "21.00",
+            "subtotal": "3318.18",
+            "tax_amount": "696.82",
+            "total": "4015.00"
+        }
+    }
+]

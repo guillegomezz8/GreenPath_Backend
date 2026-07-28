@@ -123,5 +123,134 @@ class Sale(BaseModel):
         self.full_clean()
         super().save(*args, **kwargs)
 
+    def recalculate_from_lines(self):
+        lines = list(self.lines.order_by("position", "id"))
+        if not lines:
+            return
+
+        subtotal = sum((line.subtotal for line in lines), Decimal("0.00"))
+        tax_amount = sum((line.tax_amount for line in lines), Decimal("0.00"))
+        quantity = sum((line.quantity for line in lines), Decimal("0.00"))
+        units = {line.unit for line in lines}
+        tax_rates = {line.tax_rate for line in lines}
+
+        self.product_description = "\n".join(line.product_description for line in lines)
+        self.quantity = quantity
+        self.unit = units.pop() if len(units) == 1 else "varias"
+        self.unit_price = (
+            (subtotal / quantity).quantize(Decimal("0.0001"))
+            if quantity
+            else Decimal("0.0000")
+        )
+        self.tax_rate = tax_rates.pop() if len(tax_rates) == 1 else Decimal("0.00")
+        self.subtotal = subtotal.quantize(Decimal("0.01"))
+        self.tax_amount = tax_amount.quantize(Decimal("0.01"))
+        self.total = (self.subtotal + self.tax_amount).quantize(Decimal("0.01"))
+        self.full_clean()
+        super().save(
+            update_fields=(
+                "product_description",
+                "quantity",
+                "unit",
+                "unit_price",
+                "tax_rate",
+                "subtotal",
+                "tax_amount",
+                "total",
+                "modified_date",
+            )
+        )
+
     def __str__(self):
         return self.invoice_number or f"Venta #{self.id}"
+
+
+class SaleLine(models.Model):
+    sale = models.ForeignKey(
+        Sale,
+        on_delete=models.CASCADE,
+        related_name="lines",
+        verbose_name="Venta",
+    )
+    position = models.PositiveIntegerField("Posicion", default=0)
+    product_description = models.TextField("Producto / descripcion")
+    quantity = models.DecimalField(
+        "Cantidad",
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal("0.01"))],
+    )
+    unit = models.CharField("Unidad", max_length=20, default="L")
+    unit_price = models.DecimalField(
+        "Precio unitario",
+        max_digits=12,
+        decimal_places=4,
+        validators=[MinValueValidator(Decimal("0.00"))],
+    )
+    tax_rate = models.DecimalField(
+        "IVA %",
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal("21.00"),
+        validators=[MinValueValidator(Decimal("0.00"))],
+    )
+    subtotal = models.DecimalField(
+        "Base imponible",
+        max_digits=12,
+        decimal_places=2,
+        editable=False,
+        default=Decimal("0.00"),
+    )
+    tax_amount = models.DecimalField(
+        "Importe IVA",
+        max_digits=12,
+        decimal_places=2,
+        editable=False,
+        default=Decimal("0.00"),
+    )
+    total = models.DecimalField(
+        "Total",
+        max_digits=12,
+        decimal_places=2,
+        editable=False,
+        default=Decimal("0.00"),
+    )
+
+    class Meta:
+        verbose_name = "Linea de venta"
+        verbose_name_plural = "Lineas de venta"
+        ordering = ("position", "id")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["sale", "position"],
+                name="uniq_sale_line_position",
+            ),
+        ]
+
+    def calculate_totals(self):
+        self.subtotal = (
+            Decimal(self.quantity or Decimal("0.00"))
+            * Decimal(self.unit_price or Decimal("0.00"))
+        ).quantize(Decimal("0.01"))
+        self.tax_amount = (
+            self.subtotal
+            * (Decimal(self.tax_rate or Decimal("0.00")) / Decimal("100"))
+        ).quantize(Decimal("0.01"))
+        self.total = (self.subtotal + self.tax_amount).quantize(Decimal("0.01"))
+
+    def save(self, *args, recalculate_sale=True, **kwargs):
+        self.calculate_totals()
+        self.full_clean()
+        super().save(*args, **kwargs)
+        if recalculate_sale:
+            self.sale.recalculate_from_lines()
+
+    def delete(self, *args, **kwargs):
+        sale = self.sale
+        result = super().delete(*args, **kwargs)
+        if Sale.objects.filter(pk=sale.pk).exists():
+            sale.recalculate_from_lines()
+        return result
+
+    def __str__(self):
+        return f"{self.sale} - linea {self.position + 1}"

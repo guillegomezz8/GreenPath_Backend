@@ -46,9 +46,10 @@ class SaleFilter(FilterSet):
             Q(buyer__fiscal_name__icontains=value) |
             Q(buyer__tax_id__icontains=value) |
             Q(product_description__icontains=value) |
+            Q(lines__product_description__icontains=value) |
             Q(unit__icontains=value) |
             Q(notes__icontains=value)
-        )
+        ).distinct()
 
 
 def _monthly_keys(months=6):
@@ -113,7 +114,13 @@ def _apply_date_range(queryset, field_name, start_date=None, end_date=None):
 
 
 class SaleViewSet(viewsets.ModelViewSet):
-    queryset = Sale.objects.select_related("company", "buyer").all().order_by("-invoice_date", "-id")
+    queryset = (
+        Sale.objects
+        .select_related("company", "buyer")
+        .prefetch_related("lines")
+        .all()
+        .order_by("-invoice_date", "-id")
+    )
     filter_backends = [DjangoFilterBackend]
     filterset_class = SaleFilter
     permission_classes = [IsAuthenticated, IsOwnerUser]

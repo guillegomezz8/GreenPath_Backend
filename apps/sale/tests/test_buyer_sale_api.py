@@ -5,7 +5,7 @@ from unittest.mock import patch
 from django.test import TestCase
 
 from apps.base.test_utils import BackendTestMixin
-from apps.sale.models import Sale
+from apps.sale.models import Sale, SaleLine
 
 
 class BuyerAndSaleApiTests(BackendTestMixin, TestCase):
@@ -64,6 +64,78 @@ class BuyerAndSaleApiTests(BackendTestMixin, TestCase):
         self.assertEqual(sale.total, Decimal("119.06"))
         self.assertFalse(bool(sale.invoice_pdf))
         self.assertIsNone(sale.invoice_generated_at)
+
+    def test_owner_can_create_and_update_sale_with_multiple_lines(self):
+        buyer = self.create_buyer(self.company, "Comprador Multilinea", "B23232323")
+        response = self.owner_client.post(
+            "/sales/",
+            {
+                "buyer": buyer.id,
+                "invoice_number": "020/2026",
+                "invoice_date": "2026-07-09",
+                "currency": "EUR",
+                "notes": "Factura con varios conceptos",
+                "lines": [
+                    {
+                        "product_description": "Aceite recuperado",
+                        "quantity": "100.00",
+                        "unit": "kg",
+                        "unit_price": "1.5000",
+                        "tax_rate": "21.00",
+                    },
+                    {
+                        "product_description": "Servicio de transporte",
+                        "quantity": "2.00",
+                        "unit": "ud",
+                        "unit_price": "50.0000",
+                        "tax_rate": "10.00",
+                    },
+                ],
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        sale = Sale.objects.get(company=self.company, invoice_number="020/2026")
+        self.assertEqual(sale.lines.count(), 2)
+        self.assertEqual(sale.quantity, Decimal("102.00"))
+        self.assertEqual(sale.subtotal, Decimal("250.00"))
+        self.assertEqual(sale.tax_amount, Decimal("41.50"))
+        self.assertEqual(sale.total, Decimal("291.50"))
+        self.assertEqual(response.data["line_count"], 2)
+        self.assertEqual(len(response.data["lines"]), 2)
+
+        update_response = self.owner_client.put(
+            f"/sales/{sale.id}/",
+            {
+                "buyer": buyer.id,
+                "invoice_number": "020/2026",
+                "invoice_date": "2026-07-09",
+                "currency": "EUR",
+                "notes": "Linea sustituida",
+                "lines": [
+                    {
+                        "product_description": "Concepto definitivo",
+                        "quantity": "3.00",
+                        "unit": "ud",
+                        "unit_price": "20.0000",
+                        "tax_rate": "21.00",
+                    },
+                ],
+            },
+            format="json",
+        )
+
+        self.assertEqual(update_response.status_code, 200)
+        sale.refresh_from_db()
+        self.assertEqual(sale.lines.count(), 1)
+        self.assertEqual(sale.total, Decimal("72.60"))
+        self.assertFalse(
+            SaleLine.objects.filter(
+                sale=sale,
+                product_description="Aceite recuperado",
+            ).exists()
+        )
 
     @patch("apps.sale.api.viewsets.sale_viewset.generate_sale_invoice_pdf")
     def test_download_invoice_generates_pdf_on_demand_without_storing_file(self, generate_pdf_mock):

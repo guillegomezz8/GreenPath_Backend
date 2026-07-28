@@ -133,10 +133,12 @@ def _file_uri(file_field):
         return None
 
 
-def _get_empty_rows(product_description):
-    description = (product_description or "").strip()
-    estimated_lines = max(1, math.ceil(len(description) / 52))
-    row_count = max(8, 12 - estimated_lines)
+def _get_empty_rows(items):
+    estimated_lines = sum(
+        max(1, math.ceil(len((item.get("descripcion") or "").strip()) / 52))
+        for item in items
+    )
+    row_count = max(0, 12 - estimated_lines)
     return range(row_count)
 
 
@@ -162,13 +164,30 @@ def _invoice_template_context(sale, settings_obj):
     if sale.buyer.province:
         buyer_city_line = f"{buyer_city_line}, {sale.buyer.province}" if buyer_city_line else sale.buyer.province
 
+    sale_lines = list(sale.lines.order_by("position", "id"))
+    if not sale_lines:
+        sale_lines = [sale]
+
     items = [
         {
-            "cantidad": f"{_format_decimal(sale.quantity, decimals=0)} {sale.unit}".strip(),
-            "descripcion": sale.product_description,
-            "precio_unitario": _format_money(sale.unit_price, sale.currency, decimals=3),
-            "total": _format_money(sale.subtotal, sale.currency),
+            "cantidad": f"{_format_decimal(line.quantity, decimals=2)} {line.unit}".strip(),
+            "descripcion": line.product_description,
+            "precio_unitario": _format_money(line.unit_price, sale.currency, decimals=4),
+            "total": _format_money(line.subtotal, sale.currency),
         }
+        for line in sale_lines
+    ]
+
+    tax_totals = {}
+    for line in sale_lines:
+        tax_totals.setdefault(line.tax_rate, Decimal("0.00"))
+        tax_totals[line.tax_rate] += line.tax_amount
+    tax_breakdown = [
+        {
+            "rate": _format_decimal(rate),
+            "amount": _format_money(amount, sale.currency),
+        }
+        for rate, amount in sorted(tax_totals.items())
     ]
 
     return {
@@ -189,6 +208,7 @@ def _invoice_template_context(sale, settings_obj):
         "base_imponible": _format_money(sale.subtotal, sale.currency),
         "iva_porcentaje": _format_decimal(sale.tax_rate),
         "iva_cantidad": _format_money(sale.tax_amount, sale.currency),
+        "tax_breakdown": tax_breakdown,
         "items": items,
         "total": _format_money(sale.total, sale.currency),
         "company_name": settings_obj.billing_business_name or sale.company.name,
@@ -229,7 +249,7 @@ def _invoice_template_context(sale, settings_obj):
         "total_label": "TOTAL EUROS" if sale.currency == "EUR" else f"TOTAL {sale.currency}",
         "currency": sale.currency,
         "notes": sale.notes,
-        "empty_rows": _get_empty_rows(sale.product_description),
+        "empty_rows": _get_empty_rows(items),
     }
 
 

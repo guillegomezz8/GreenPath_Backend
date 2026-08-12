@@ -30,3 +30,9 @@ python manage.py loaddata copias/greenpath.json
 
 Los archivos contienen datos personales y hashes de contrasenas. Deben
 guardarse en una ubicacion privada y no subirse al repositorio.
+
+La exportacion incluye tambien `sale.saleinvoiceissuersnapshot` y
+`sale.saleline`, los modelos que conservan la foto fiscal y bancaria del emisor
+asociada a cada factura y sus conceptos de venta. Esto permite restaurar
+facturas antiguas sin depender de la configuracion fiscal global que exista en
+`CompanySettings` en el momento de la restauracion.

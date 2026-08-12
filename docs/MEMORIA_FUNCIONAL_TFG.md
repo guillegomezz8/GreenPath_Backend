@@ -249,7 +249,7 @@ Durante el proyecto se han consolidado varias decisiones tecnicas y funcionales 
 - precio por litro configurable a nivel de empresa
 - bandera `facturable` en recogidas para impactar o no en estadisticas
 - uso de Celery para no bloquear procesos operativos
-- generacion de factura solo en el momento de descarga para evitar almacenamiento innecesario y garantizar que el PDF refleje los datos vigentes
+- generacion de factura solo en el momento de descarga para evitar almacenamiento innecesario, conservando los datos fiscales del emisor mediante snapshot historico
 
 La arquitectura detallada del sistema se desarrolla en `docs/ARQUITECTURA_TECNICA.md`.
 
@@ -329,7 +329,7 @@ Su uso no solo permite generar facturas PDF, sino que obliga a resolver:
 - composicion dinamica de datos
 - dependencias del sistema necesarias para el renderizado
 
-Ademas, la decision actual de generar la factura bajo demanda y no almacenarla añade una justificacion arquitectonica adicional: el documento final siempre refleja el estado vigente de la venta y de la configuracion fiscal de la empresa.
+Ademas, la decision actual de generar la factura bajo demanda y no almacenarla añade una justificacion arquitectonica adicional: el documento final evita binarios persistidos, pero conserva la informacion fiscal del emisor mediante una foto asociada a la venta.
 
 #### Conclusion de valor tecnologico
 

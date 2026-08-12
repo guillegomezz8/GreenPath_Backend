@@ -187,7 +187,7 @@ Desde el modulo de ventas, el owner puede:
 - editar ventas
 - descargar factura PDF
 
-La factura se genera en el momento de la descarga con los datos actuales de la venta y de la configuracion fiscal de la empresa. No se almacena como fichero persistido.
+La factura se genera en el momento de la descarga con los datos de la venta y los datos fiscales de empresa guardados al crearla. No se almacena como fichero persistido, pero los datos del emisor y la cuenta bancaria quedan conservados para que una configuracion posterior no cambie facturas antiguas.
 
 Para crear una venta, debe indicar:
 

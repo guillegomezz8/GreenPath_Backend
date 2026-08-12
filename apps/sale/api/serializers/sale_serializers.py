@@ -36,7 +36,15 @@ class SaleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Sale
-        exclude = ("created_date", "modified_date", "deleted_date", "sale_date", "invoice_pdf", "invoice_generated_at")
+        exclude = (
+            "created_date",
+            "modified_date",
+            "deleted_date",
+            "sale_date",
+            "invoice_issuer",
+            "invoice_pdf",
+            "invoice_generated_at",
+        )
 
 
 class SaleBaseWriteSerializer(serializers.ModelSerializer):

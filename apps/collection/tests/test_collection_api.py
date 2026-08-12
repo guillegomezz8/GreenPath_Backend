@@ -5,7 +5,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 from apps.base.enums import CollectionRequestStatus, CollectionStatus, ContainerType
-from apps.base.test_utils import BackendTestMixin
+from apps.base.tests.helpers import BackendTestMixin
 from apps.collection.models import Collection, CollectionRequest
 from apps.route.models import Route, RouteDay, RouteDayClient
 

@@ -116,7 +116,7 @@ def _apply_date_range(queryset, field_name, start_date=None, end_date=None):
 class SaleViewSet(viewsets.ModelViewSet):
     queryset = (
         Sale.objects
-        .select_related("company", "buyer")
+        .select_related("company", "buyer", "invoice_issuer")
         .prefetch_related("lines")
         .all()
         .order_by("-invoice_date", "-id")

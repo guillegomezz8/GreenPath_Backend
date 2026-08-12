@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 from django.test import TestCase
 
-from apps.base.test_utils import BackendTestMixin
+from apps.base.tests.helpers import BackendTestMixin
 from apps.sale.models import Sale, SaleLine
 
 
@@ -64,6 +64,7 @@ class BuyerAndSaleApiTests(BackendTestMixin, TestCase):
         self.assertEqual(sale.total, Decimal("119.06"))
         self.assertFalse(bool(sale.invoice_pdf))
         self.assertIsNone(sale.invoice_generated_at)
+        self.assertIsNotNone(sale.invoice_issuer)
 
     def test_owner_can_create_and_update_sale_with_multiple_lines(self):
         buyer = self.create_buyer(self.company, "Comprador Multilinea", "B23232323")

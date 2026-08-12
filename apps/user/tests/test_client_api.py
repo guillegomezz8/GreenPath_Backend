@@ -3,7 +3,7 @@ from decimal import Decimal
 from django.test import TestCase
 
 from apps.base.enums import CollectionStatus, DeductionReason, PickupFrequency
-from apps.base.test_utils import BackendTestMixin
+from apps.base.tests.helpers import BackendTestMixin
 from apps.collection.models import Collection
 from apps.user.models.client import Client
 from apps.user.models.user import User

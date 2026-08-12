@@ -118,7 +118,7 @@ Como Owner quiero registrar ventas con numero de factura manual para controlar i
 Criterios de aceptacion:
 1. Puedo crear una venta seleccionando comprador y fecha de factura.
 2. El sistema calcula base imponible, IVA y total.
-3. Puedo descargar el PDF de factura y el sistema lo reconstruye con los datos vigentes de la venta y de la configuracion fiscal de la empresa.
+3. Puedo descargar el PDF de factura y el sistema lo reconstruye con la venta, sus conceptos y la foto fiscal guardada al crearla.
 
 ### US-OWN-005E (P1) Configurar datos fiscales de empresa
 

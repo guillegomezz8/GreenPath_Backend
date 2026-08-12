@@ -237,9 +237,9 @@ En la version actual del proyecto, el PDF de factura:
 
 - no se almacena como fichero persistido
 - se genera al vuelo en cada descarga
-- se construye con el estado vigente de la venta y de la configuracion fiscal
+- se construye con la venta, sus lineas y el snapshot fiscal del emisor asociado
 
-Esta decision reduce almacenamiento innecesario y asegura que el documento final refleje los datos actuales del negocio.
+Esta decision reduce almacenamiento innecesario y asegura que el documento final conserve los datos fiscales y bancarios historicos del emisor aunque cambie la configuracion global.
 
 ## 7. Estrategia general ante integraciones externas
 

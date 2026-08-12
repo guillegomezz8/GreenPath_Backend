@@ -163,6 +163,7 @@ La API usa autenticacion JWT, paginacion personalizada, filtros por query params
 - Numero de factura manual y unico por empresa.
 - Fecha funcional `invoice_date`.
 - Recalculo backend de subtotal, IVA y total.
+- Foto fiscal del emisor vinculada a la venta para conservar datos de empresa y cuenta bancaria historicos.
 - Descarga de factura PDF generada al vuelo con WeasyPrint.
 
 ### Estadisticas
@@ -395,7 +396,7 @@ celery -A global flower --port=5555 --basic_auth=admin:adminpassword
 - Una recogida no facturable existe a nivel operativo, pero no entra en estadisticas economicas.
 - Las ventas computan como ingreso.
 - Las recogidas confirmadas y facturables computan como coste.
-- La factura PDF siempre se genera con los datos vigentes en el momento de descarga.
+- La factura PDF se genera bajo demanda, pero los datos fiscales del emisor se toman del snapshot guardado en la venta.
 
 ## Documentacion del TFG
 

@@ -4,9 +4,9 @@ from decimal import Decimal
 from django.template.loader import render_to_string
 from django.test import TestCase
 
-from apps.base.test_utils import BackendTestMixin
-from apps.sale.models import Sale, SaleLine
-from apps.sale.utils import _invoice_template_context
+from apps.base.tests.helpers import BackendTestMixin
+from apps.sale.models import Sale, SaleInvoiceIssuerSnapshot, SaleLine
+from apps.sale.utils import _invoice_template_context, _resolve_sale_invoice_issuer
 
 
 class SaleUtilsTests(BackendTestMixin, TestCase):
@@ -102,3 +102,95 @@ class SaleUtilsTests(BackendTestMixin, TestCase):
         self.assertIn("Servicio de transporte", html)
         self.assertIn("IVA 10,00 %", html)
         self.assertIn("IVA 21,00 %", html)
+
+    def test_invoice_template_uses_frozen_company_billing_data(self):
+        settings_obj = self.company.settings
+        settings_obj.billing_business_name = "Empresa Original S.L."
+        settings_obj.billing_tax_id = "B11111111"
+        settings_obj.billing_address = "Calle Original 1"
+        settings_obj.billing_postal_code = "41001"
+        settings_obj.billing_city = "Sevilla"
+        settings_obj.billing_province = "Sevilla"
+        settings_obj.billing_phone = "955111111"
+        settings_obj.billing_email = "original@example.com"
+        settings_obj.billing_bank_account = "ES1111111111111111111111"
+        settings_obj.save()
+
+        buyer = self.create_buyer(
+            self.company,
+            fiscal_name="COMPRADOR FOTO S.L.",
+            tax_id="B57575757",
+        )
+        sale = Sale.objects.create(
+            company=self.company,
+            buyer=buyer,
+            sale_date=date(2026, 8, 1),
+            invoice_date=date(2026, 8, 1),
+            invoice_number="030/2026",
+            product_description="Aceite original",
+            quantity=Decimal("10.00"),
+            unit="kg",
+            unit_price=Decimal("2.00"),
+            tax_rate=Decimal("21.00"),
+            currency="EUR",
+        )
+        first_snapshot_id = sale.invoice_issuer_id
+
+        settings_obj.billing_business_name = "Empresa Nueva S.L."
+        settings_obj.billing_bank_account = "ES2222222222222222222222"
+        settings_obj.save()
+
+        sale.refresh_from_db()
+        context = _invoice_template_context(sale, sale.invoice_issuer)
+
+        self.assertEqual(context["empresa_nombre"], "Empresa Original S.L.")
+        self.assertEqual(context["cuenta_bancaria"], "ES1111111111111111111111")
+
+        second_sale = Sale.objects.create(
+            company=self.company,
+            buyer=buyer,
+            sale_date=date(2026, 8, 2),
+            invoice_date=date(2026, 8, 2),
+            invoice_number="031/2026",
+            product_description="Aceite nuevo",
+            quantity=Decimal("10.00"),
+            unit="kg",
+            unit_price=Decimal("2.00"),
+            tax_rate=Decimal("21.00"),
+            currency="EUR",
+        )
+
+        self.assertNotEqual(second_sale.invoice_issuer_id, first_snapshot_id)
+        self.assertEqual(second_sale.invoice_issuer.billing_bank_account, "ES2222222222222222222222")
+        self.assertEqual(SaleInvoiceIssuerSnapshot.objects.count(), 2)
+
+    def test_invoice_download_does_not_assign_missing_invoice_issuer(self):
+        buyer = self.create_buyer(
+            self.company,
+            fiscal_name="COMPRADOR SIN FOTO S.L.",
+            tax_id="B58585858",
+        )
+        sale = Sale.objects.create(
+            company=self.company,
+            buyer=buyer,
+            sale_date=date(2026, 8, 3),
+            invoice_date=date(2026, 8, 3),
+            invoice_number="032/2026",
+            product_description="Aceite sin foto",
+            quantity=Decimal("10.00"),
+            unit="kg",
+            unit_price=Decimal("2.00"),
+            tax_rate=Decimal("21.00"),
+            currency="EUR",
+        )
+        Sale.objects.filter(pk=sale.pk).update(invoice_issuer=None)
+        sale.refresh_from_db()
+
+        with self.assertRaisesMessage(
+            ValueError,
+            "La venta no tiene datos fiscales de factura asociados.",
+        ):
+            _resolve_sale_invoice_issuer(sale)
+
+        sale.refresh_from_db()
+        self.assertIsNone(sale.invoice_issuer_id)

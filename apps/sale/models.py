@@ -1,10 +1,125 @@
+import hashlib
+import json
 from decimal import Decimal
 
 from django.core.validators import MinValueValidator
 from django.db import models
 
 from apps.base.models import BaseModel
-from apps.company.models import Company
+from apps.company.models import Company, CompanySettings
+
+
+class SaleInvoiceIssuerSnapshot(models.Model):
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name="sale_invoice_issuer_snapshots",
+        verbose_name="Empresa",
+    )
+    billing_business_name = models.CharField("Razon social", max_length=255, blank=True, default="")
+    billing_tax_id = models.CharField("CIF", max_length=20, blank=True, default="")
+    billing_address = models.CharField("Direccion fiscal", max_length=255, blank=True, default="")
+    billing_postal_code = models.CharField("Codigo postal", max_length=10, blank=True, default="")
+    billing_city = models.CharField("Ciudad", max_length=100, blank=True, default="")
+    billing_province = models.CharField("Provincia", max_length=100, blank=True, default="")
+    billing_country = models.CharField("Pais", max_length=100, blank=True, default="Espana")
+    billing_phone = models.CharField("Telefono", max_length=20, blank=True, default="")
+    billing_email = models.EmailField("Email", blank=True, default="")
+    billing_bank_account = models.CharField("Cuenta bancaria", max_length=64, blank=True, default="")
+    billing_logo = models.ImageField("Logo facturacion", upload_to="sale/issuer_snapshots/", max_length=255, blank=True, null=True)
+    billing_ler_code = models.CharField("Codigo LER", max_length=50, blank=True, default="")
+    billing_footer = models.TextField("Pie de factura", blank=True, default="")
+    data_hash = models.CharField("Hash de datos", max_length=64, db_index=True, editable=False)
+    created_date = models.DateTimeField("Fecha de creacion", auto_now_add=True)
+
+    BILLING_FIELDS = (
+        "billing_business_name",
+        "billing_tax_id",
+        "billing_address",
+        "billing_postal_code",
+        "billing_city",
+        "billing_province",
+        "billing_country",
+        "billing_phone",
+        "billing_email",
+        "billing_bank_account",
+        "billing_logo",
+        "billing_ler_code",
+        "billing_footer",
+    )
+
+    class Meta:
+        verbose_name = "Datos fiscales de factura"
+        verbose_name_plural = "Datos fiscales de facturas"
+        ordering = ("-created_date", "-id")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["company", "data_hash"],
+                name="uniq_sale_invoice_snapshot_company_hash",
+            ),
+        ]
+
+    @classmethod
+    def _file_name(cls, file_field):
+        return getattr(file_field, "name", "") or ""
+
+    @classmethod
+    def _hash_data(cls, data):
+        normalized = {
+            field: str(data.get(field) or "")
+            for field in cls.BILLING_FIELDS
+        }
+        raw = json.dumps(normalized, sort_keys=True, separators=(",", ":"))
+        return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+    @classmethod
+    def current_data_for_company(cls, company):
+        settings_obj, _ = CompanySettings.objects.get_or_create(company=company)
+        return {
+            "billing_business_name": settings_obj.billing_business_name or company.name or "",
+            "billing_tax_id": settings_obj.billing_tax_id or company.cif or "",
+            "billing_address": settings_obj.billing_address or company.address or "",
+            "billing_postal_code": settings_obj.billing_postal_code or "",
+            "billing_city": settings_obj.billing_city or "",
+            "billing_province": settings_obj.billing_province or "",
+            "billing_country": settings_obj.billing_country or "Espana",
+            "billing_phone": settings_obj.billing_phone or company.phone or "",
+            "billing_email": settings_obj.billing_email or company.email or "",
+            "billing_bank_account": settings_obj.billing_bank_account or "",
+            "billing_logo": cls._file_name(settings_obj.billing_logo) or cls._file_name(company.logo),
+            "billing_ler_code": settings_obj.billing_ler_code or "",
+            "billing_footer": settings_obj.billing_footer or "",
+        }
+
+    @classmethod
+    def get_or_create_for_company(cls, company):
+        data = cls.current_data_for_company(company)
+        data_hash = cls._hash_data(data)
+        snapshot, _ = cls.objects.get_or_create(
+            company=company,
+            data_hash=data_hash,
+            defaults=data,
+        )
+        return snapshot
+
+    def _value_for_hash(self, field):
+        if field == "billing_logo":
+            return self._file_name(self.billing_logo)
+        return getattr(self, field)
+
+    def save(self, *args, **kwargs):
+        data = {
+            field: self._value_for_hash(field)
+            for field in self.BILLING_FIELDS
+        }
+        self.data_hash = self._hash_data(data)
+        if kwargs.get("update_fields") is not None:
+            kwargs["update_fields"] = set(kwargs["update_fields"]) | {"data_hash"}
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        name = self.billing_business_name or self.company.name
+        return f"{name} - {self.billing_bank_account or 'sin cuenta'}"
 
 
 class Buyer(BaseModel):
@@ -54,6 +169,15 @@ class Sale(BaseModel):
         on_delete=models.CASCADE,
         related_name="sales",
         verbose_name="Empresa",
+    )
+    invoice_issuer = models.ForeignKey(
+        SaleInvoiceIssuerSnapshot,
+        on_delete=models.PROTECT,
+        related_name="sales",
+        verbose_name="Datos fiscales de factura",
+        blank=True,
+        null=True,
+        editable=False,
     )
     buyer = models.ForeignKey(
         Buyer,
@@ -107,6 +231,8 @@ class Sale(BaseModel):
     def clean(self):
         if self.buyer_id and self.company_id and self.buyer.company_id != self.company_id:
             raise ValueError("El comprador no pertenece a la misma empresa que la venta.")
+        if self.invoice_issuer_id and self.company_id and self.invoice_issuer.company_id != self.company_id:
+            raise ValueError("Los datos fiscales no pertenecen a la empresa de la venta.")
 
     def save(self, *args, **kwargs):
         if self.invoice_date:
@@ -119,6 +245,9 @@ class Sale(BaseModel):
         self.subtotal = (Decimal(self.quantity or Decimal("0.00")) * Decimal(self.unit_price or Decimal("0.00"))).quantize(Decimal("0.01"))
         self.tax_amount = (self.subtotal * (Decimal(self.tax_rate or Decimal("0.00")) / Decimal("100"))).quantize(Decimal("0.01"))
         self.total = (self.subtotal + self.tax_amount).quantize(Decimal("0.01"))
+
+        if self.company_id and not self.invoice_issuer_id:
+            self.invoice_issuer = SaleInvoiceIssuerSnapshot.get_or_create_for_company(self.company)
 
         self.full_clean()
         super().save(*args, **kwargs)

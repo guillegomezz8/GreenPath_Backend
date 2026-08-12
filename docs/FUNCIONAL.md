@@ -362,6 +362,7 @@ Hoy concentra:
 - pie de factura
 
 Es una pieza transversal que afecta tanto a recogidas como a facturacion.
+En facturacion actua como plantilla para nuevas ventas: al crear una venta, el backend copia esos datos a `SaleInvoiceIssuerSnapshot` para que cambios posteriores en configuracion no alteren facturas antiguas.
 
 ### 12.3 CompanyHub
 
@@ -721,7 +722,7 @@ Registrar operaciones de venta y reflejar los ingresos del negocio.
 - `invoice_date` es la unica fecha visible y funcional del modulo
 - `sale_date` se sincroniza internamente con `invoice_date` para mantener compatibilidad del modelo
 - reusar un concepto solo copia la descripcion comercial; no sobrescribe unidad, cantidad ni precio
-- el PDF siempre representa el estado actual de la venta y la configuracion fiscal de la empresa
+- el PDF representa los datos de la venta y la foto fiscal de empresa asociada a la factura
 
 ### 13.12 Modulo de facturacion PDF
 
@@ -739,9 +740,9 @@ Emitir un documento de factura coherente y descargable a partir de una venta.
 
 #### Reglas de negocio
 
-- los datos del emisor se toman de `CompanySettings`
+- los datos del emisor se toman de `SaleInvoiceIssuerSnapshot`, creado desde `CompanySettings` al registrar la venta
 - los datos del destinatario se toman del `Buyer`
-- el PDF no es un documento fijo en codigo: depende de la configuracion actual de empresa y de la venta
+- el PDF no es un documento fijo en codigo: se renderiza bajo demanda, pero conserva los datos historicos del emisor asociados a la venta
 
 ### 13.13 Modulo de configuracion de empresa
 
@@ -913,8 +914,8 @@ Durante esta fase, el sistema deja preparada tambien la base operativa de la eje
 
 1. el owner actualiza datos fiscales y bancarios
 2. el sistema guarda la configuracion por empresa
-3. nuevas ventas y facturas consumen esos datos
-4. si cambia la configuracion y se vuelve a descargar una factura, el PDF reflejara el estado vigente segun el flujo actual
+3. nuevas ventas crean o reutilizan una foto fiscal con esos datos
+4. si cambia la configuracion y se vuelve a descargar una factura antigua, el PDF conserva la foto fiscal vinculada a esa venta
 
 ## 16. Reglas de negocio detalladas
 
@@ -1135,7 +1136,7 @@ Los indicadores mas relevantes que hoy soporta GreenPath son:
 - Buyer: comprador interno para modulo de ventas
 - Sale: operacion de venta registrada en sistema
 - Invoice PDF: factura de venta generada para una `Sale`
-- Facturacion bajo demanda: generacion del PDF de venta en el momento de descarga, usando los datos vigentes sin persistir el binario como documento operativo
+- Facturacion bajo demanda: generacion del PDF de venta en el momento de descarga, usando la venta y su snapshot fiscal sin persistir el binario como documento operativo
 
 ## 25. Requisitos funcionales resumidos
 
@@ -1274,7 +1275,7 @@ Puede ejecutar acciones criticas como:
 - editar configuracion fiscal
 - marcar recogidas facturables
 - medir y confirmar recogidas
-- descargar facturas PDF con datos fiscales vigentes
+- descargar facturas PDF con los datos fiscales congelados en cada venta
 
 ### 28.2 Worker
 

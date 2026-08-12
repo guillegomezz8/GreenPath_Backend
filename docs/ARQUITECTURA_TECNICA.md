@@ -270,15 +270,16 @@ Elementos clave:
 1. el owner crea una `Sale`
 2. el frontend muestra como referencia el numero de la ultima factura y permite reusar conceptos anteriores sin modificar la unidad
 3. el backend valida `invoice_number` y `invoice_date`
-4. recalcula `subtotal`, `tax_amount` y `total`
-5. sincroniza `sale_date` con `invoice_date`
-6. renderiza el PDF con WeasyPrint solo cuando se solicita
-7. expone descarga via endpoint dedicado sin persistir el fichero
+4. crea o reutiliza un `SaleInvoiceIssuerSnapshot` con los datos fiscales y bancarios actuales de la empresa
+5. recalcula `subtotal`, `tax_amount` y `total`
+6. sincroniza `sale_date` con `invoice_date`
+7. renderiza el PDF con WeasyPrint solo cuando se solicita
+8. expone descarga via endpoint dedicado sin persistir el fichero
 
 Esta decision de generar el documento bajo demanda tiene dos ventajas arquitectonicas:
 
 - evita persistencia innecesaria de binarios
-- garantiza que el PDF refleje los datos fiscales y comerciales vigentes
+- conserva los datos fiscales y bancarios historicos del emisor aunque cambie la configuracion global de empresa
 
 ## 11. Frontend y organizacion de pantallas
 
@@ -482,7 +483,7 @@ El sistema genera documentos de negocio en forma de PDF:
 - facturas de venta ligadas a `Sale`
 - posible documentacion complementaria asociada a medios o email
 
-La generacion se hace con WeasyPrint a partir de plantillas HTML/CSS, lo que permite versionar la presentacion en el propio repositorio y reconstruir el documento en cada descarga con los datos vigentes.
+La generacion se hace con WeasyPrint a partir de plantillas HTML/CSS, lo que permite versionar la presentacion en el propio repositorio y reconstruir el documento en cada descarga con la venta, sus lineas y el snapshot fiscal asociado.
 
 ## 21. Validacion automatizada actual
 

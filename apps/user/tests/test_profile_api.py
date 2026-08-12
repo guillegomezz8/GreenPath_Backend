@@ -1,7 +1,7 @@
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 
-from apps.base.test_utils import BackendTestMixin
+from apps.base.tests.helpers import BackendTestMixin
 
 
 def small_gif(name="avatar.gif"):

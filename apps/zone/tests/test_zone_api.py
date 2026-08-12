@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from apps.base.test_utils import BackendTestMixin
+from apps.base.tests.helpers import BackendTestMixin
 
 
 class ZoneApiTests(BackendTestMixin, TestCase):

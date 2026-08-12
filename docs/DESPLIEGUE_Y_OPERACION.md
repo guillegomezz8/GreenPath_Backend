@@ -251,7 +251,7 @@ Desde la perspectiva de negocio, la operacion cotidiana se apoya en:
 - registro de ventas y descarga de facturas
 - revision de estadisticas
 
-En este punto conviene remarcar que la descarga de facturas no depende de ficheros previamente almacenados. Si los datos fiscales, comprador o venta cambian, el documento se genera con los datos vigentes.
+En este punto conviene remarcar que la descarga de facturas no depende de ficheros previamente almacenados. La venta se renderiza bajo demanda, pero los datos fiscales y bancarios del emisor se toman del snapshot asociado a la factura.
 
 Desde la perspectiva tecnica, esto implica revisar:
 
@@ -317,7 +317,7 @@ Ante una incidencia grave, la recuperacion minima deberia contemplar:
 3. restaurar media persistida si aplica
 4. verificar login, API, panel y facturas
 
-Las facturas de venta no requieren restaurar binarios PDF historicos en el flujo actual, porque se reconstruyen en cada descarga a partir de `Sale`, `Buyer` y `CompanySettings`.
+Las facturas de venta no requieren restaurar binarios PDF historicos en el flujo actual, porque se reconstruyen en cada descarga a partir de `Sale`, `Buyer` y `SaleInvoiceIssuerSnapshot`. La configuracion `CompanySettings` solo actua como origen para snapshots de nuevas facturas.
 
 ## 11. Riesgos operativos principales
 

@@ -319,11 +319,12 @@ Payload actual:
 Uso actual:
 - precio por litro por defecto para recogidas manuales
 - precio por litro por defecto para recogidas creadas desde ejecucion de ruta
-- datos fiscales y bancarios usados para las facturas de venta PDF
+- datos fiscales y bancarios usados como plantilla para nuevas facturas de venta
 - configuracion del hub para operativa de rutas
 
 Nota:
 - el modelo conserva `billing_logo` para facturacion, aunque el endpoint actual de settings no lo expone en el payload principal
+- al crear una venta, el backend congela esos datos en `SaleInvoiceIssuerSnapshot`; cambiar `CompanySettings` despues no altera facturas antiguas
 
 ### 6.5 Zones (`/zones/`)
 
@@ -674,10 +675,13 @@ Reglas:
 - `invoice_number` es manual y obligatorio.
 - `invoice_date` es la unica fecha visible y funcional del modulo.
 - internamente `sale_date` se sincroniza con `invoice_date` para mantener compatibilidad del modelo.
+- al crear una venta se vincula un snapshot fiscal del emisor (`SaleInvoiceIssuerSnapshot`) con razon social, CIF, direccion, telefono, email, cuenta bancaria, logo, LER y pie de factura.
+- si los datos fiscales actuales coinciden con un snapshot anterior de la misma empresa, se reutiliza; si cambian, se crea uno nuevo para las nuevas facturas.
 - cada linea calcula su base, IVA y total.
 - `subtotal`, `tax_amount` y `total` de la venta se obtienen sumando sus lineas.
 - los payloads antiguos de un solo concepto siguen siendo compatibles.
-- el PDF no se almacena: se genera bajo demanda cuando se descarga.
+- el PDF no se almacena: se genera bajo demanda cuando se descarga, usando la venta, el comprador y el snapshot fiscal asociado.
+- `invoice_issuer` es interno y no se expone en el serializer publico de ventas para no cambiar el contrato del frontend.
 
 #### `GET /sales/{id}/invoice/download/`
 
@@ -685,6 +689,7 @@ Descarga el PDF de factura.
 
 Comportamiento:
 - backend construye el PDF en memoria en cada solicitud
+- los datos fiscales y bancarios del emisor se leen del snapshot asociado a la venta
 - no persiste el fichero en almacenamiento
 - devuelve un adjunto `application/pdf`
 

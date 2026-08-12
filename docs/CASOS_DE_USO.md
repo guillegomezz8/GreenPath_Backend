@@ -296,14 +296,16 @@ La revision actual incorpora el alcance completo del TFG: gestion multiempresa, 
 5. completa el primer concepto con descripcion, cantidad, unidad, precio e IVA
 6. si necesita mas conceptos, pulsa `Añadir concepto`; las lineas se mantienen dentro de una zona con scroll
 7. si quiere reutilizar una descripcion, abre `Reusar concepto` en la linea correspondiente y selecciona un concepto anterior
-8. el sistema recalcula subtotal, impuesto y total de cada linea y de la factura
-9. la venta queda disponible en listado, detalle y descarga documental
-10. el PDF se renderiza en el momento de la descarga con todos los conceptos
+8. el sistema crea o reutiliza una foto fiscal de la empresa para esa factura
+9. el sistema recalcula subtotal, impuesto y total de cada linea y de la factura
+10. la venta queda disponible en listado, detalle y descarga documental
+11. el PDF se renderiza en el momento de la descarga con todos los conceptos
 
 **Flujos alternativos:**
 
 - en edicion, el owner puede abrir `Reusar concepto`; la seleccion solo sustituye la descripcion, no la unidad
 - si el numero de factura ya existe en la empresa, el sistema rechaza la operacion
+- si la empresa cambia su configuracion fiscal o bancaria despues, las facturas ya creadas mantienen la foto fiscal asociada
 - si el PDF falla por problema de entorno, la descarga devuelve error y la venta sigue existiendo
 
 **Resultado esperado:**
@@ -642,29 +644,29 @@ La revision actual incorpora el alcance completo del TFG: gestion multiempresa, 
 
 **Resultado esperado:**
 
-- el owner descarga una factura PDF construida con los datos vigentes de la venta, comprador y configuracion fiscal de empresa
+- el owner descarga una factura PDF construida con los datos de la venta, el comprador y la foto fiscal del emisor asociada a la factura
 
-### CU-022. Recalcular documento tras cambios de datos
+### CU-022. Mantener datos fiscales historicos de factura
 
 **Actor principal:** Sistema
 
-**Objetivo:** garantizar que la factura descargada refleja siempre la informacion actual.
+**Objetivo:** garantizar que las facturas antiguas no cambian si se modifica la configuracion fiscal o bancaria de la empresa.
 
 **Precondiciones:**
 
 - existe una venta registrada
-- el owner ha modificado datos de venta, comprador o configuracion fiscal
+- el owner ha modificado la configuracion fiscal o bancaria de la empresa
 
 **Flujo principal:**
 
 1. el owner solicita de nuevo la descarga de factura
-2. el backend consulta los datos actuales
-3. WeasyPrint vuelve a renderizar el PDF con ese contexto
-4. el sistema entrega el documento actualizado
+2. el backend consulta el `SaleInvoiceIssuerSnapshot` vinculado a la venta
+3. WeasyPrint vuelve a renderizar el PDF con ese contexto historico
+4. el sistema entrega el documento sin cambiar los datos fiscales del emisor
 
 **Resultado esperado:**
 
-- no hace falta endpoint de regeneracion ni limpiar ficheros antiguos, porque la factura se reconstruye bajo demanda
+- no hace falta almacenar binarios historicos ni limpiar ficheros antiguos, porque la factura se reconstruye bajo demanda con su snapshot fiscal
 
 ## 7. Observaciones finales
 

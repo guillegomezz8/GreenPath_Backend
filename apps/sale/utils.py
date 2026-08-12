@@ -11,7 +11,6 @@ from django.template.loader import render_to_string
 from apps.base.enums import CollectionStatus
 from apps.base.logger import configure_logging
 from apps.collection.models import Collection
-from apps.company.utils import get_or_create_company_settings
 from apps.sale.models import Sale
 
 configure_logging()
@@ -253,6 +252,13 @@ def _invoice_template_context(sale, settings_obj):
     }
 
 
+def _resolve_sale_invoice_issuer(sale):
+    if sale.invoice_issuer_id:
+        return sale.invoice_issuer
+
+    raise ValueError("La venta no tiene datos fiscales de factura asociados.")
+
+
 def generate_sale_invoice_pdf(sale):
     try:
         from weasyprint import HTML
@@ -260,7 +266,7 @@ def generate_sale_invoice_pdf(sale):
         logging.error(f"[sale_utils - generate_sale_invoice_pdf] WeasyPrint no disponible para venta {sale.id}: {str(e)}")
         raise ValueError("La libreria de PDF no esta disponible. Debes instalar weasyprint.")
 
-    settings_obj = get_or_create_company_settings(sale.company)
+    settings_obj = _resolve_sale_invoice_issuer(sale)
     html_content = render_to_string(
         "sale/invoice.html",
         _invoice_template_context(sale, settings_obj),

@@ -8,7 +8,7 @@ from django.test import TestCase, override_settings
 from django.utils import timezone
 
 from apps.base.enums import CollectionRequestStatus, CollectionStatus, RouteDayStatus
-from apps.base.test_utils import BackendTestMixin
+from apps.base.tests.helpers import BackendTestMixin
 from apps.collection.models import Collection
 from apps.collection.models import CollectionRequest
 from apps.company.models import CompanyHub

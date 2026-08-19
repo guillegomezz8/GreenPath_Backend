@@ -165,7 +165,7 @@ class SaleAdmin(admin.ModelAdmin):
     list_select_related = ("company", "buyer", "invoice_issuer")
     ordering = ("-invoice_date", "-id")
     date_hierarchy = "invoice_date"
-    readonly_fields = ("invoice_issuer", "subtotal", "tax_amount", "total")
+    readonly_fields = ("subtotal", "tax_amount", "total")
     fieldsets = (
         ("Factura", {
             "fields": ("company", "buyer", "manual_invoice_number", "invoice_date", "currency", "invoice_issuer"),
@@ -225,7 +225,7 @@ class SaleInvoiceIssuerSnapshotAdmin(admin.ModelAdmin):
     list_filter = ("company", "created_date")
     autocomplete_fields = ("company",)
     ordering = ("-created_date", "-id")
-    readonly_fields = ("company", "data_hash", "created_date")
+    readonly_fields = ("data_hash", "created_date")
     fieldsets = (
         ("Empresa", {
             "fields": ("company", "billing_business_name", "billing_tax_id"),
@@ -253,9 +253,6 @@ class SaleInvoiceIssuerSnapshotAdmin(admin.ModelAdmin):
             "fields": ("data_hash", "created_date"),
         }),
     )
-
-    def has_add_permission(self, request):
-        return False
 
     def has_delete_permission(self, request, obj=None):
         return False

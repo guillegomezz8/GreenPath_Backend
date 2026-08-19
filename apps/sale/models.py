@@ -177,7 +177,7 @@ class Sale(BaseModel):
         verbose_name="Datos fiscales de factura",
         blank=True,
         null=True,
-        editable=False,
+        editable=True,
     )
     buyer = models.ForeignKey(
         Buyer,

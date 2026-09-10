@@ -2,6 +2,7 @@ from rest_framework import serializers
 from apps.user.api.serializers.client_serializers import ClientSerializer
 from apps.user.api.serializers.worker_serializers import WorkerSerializer
 from apps.user.models.user import User
+from apps.user.utils import sync_client_location_from_address
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -94,21 +95,55 @@ class UserListSerializer(serializers.ModelSerializer):
 
 
 class UserProfileUpdateSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(write_only=True, required=False)
-    phone = serializers.CharField(write_only=True, required=False)
+    email = serializers.EmailField(required=False)
+    name = serializers.CharField(write_only=True, required=False, allow_blank=True, max_length=255, trim_whitespace=True)
+    surname = serializers.CharField(write_only=True, required=False, allow_blank=True, max_length=255, trim_whitespace=True)
+    phone = serializers.CharField(write_only=True, required=False, allow_blank=True, max_length=20, trim_whitespace=True)
+    address = serializers.CharField(write_only=True, required=False, allow_blank=True, max_length=255, trim_whitespace=True)
+    dni = serializers.CharField(write_only=True, required=False, allow_blank=True, max_length=255, trim_whitespace=True)
+    birth_date = serializers.DateField(write_only=True, required=False, allow_null=True)
+    cif = serializers.CharField(write_only=True, required=False, allow_blank=True, max_length=20, trim_whitespace=True)
+    city = serializers.CharField(write_only=True, required=False, allow_blank=True, max_length=100, trim_whitespace=True)
+    postal_code = serializers.CharField(write_only=True, required=False, allow_blank=True, max_length=10, trim_whitespace=True)
+    country = serializers.CharField(write_only=True, required=False, allow_blank=True, max_length=100, trim_whitespace=True)
     photo = serializers.ImageField(write_only=True, required=False, allow_null=True)
     
     class Meta:
         model = User
-        fields = ['email', 'name', 'phone', 'photo']
-        
+        fields = [
+            'email',
+            'name',
+            'surname',
+            'phone',
+            'address',
+            'dni',
+            'birth_date',
+            'cif',
+            'city',
+            'postal_code',
+            'country',
+            'photo',
+        ]
+
     def update(self, instance, validated_data):
         if 'email' in validated_data:
             instance.email = validated_data['email']
-            
-        profile_fields = ['name', 'phone', 'photo']
+
+        profile_fields = [
+            'name',
+            'surname',
+            'phone',
+            'address',
+            'dni',
+            'birth_date',
+            'cif',
+            'city',
+            'postal_code',
+            'country',
+            'photo',
+        ]
         profile_data = {k: v for k, v in validated_data.items() if k in profile_fields}
-        
+
         if profile_data:
             profile = None
             if instance.role_type in ["owner", "worker"] and hasattr(instance, 'worker_profile'):
@@ -119,14 +154,20 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
                 profile = instance.worker_profile
             elif hasattr(instance, 'client_profile'):
                 profile = instance.client_profile
-                
+
             if profile:
+                address_changed = False
                 for field, value in profile_data.items():
                     if not hasattr(profile, field):
                         continue
                     setattr(profile, field, value)
+                    if field in ['address', 'city', 'postal_code', 'country']:
+                        address_changed = True
                 profile.save()
-        
+
+                if instance.role_type == "client" and address_changed:
+                    sync_client_location_from_address(profile, clear_on_failure=True)
+
         instance.save()
         return instance
 

@@ -103,6 +103,46 @@ class SaleUtilsTests(BackendTestMixin, TestCase):
         self.assertIn("IVA 10,00 %", html)
         self.assertIn("IVA 21,00 %", html)
 
+    def test_invoice_template_displays_unit_price_with_two_decimals(self):
+        buyer = self.create_buyer(
+            self.company,
+            fiscal_name="COMPRADOR PRECIO S.L.",
+            tax_id="B59595959",
+        )
+        sale = Sale.objects.create(
+            company=self.company,
+            buyer=buyer,
+            sale_date=date(2026, 9, 4),
+            invoice_date=date(2026, 9, 4),
+            invoice_number="033/2026",
+            product_description="Temporal",
+            quantity=Decimal("1.00"),
+            unit="ud",
+            unit_price=Decimal("1.00"),
+            tax_rate=Decimal("21.00"),
+            currency="EUR",
+        )
+        line = SaleLine(
+            sale=sale,
+            position=0,
+            product_description="Producto con precio preciso",
+            quantity=Decimal("1.00"),
+            unit="ud",
+            unit_price=Decimal("1.2345"),
+            tax_rate=Decimal("21.00"),
+        )
+        line.save(recalculate_sale=False)
+        sale.recalculate_from_lines()
+
+        context = _invoice_template_context(sale, self.company.settings)
+        html = render_to_string("sale/invoice.html", context)
+        line.refresh_from_db()
+
+        self.assertEqual(line.unit_price, Decimal("1.2345"))
+        self.assertEqual(context["items"][0]["precio_unitario"], "1,23 €")
+        self.assertIn(">1,23 €<", html)
+        self.assertNotIn("1,2345", html)
+
     def test_invoice_template_uses_frozen_company_billing_data(self):
         settings_obj = self.company.settings
         settings_obj.billing_business_name = "Empresa Original S.L."

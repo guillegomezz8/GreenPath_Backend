@@ -8,6 +8,7 @@ from django.test import TestCase, override_settings
 from django.utils import timezone
 
 from apps.base.enums import CollectionRequestStatus, CollectionStatus, RouteDayStatus
+from apps.base.literals import ROUTE_DAY_CLIENT_LOCATION_REQUIRED
 from apps.base.tests.helpers import BackendTestMixin
 from apps.collection.models import Collection
 from apps.collection.models import CollectionRequest
@@ -310,7 +311,7 @@ class RouteApiTests(BackendTestMixin, TestCase):
 
     @override_settings(GOOGLE_MAPS_API_KEY="test-key")
     @patch("apps.route.utils.requests.get")
-    def test_google_optimization_preserves_unlocated_stops_without_crashing(self, mock_get):
+    def test_google_optimization_rejects_unlocated_stops(self, mock_get):
         CompanyHub.objects.create(
             company=self.company,
             name="Nave optimizacion",
@@ -330,10 +331,17 @@ class RouteApiTests(BackendTestMixin, TestCase):
         google_response.json.return_value = {"routes": [{"waypoint_order": [1, 0]}]}
         mock_get.return_value = google_response
 
-        optimized = optimize_route_day_with_google(route_day)
+        with self.assertRaisesMessage(
+            ValueError,
+            ROUTE_DAY_CLIENT_LOCATION_REQUIRED.format(clients=client_without_location.name),
+        ):
+            optimize_route_day_with_google(route_day)
 
-        self.assertEqual([row.id for row in optimized], [stop_two.id, stop_without_location.id, stop_one.id])
-        self.assertEqual(list(route_day.ordered_clients.order_by("order").values_list("id", flat=True)), [stop_two.id, stop_without_location.id, stop_one.id])
+        mock_get.assert_not_called()
+        self.assertEqual(
+            list(route_day.ordered_clients.order_by("order").values_list("id", flat=True)),
+            [stop_one.id, stop_without_location.id, stop_two.id],
+        )
 
     @override_settings(GOOGLE_MAPS_API_KEY="test-key")
     @patch("apps.route.utils.requests.get")
@@ -369,6 +377,46 @@ class RouteApiTests(BackendTestMixin, TestCase):
         self.assertEqual(mock_get.call_count, 2)
         self.assertEqual([row.id for row in optimized], [stops[1].id, stops[0].id, stops[3].id, stops[2].id])
         self.assertEqual(list(route_day.ordered_clients.order_by("order").values_list("id", flat=True)), [stops[1].id, stops[0].id, stops[3].id, stops[2].id])
+
+    @override_settings(GOOGLE_MAPS_API_KEY="test-key")
+    @patch("apps.route.utils.requests.get")
+    def test_google_optimization_builds_capacity_segments_by_proximity_to_hub(self, mock_get):
+        CompanyHub.objects.create(
+            company=self.company,
+            name="Nave segmentos cercanos",
+            location=Point(-6.0000, 37.0000, srid=4326),
+        )
+        route_day = RouteDay.objects.create(
+            route=self.route,
+            date=self.today(),
+            daily_capacity_liters=Decimal("120.00"),
+        )
+        stop_specs = [
+            ("far-one", Point(-6.4000, 37.4000, srid=4326)),
+            ("near-one", Point(-6.0100, 37.0100, srid=4326)),
+            ("near-two", Point(-6.0200, 37.0200, srid=4326)),
+            ("far-two", Point(-6.4100, 37.4100, srid=4326)),
+        ]
+        stops = []
+        for index, (name, location) in enumerate(stop_specs):
+            _, client = self.create_client(self.company, name, location=location)
+            stop = RouteDayClient.objects.create(route_day=route_day, client=client, order=index + 1)
+            CollectionRequest.objects.create(route_day_client=stop, expires_at=timezone.now(), final_liters=Decimal("60.00"))
+            stops.append(stop)
+
+        google_response = Mock()
+        google_response.raise_for_status.return_value = None
+        google_response.json.return_value = {"routes": [{"waypoint_order": [0, 1]}]}
+        mock_get.return_value = google_response
+
+        optimized = optimize_route_day_with_google(route_day)
+
+        self.assertEqual(mock_get.call_count, 2)
+        self.assertEqual([row.id for row in optimized], [stops[1].id, stops[2].id, stops[0].id, stops[3].id])
+        self.assertEqual(
+            list(route_day.ordered_clients.order_by("order").values_list("id", flat=True)),
+            [stops[1].id, stops[2].id, stops[0].id, stops[3].id],
+        )
 
     def test_operational_plan_splits_segments_by_capacity_and_ignores_canceled_load(self):
         route_day = RouteDay.objects.create(

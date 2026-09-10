@@ -25,6 +25,7 @@ from apps.base.literals import (
     ROUTE_DAY_STOP_OUT_OF_ORDER,
     ROUTE_DAY_GOOGLE_NAVIGATION_EMPTY,
     ROUTE_DAY_GOOGLE_HUB_REQUIRED,
+    ROUTE_DAY_CLIENT_LOCATION_REQUIRED,
     ROUTE_DAY_FINISH_DECISION_REQUIRED,
     ROUTE_DAY_FINISH_CLOSE_ACTION_INVALID,
     ROUTE_DAY_GENERATION_LOCKED,
@@ -315,13 +316,42 @@ def _route_day_client_has_location(row):
     return bool(getattr(row.client, "location", None))
 
 
+def _distance_between_points(first, second):
+    if not first or not second:
+        return Decimal("0.00")
+    lat_diff = Decimal(str(first.y)) - Decimal(str(second.y))
+    lng_diff = Decimal(str(first.x)) - Decimal(str(second.x))
+    return (lat_diff * lat_diff) + (lng_diff * lng_diff)
+
+
+def _client_sort_index(items):
+    return {item.id: index for index, item in enumerate(items)}
+
+
+def _row_sort_index(items):
+    return {item.id: index for index, item in enumerate(items)}
+
+
+def _route_day_clients_without_location(route_day_clients):
+    return [row for row in route_day_clients if not _route_day_client_has_location(row)]
+
+
+def _raise_for_route_day_clients_without_location(route_day_clients):
+    missing_rows = _route_day_clients_without_location(route_day_clients)
+    if not missing_rows:
+        return
+
+    client_names = ", ".join(row.client.name for row in missing_rows)
+    raise ValueError(ROUTE_DAY_CLIENT_LOCATION_REQUIRED.format(clients=client_names))
+
+
 def _planned_liters_for_optimization(row, planned_liters_by_row=None):
     if planned_liters_by_row and row.id in planned_liters_by_row:
         return Decimal(planned_liters_by_row[row.id] or 0).quantize(Decimal("0.01"))
     return _planned_stop_liters(row).quantize(Decimal("0.01"))
 
 
-def _split_route_day_clients_by_capacity(route_day_clients, capacity_limit, planned_liters_by_row=None):
+def _order_rows_into_capacity_segments(route_day_clients, capacity_limit, hub, planned_liters_by_row=None):
     if not route_day_clients:
         return []
 
@@ -329,24 +359,97 @@ def _split_route_day_clients_by_capacity(route_day_clients, capacity_limit, plan
     if capacity_limit <= 0:
         return [route_day_clients]
 
+    original_index = _row_sort_index(route_day_clients)
+    remaining = list(route_day_clients)
     segments = []
-    current_segment = []
-    current_liters = Decimal("0.00")
+    current_point = hub.location if hub and hub.location else None
 
-    for row in route_day_clients:
-        row_liters = _planned_liters_for_optimization(row, planned_liters_by_row)
-        if current_segment and current_liters > 0 and current_liters + row_liters > capacity_limit:
-            segments.append(current_segment)
-            current_segment = []
-            current_liters = Decimal("0.00")
+    while remaining:
+        segment = []
+        segment_liters = Decimal("0.00")
 
-        current_segment.append(row)
-        current_liters += row_liters
+        while remaining:
+            fitting_rows = [
+                row for row in remaining
+                if not segment
+                or segment_liters + _planned_liters_for_optimization(row, planned_liters_by_row) <= capacity_limit
+            ]
+            if not fitting_rows:
+                break
 
-    if current_segment:
-        segments.append(current_segment)
+            next_row = min(
+                fitting_rows,
+                key=lambda row: (
+                    _distance_between_points(current_point, row.client.location),
+                    original_index[row.id],
+                ),
+            )
+            remaining.remove(next_row)
+            segment.append(next_row)
+            segment_liters += _planned_liters_for_optimization(next_row, planned_liters_by_row)
+            current_point = next_row.client.location
+
+        if segment:
+            segments.append(segment)
+            current_point = hub.location if hub and hub.location else None
+            continue
+
+        oversized_row = remaining.pop(0)
+        segments.append([oversized_row])
+        current_point = hub.location if hub and hub.location else None
 
     return segments
+
+
+def _select_clients_for_route_day(
+    due_clients,
+    existing_client_ids,
+    reserved_client_ids,
+    max_clients_limit,
+    capacity_limit,
+    current_planned_liters,
+    planned_liters_by_client,
+    hub,
+):
+    due_index = _client_sort_index(due_clients)
+    remaining = [
+        client for client in due_clients
+        if client.id not in existing_client_ids and client.id not in reserved_client_ids
+    ]
+    selected = []
+    skipped_by_capacity_ids = set()
+    current_point = hub.location if hub and hub.location else None
+
+    while remaining:
+        if max_clients_limit > 0 and len(existing_client_ids) + len(selected) >= max_clients_limit:
+            break
+
+        fitting_clients = []
+        for client in remaining:
+            planned_liters = planned_liters_by_client.get(client.id, Decimal("60.00"))
+            if capacity_limit > 0 and current_planned_liters + planned_liters > capacity_limit:
+                skipped_by_capacity_ids.add(client.id)
+                continue
+            fitting_clients.append(client)
+
+        if not fitting_clients:
+            break
+
+        next_client = min(
+            fitting_clients,
+            key=lambda client: (
+                _distance_between_points(current_point, client.location),
+                due_index[client.id],
+            ),
+        )
+        remaining.remove(next_client)
+        selected.append(next_client)
+        current_planned_liters += planned_liters_by_client.get(next_client.id, Decimal("60.00"))
+        current_point = next_client.location
+
+    selected_ids = {client.id for client in selected}
+    skipped_by_capacity = len(skipped_by_capacity_ids - selected_ids)
+    return selected, skipped_by_capacity
 
 
 def _merge_optimized_located_rows_preserving_unlocated(segment_rows, optimized_located_rows):
@@ -429,18 +532,11 @@ def _persist_route_day_client_order(route_day, ordered_rows):
 
 def optimize_route_day_with_google(route_day, planned_liters_by_row=None):
     route_day_clients = list(route_day.ordered_clients.select_related("client").order_by("order"))
+    _raise_for_route_day_clients_without_location(route_day_clients)
+
     if len(route_day_clients) < 2:
         logging.info(f"[route_utils - optimize_route_day_with_google] Optimizacion Google no aplicada en route_day {route_day.id}: menos de 2 paradas")
         return route_day_clients
-
-    located_rows = [row for row in route_day_clients if _route_day_client_has_location(row)]
-    if len(located_rows) < 2:
-        logging.info(f"[route_utils - optimize_route_day_with_google] Optimizacion Google no aplicada en route_day {route_day.id}: menos de 2 paradas con ubicacion")
-        return route_day_clients
-
-    skipped_without_location = len(route_day_clients) - len(located_rows)
-    if skipped_without_location > 0:
-        logging.warning(f"[route_utils - optimize_route_day_with_google] {skipped_without_location} paradas sin ubicacion se conservaran en su posicion relativa en route_day {route_day.id}")
 
     hub = CompanyHub.objects.filter(company=route_day.route.company, location__isnull=False).first()
     if not hub:
@@ -453,7 +549,7 @@ def optimize_route_day_with_google(route_day, planned_liters_by_row=None):
         return route_day_clients
 
     capacity_limit = Decimal(route_day.daily_capacity_liters or 0)
-    segments = _split_route_day_clients_by_capacity(route_day_clients, capacity_limit, planned_liters_by_row=planned_liters_by_row)
+    segments = _order_rows_into_capacity_segments(route_day_clients, capacity_limit, hub, planned_liters_by_row=planned_liters_by_row)
     optimized = []
     for segment_number, segment_rows in enumerate(segments, start=1):
         optimized.extend(_optimize_route_day_segment_with_google(route_day, segment_rows, hub, api_key, segment_number))
@@ -467,7 +563,7 @@ def optimize_route_day_with_google(route_day, planned_liters_by_row=None):
     if updated_rows == 0:
         logging.info(f"[route_utils - optimize_route_day_with_google] Optimizacion Google sin cambios en route_day {route_day.id}")
     else:
-        logging.info(f"[route_utils - optimize_route_day_with_google] Optimizacion Google segmentada aplicada en route_day {route_day.id}: {updated_rows} paradas reordenadas en {len(segments)} segmentos")
+        logging.info(f"[route_utils - optimize_route_day_with_google] Optimizacion Google segmentada por capacidad aplicada en route_day {route_day.id}: {updated_rows} paradas reordenadas en {len(segments)} segmentos")
 
     return optimized
 
@@ -584,29 +680,27 @@ def generate_route_day_clients(route_day, regenerate=False, reserved_client_ids=
         capacity_limit = Decimal(route_day.daily_capacity_liters or 0)
         current_planned_liters = sum((_planned_stop_liters(item) for item in current_rows), Decimal("0.00"))
 
+        hub = CompanyHub.objects.filter(company=route_day.route.company, location__isnull=False).first()
+        selected_clients, skipped_by_capacity = _select_clients_for_route_day(
+            due_clients=due_clients,
+            existing_client_ids=existing_client_ids,
+            reserved_client_ids=reserved_client_ids,
+            max_clients_limit=max_clients_limit,
+            capacity_limit=capacity_limit,
+            current_planned_liters=current_planned_liters,
+            planned_liters_by_client=planned_liters_by_client,
+            hub=hub,
+        )
+
         next_order = int(route_day.ordered_clients.aggregate(max_order=Max("order"))["max_order"] or 0) + 1
-        skipped_by_capacity = 0
         created_rows = 0
 
-        for client in due_clients:
-            if client.id in existing_client_ids:
-                continue
-            if client.id in reserved_client_ids:
-                continue
-            if max_clients_limit > 0 and (len(existing_client_ids) >= max_clients_limit):
-                break
-
-            planned_liters = planned_liters_by_client.get(client.id, Decimal("60.00"))
-            if capacity_limit > 0 and (current_planned_liters + planned_liters > capacity_limit):
-                skipped_by_capacity += 1
-                continue
-
+        for client in selected_clients:
             route_day_client = RouteDayClient.objects.create(route_day=route_day, client=client, order=next_order)
-            planned_liters_by_row[route_day_client.id] = planned_liters
+            planned_liters_by_row[route_day_client.id] = planned_liters_by_client.get(client.id, Decimal("60.00"))
             next_order += 1
             created_rows += 1
             existing_client_ids.add(client.id)
-            current_planned_liters += planned_liters
 
         if max_clients_limit > 0 and len(existing_client_ids) >= max_clients_limit:
             logging.info(f"[route_utils - generate_route_day_clients] Limite max_clients_per_day alcanzado en route_day {route_day.id}: {max_clients_limit}")

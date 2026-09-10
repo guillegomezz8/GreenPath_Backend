@@ -171,7 +171,7 @@ def _invoice_template_context(sale, settings_obj):
         {
             "cantidad": f"{_format_decimal(line.quantity, decimals=2)} {line.unit}".strip(),
             "descripcion": line.product_description,
-            "precio_unitario": _format_money(line.unit_price, sale.currency, decimals=4),
+            "precio_unitario": _format_money(line.unit_price, sale.currency, decimals=2),
             "total": _format_money(line.subtotal, sale.currency),
         }
         for line in sale_lines

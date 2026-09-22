@@ -26,6 +26,7 @@ configure_logging()
 
 class RouteSerializer(serializers.ModelSerializer):
     company_name = serializers.SerializerMethodField()
+    default_daily_capacity_liters = serializers.SerializerMethodField()
 
     class Meta:
         model = Route
@@ -40,6 +41,11 @@ class RouteSerializer(serializers.ModelSerializer):
             logging.error(f"[route_serializers - get_company_name] Error obteniendo nombre de empresa para ruta {obj.id}: {str(e)}")
             return ""
 
+    def get_default_daily_capacity_liters(self, obj):
+        from apps.route.utils import resolve_route_default_capacity_liters
+
+        return resolve_route_default_capacity_liters(obj)
+
 
 class CreateRouteSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
@@ -48,7 +54,7 @@ class CreateRouteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Route
-        fields = ('id', 'name', 'worker', 'start_date', 'end_date', 'week_start', 'week_end')
+        fields = ('id', 'name', 'worker', 'start_date', 'end_date', 'week_start', 'week_end', 'default_capacity_liters')
         extra_kwargs = {'worker': {'required': False}}
 
     def validate(self, attrs):
@@ -77,7 +83,7 @@ class UpdateRouteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Route
-        fields = ('name', 'worker', 'start_date', 'end_date', 'week_start', 'week_end')
+        fields = ('name', 'worker', 'start_date', 'end_date', 'week_start', 'week_end', 'default_capacity_liters')
         extra_kwargs = {'worker': {'required': False}}
 
     def validate(self, attrs):
@@ -115,7 +121,7 @@ class PartialUpdateRouteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Route
-        fields = ('name', 'worker', 'start_date', 'end_date', 'week_start', 'week_end')
+        fields = ('name', 'worker', 'start_date', 'end_date', 'week_start', 'week_end', 'default_capacity_liters')
         extra_kwargs = {'worker': {'required': False}}
 
     def validate(self, attrs):

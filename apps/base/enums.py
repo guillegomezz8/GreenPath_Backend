@@ -57,6 +57,13 @@ class RouteDayStatus(models.TextChoices):
     CANCELED = "CANCELED", "Cancelada"
 
 
+class RouteOptimizationStatus(models.TextChoices):
+    PENDING = "PENDING", "Pendiente"
+    OPTIMIZED = "OPTIMIZED", "Optimizada"
+    FALLBACK = "FALLBACK", "Orden alternativo"
+    FAILED = "FAILED", "No optimizada"
+
+
 class CollectionStatus(models.TextChoices):
     PENDING_MEASUREMENT = "PENDING_MEASUREMENT", "Pendiente de medición"
     CONFIRMED = "CONFIRMED", "Confirmada"

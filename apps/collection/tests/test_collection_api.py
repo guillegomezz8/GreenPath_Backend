@@ -1,5 +1,6 @@
 from datetime import date, timedelta
 from decimal import Decimal
+from unittest.mock import patch
 
 from django.test import TestCase
 from django.utils import timezone
@@ -27,7 +28,8 @@ class CollectionApiTests(BackendTestMixin, TestCase):
         self.route_day = RouteDay.objects.create(route=self.route, date=self.today())
         self.route_day_client = RouteDayClient.objects.create(route_day=self.route_day, client=self.client_profile, order=1)
 
-    def test_client_can_answer_own_collection_request(self):
+    @patch("apps.collection.api.viewsets.collection_viewset.refresh_planned_route_day_optimization")
+    def test_client_can_answer_own_collection_request(self, mock_refresh_optimization):
         collection_request = CollectionRequest.objects.create(
             route_day_client=self.route_day_client,
             expires_at=timezone.now() + timedelta(hours=4),
@@ -48,6 +50,7 @@ class CollectionApiTests(BackendTestMixin, TestCase):
         self.assertEqual(collection_request.container_number, 3)
         self.assertEqual(collection_request.final_liters, Decimal("180.00"))
         self.assertEqual(collection_request.estimated_liters, Decimal("180.00"))
+        mock_refresh_optimization.assert_called_once_with(self.route_day)
 
     def test_owner_can_filter_collections_by_billable(self):
         Collection.objects.create(

@@ -253,7 +253,14 @@ SECRET_KEY=
 DEBUG=
 ALLOWED_HOSTS=
 CSRF_TRUSTED_ORIGINS=
+CORS_ALLOW_ALL_ORIGINS=
+CORS_ALLOWED_ORIGINS=
+CORS_ALLOWED_ORIGIN_REGEXES=
+SECURE_SSL_REDIRECT=
+SESSION_COOKIE_SECURE=
+CSRF_COOKIE_SECURE=
 
+DATABASE_URL=
 DB_ENGINE=
 DB_NAME=
 DB_USER=
@@ -263,6 +270,7 @@ DB_PORT=
 
 CELERY_BROKER_URL=
 CELERY_RESULT_BACKEND=
+REDIS_URL=
 
 GOOGLE_CLIENT_ID=
 GOOGLE_MAPS_API_KEY=
@@ -282,9 +290,14 @@ GMAIL_TOKEN_JSON=
 Notas:
 
 - `GMAIL_CLIENT_SECRET_JSON` y `GMAIL_TOKEN_JSON` deben guardarse en una sola linea dentro de `.env`.
-- `ALLOWED_HOSTS` y `CSRF_TRUSTED_ORIGINS` deben incluir el dominio de ngrok si se expone la API.
+- Las listas de dominios y origenes aceptan valores separados por espacios o comas.
+- `DATABASE_URL` tiene prioridad sobre las variables `DB_*` y siempre usa el backend PostGIS.
+- `REDIS_URL` se usa como valor comun de Celery salvo que se definan `CELERY_BROKER_URL` o `CELERY_RESULT_BACKEND`.
+- En produccion, configura `CORS_ALLOWED_ORIGINS` con el origen exacto del frontend y deja `CORS_ALLOW_ALL_ORIGINS=0`.
+- `ALLOWED_HOSTS` y `CSRF_TRUSTED_ORIGINS` deben incluir el dominio publico del backend si se expone la API.
 - En Docker, `DB_HOST` y las URLs de Redis deben apuntar a los nombres de servicio del `docker-compose.yml`.
 - El frontend consume la API mediante `VITE_APP_API_URL`.
+- La receta completa de Railway esta en `docs/DESPLIEGUE_Y_OPERACION.md`.
 
 ## Endpoints y documentacion API
 

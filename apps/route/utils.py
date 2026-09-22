@@ -152,7 +152,7 @@ def _compute_auto_estimated_liters(collection_request):
     company = collection_request.route_day_client.route_day.route.company
     historical_avg = (
         _company_collection_history_queryset(company, client_ids=[client_id], statuses=[CollectionStatus.CONFIRMED])
-        .aggregate(avg_liters=Avg("net_liters"))
+        .aggregate(avg_liters=Avg("measured_liters"))
         .get("avg_liters")
     )
 
@@ -189,7 +189,7 @@ def _planned_liters_by_client_for_company(company, client_ids):
     confirmed_rows = (
         _company_collection_history_queryset(company, client_ids=client_ids, statuses=[CollectionStatus.CONFIRMED])
         .values("client_id")
-        .annotate(avg_liters=Avg("net_liters"))
+        .annotate(avg_liters=Avg("measured_liters"))
     )
     confirmed_avg_by_client = {item["client_id"]: item["avg_liters"] for item in confirmed_rows}
 

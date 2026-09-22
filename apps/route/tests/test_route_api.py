@@ -171,7 +171,7 @@ class RouteApiTests(BackendTestMixin, TestCase):
             collection_date=self.today() - timedelta(days=8),
             container_number=1,
             measured_liters=Decimal("50.00"),
-            deduction_liters=Decimal("0.00"),
+            deduction_reason="OTHER",
             price_per_liter=Decimal("1.200"),
             status=CollectionStatus.CONFIRMED,
         )
@@ -181,7 +181,7 @@ class RouteApiTests(BackendTestMixin, TestCase):
             collection_date=self.today() - timedelta(days=9),
             container_number=7,
             measured_liters=Decimal("400.00"),
-            deduction_liters=Decimal("0.00"),
+            deduction_reason="OTHER",
             price_per_liter=Decimal("1.200"),
             status=CollectionStatus.CONFIRMED,
         )

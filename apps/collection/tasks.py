@@ -55,9 +55,8 @@ def auto_estimate_collection_request_liters(self, collection_request_id):
 
         historical_avg = (
             Collection.objects
-            .filter(client_id=client_id)
-            .exclude(status=CollectionStatus.CANCELED)
-            .aggregate(avg_liters=Avg("net_liters"))
+            .filter(client_id=client_id, status=CollectionStatus.CONFIRMED)
+            .aggregate(avg_liters=Avg("measured_liters"))
             .get("avg_liters")
         )
 

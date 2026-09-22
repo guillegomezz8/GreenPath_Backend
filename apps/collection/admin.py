@@ -16,7 +16,7 @@ class CollectionAdmin(admin.ModelAdmin):
         "status",
         "billable",
         "estimated_liters",
-        "net_liters",
+        "measured_liters",
         "total_price_display",
     )
 
@@ -40,7 +40,7 @@ class CollectionAdmin(admin.ModelAdmin):
 
     readonly_fields = (
         "estimated_liters",
-        "net_liters",
+        "deduction_liters",
         "total_price",
     )
 
@@ -79,7 +79,6 @@ class CollectionAdmin(admin.ModelAdmin):
             "fields": (
                 "billable",
                 "price_per_liter",
-                "net_liters",
                 "total_price",
             )
         }),

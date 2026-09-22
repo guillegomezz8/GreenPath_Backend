@@ -415,7 +415,6 @@ class RouteViewSet(viewsets.ModelViewSet):
                             'id': collection_obj.id if collection_obj else None,
                             'status': collection_obj.status if collection_obj else None,
                             'measured_liters': collection_obj.measured_liters if collection_obj else None,
-                            'net_liters': collection_obj.net_liters if collection_obj else None,
                             'total_price': collection_obj.total_price if collection_obj else None,
                             'collection_date': collection_obj.collection_date if collection_obj else None,
                         },

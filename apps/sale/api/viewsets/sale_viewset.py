@@ -223,7 +223,7 @@ class SaleViewSet(viewsets.ModelViewSet):
 
             total_cost = collections_qs.aggregate(total=Sum("total_price")).get("total") or 0
             total_income = sales_qs.aggregate(total=Sum("total")).get("total") or 0
-            total_bought_volume = collections_qs.aggregate(total=Sum("net_liters")).get("total") or 0
+            total_bought_volume = collections_qs.aggregate(total=Sum("measured_liters")).get("total") or 0
             total_sold_volume = sales_qs.aggregate(total=Sum("quantity")).get("total") or 0
 
             monthly = []
@@ -233,7 +233,7 @@ class SaleViewSet(viewsets.ModelViewSet):
                 income = month_sales.aggregate(total=Sum("total")).get("total") or 0
                 cost = month_collections.aggregate(total=Sum("total_price")).get("total") or 0
                 sold_volume = month_sales.aggregate(total=Sum("quantity")).get("total") or 0
-                bought_volume = month_collections.aggregate(total=Sum("net_liters")).get("total") or 0
+                bought_volume = month_collections.aggregate(total=Sum("measured_liters")).get("total") or 0
                 monthly.append({
                     "year": year,
                     "month": month,

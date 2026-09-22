@@ -202,7 +202,6 @@ class Collection {
   +deduction_liters: decimal
   +deduction_reason: string
   +deduction_notes: text
-  +net_liters: decimal
   +price_per_liter: decimal
   +billable: bool
   +total_price: decimal
@@ -472,7 +471,6 @@ class Collection {
   +container_type: string
   +container_number: int
   +measured_liters: decimal
-  +net_liters: decimal
   +price_per_liter: decimal
   +billable: bool
   +total_price: decimal

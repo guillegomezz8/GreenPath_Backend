@@ -218,7 +218,6 @@ Campos clave:
 - `estimated_liters`
 - `measured_liters`
 - `deduction_liters`
-- `net_liters`
 - `price_per_liter`
 - `billable`
 - `total_price`
@@ -660,7 +659,7 @@ Funcion:
 
 Prioridad:
 
-1. media de `Collection.net_liters` confirmadas
+1. media de `Collection.measured_liters` confirmadas
 2. media de `Collection.estimated_liters` no canceladas
 3. `60.00` litros por defecto
 
@@ -1157,7 +1156,7 @@ Si `auto_estimate_without_contact=True`:
 
 Calculo automatico:
 
-1. media historica confirmada de `net_liters`
+1. media historica confirmada de `measured_liters`
 2. media historica de `estimated_liters`
 3. litros calculados por envase y numero
 4. `60.00`

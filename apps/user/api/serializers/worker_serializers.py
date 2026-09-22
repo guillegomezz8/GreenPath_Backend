@@ -57,7 +57,7 @@ class WorkerSerializer(serializers.ModelSerializer):
             confirmed_collections=Count("id", filter=Q(status=CollectionStatus.CONFIRMED)),
             pending_collections=Count("id", filter=Q(status=CollectionStatus.PENDING_MEASUREMENT)),
             canceled_collections=Count("id", filter=Q(status=CollectionStatus.CANCELED)),
-            total_liters_collected=Sum("net_liters", filter=Q(status=CollectionStatus.CONFIRMED)),
+            total_liters_collected=Sum("measured_liters", filter=Q(status=CollectionStatus.CONFIRMED)),
             total_incomes=Sum("total_price", filter=Q(status=CollectionStatus.CONFIRMED, billable=True)),
         )
         obj._collection_stats_cache = stats_cache

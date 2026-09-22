@@ -74,16 +74,10 @@ def _normalize_collection_validated_data(validated_data, partial=False):
     return validated_data
 
 
-def _update_collection_preserving_paid_total(instance, validated_data):
-    original_total_price = instance.total_price
+def _update_collection(instance, validated_data):
     for attr, value in validated_data.items():
         setattr(instance, attr, value)
     instance.save()
-
-    if instance.total_price != original_total_price:
-        Collection.objects.filter(pk=instance.pk).update(total_price=original_total_price)
-        instance.total_price = original_total_price
-
     return instance
 
 
@@ -105,7 +99,6 @@ class CreateCollectionSerializer(serializers.ModelSerializer):
     collection_date = serializers.DateField(required=True)
     price_per_liter = serializers.DecimalField(max_digits=7, decimal_places=3, required=False)
     measured_liters = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, allow_null=True)
-    deduction_liters = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
     deduction_reason = serializers.ChoiceField(choices=DeductionReason.choices, required=False, allow_blank=True)
     deduction_notes = serializers.CharField(required=False, allow_blank=True)
     billable = serializers.BooleanField(required=False, default=True)
@@ -128,10 +121,9 @@ class CreateCollectionSerializer(serializers.ModelSerializer):
             'status',
             'notes',
             'estimated_liters',
-            'net_liters',
             'total_price',
         )
-        read_only_fields = ('estimated_liters', 'net_liters', 'total_price')
+        read_only_fields = ('estimated_liters', 'deduction_liters', 'total_price')
 
     def create(self, validated_data):
         try:
@@ -148,7 +140,6 @@ class UpdateCollectionSerializer(serializers.ModelSerializer):
     collection_date = serializers.DateField(required=True)
     price_per_liter = serializers.DecimalField(max_digits=7, decimal_places=3, required=True)
     measured_liters = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, allow_null=True)
-    deduction_liters = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
     deduction_reason = serializers.ChoiceField(choices=DeductionReason.choices, required=False, allow_blank=True)
     deduction_notes = serializers.CharField(required=False, allow_blank=True)
     billable = serializers.BooleanField(required=False)
@@ -171,15 +162,14 @@ class UpdateCollectionSerializer(serializers.ModelSerializer):
             'status',
             'notes',
             'estimated_liters',
-            'net_liters',
             'total_price',
         )
-        read_only_fields = ('estimated_liters', 'net_liters', 'total_price')
+        read_only_fields = ('estimated_liters', 'deduction_liters', 'total_price')
 
     def update(self, instance, validated_data):
         try:
             validated_data = _normalize_collection_validated_data(validated_data)
-            return _update_collection_preserving_paid_total(instance, validated_data)
+            return _update_collection(instance, validated_data)
         except Exception as e:
             logging.error(f'[collection_serializers - update] Error updating collection with id {instance.id}: {str(e)}')
             raise serializers.ValidationError(f'Error updating collection: {str(e)}')
@@ -189,7 +179,6 @@ class PartialUpdateCollectionSerializer(serializers.ModelSerializer):
     collection_date = serializers.DateField(required=False)
     price_per_liter = serializers.DecimalField(max_digits=7, decimal_places=3, required=False)
     measured_liters = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, allow_null=True)
-    deduction_liters = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
     deduction_reason = serializers.ChoiceField(choices=DeductionReason.choices, required=False, allow_blank=True)
     deduction_notes = serializers.CharField(required=False, allow_blank=True)
     billable = serializers.BooleanField(required=False)
@@ -212,15 +201,14 @@ class PartialUpdateCollectionSerializer(serializers.ModelSerializer):
             'status',
             'notes',
             'estimated_liters',
-            'net_liters',
             'total_price',
         )
-        read_only_fields = ('estimated_liters', 'net_liters', 'total_price')
+        read_only_fields = ('estimated_liters', 'deduction_liters', 'total_price')
 
     def update(self, instance, validated_data):
         try:
             validated_data = _normalize_collection_validated_data(validated_data, partial=True)
-            return _update_collection_preserving_paid_total(instance, validated_data)
+            return _update_collection(instance, validated_data)
         except Exception as e:
             logging.error(f'[collection_serializers - update] Error updating collection with id {instance.id}: {str(e)}')
             raise serializers.ValidationError(f'Error updating collection: {str(e)}')

@@ -32,12 +32,12 @@ class CollectionInline(admin.TabularInline):
         "worker",
         "container_type",
         "container_number",
-        "net_liters",
+        "measured_liters",
         "total_price",
         "status",
         "optimization_status",
     )
-    readonly_fields = ("net_liters", "total_price")
+    readonly_fields = ("measured_liters", "total_price")
     autocomplete_fields = ("client", "worker")
     ordering = ("-collection_date",)
 

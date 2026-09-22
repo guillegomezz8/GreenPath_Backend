@@ -66,7 +66,7 @@ class Collection(BaseModel):
     )
 
     measured_liters = models.DecimalField(
-        "Litros medidos (brutos)",
+        "Litros medidos finales",
         max_digits=10,
         decimal_places=2,
         validators=[MinValueValidator(Decimal("0.00"))],
@@ -91,14 +91,6 @@ class Collection(BaseModel):
     )
 
     deduction_notes = models.TextField("Notas descuento", blank=True, default="")
-
-    net_liters = models.DecimalField(
-        "Litros netos (facturables)",
-        max_digits=10,
-        decimal_places=2,
-        editable=False,
-        default=Decimal("0.00"),
-    )
 
     price_per_liter = models.DecimalField(
         "Precio por Litro",
@@ -159,9 +151,6 @@ class Collection(BaseModel):
             if self.collection_date != route_day_client.route_day.date:
                 raise ValueError("La fecha no coincide con la ruta diaria planificada.")
 
-        if self.measured_liters is not None and self.deduction_liters > self.measured_liters:
-            raise ValueError("Los litros descontados no pueden ser mayores que los litros medidos.")
-
         deduction = self.deduction_liters or Decimal("0.00")
         if deduction <= Decimal("0.00"):
             self.deduction_reason = ""
@@ -172,19 +161,26 @@ class Collection(BaseModel):
             raise ValueError("Para confirmar la recogida debes indicar los litros medidos.")
 
     def save(self, *args, **kwargs):
+        if self._state.adding:
+            capacity = container_capacity_liters(self.container_type)
+            self.estimated_liters = (Decimal(self.container_number) * capacity).quantize(Decimal("0.01"))
+
+        if self.measured_liters is None:
+            self.deduction_liters = Decimal("0.00")
+            self.deduction_reason = ""
+        else:
+            self.measured_liters = self.measured_liters.quantize(Decimal("0.01"))
+            self.deduction_liters = max(
+                Decimal("0.00"),
+                self.estimated_liters - self.measured_liters,
+            ).quantize(Decimal("0.01"))
 
         self.full_clean()
-
-        capacity = container_capacity_liters(self.container_type)
-        self.estimated_liters = (Decimal(self.container_number) * capacity).quantize(Decimal("0.01"))
-
-        measured = self.measured_liters if self.measured_liters is not None else self.estimated_liters
-        deduction = self.deduction_liters or Decimal("0.00")
-        if deduction > measured:
-            deduction = measured
-
-        self.net_liters = (measured - deduction).quantize(Decimal("0.01"))
-        self.total_price = (self.net_liters * (self.price_per_liter or Decimal("0.00"))).quantize(Decimal("0.01"))
+        if self.status == CollectionStatus.CANCELED:
+            payable_liters = Decimal("0.00")
+        else:
+            payable_liters = self.measured_liters if self.measured_liters is not None else self.estimated_liters
+        self.total_price = (payable_liters * (self.price_per_liter or Decimal("0.00"))).quantize(Decimal("0.01"))
 
         super().save(*args, **kwargs)
 

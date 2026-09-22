@@ -152,7 +152,7 @@ class CollectionApiTests(BackendTestMixin, TestCase):
         self.assertEqual(response.data["client"], self.client_profile.id)
         self.assertEqual(response.data["worker"], self.owner_worker.id)
 
-    def test_update_preserves_paid_total_and_respects_manual_status(self):
+    def test_update_recalculates_total_with_final_liters_and_selected_price(self):
         collection = Collection.objects.create(
             client=self.client_profile,
             worker=self.owner_worker,
@@ -165,8 +165,6 @@ class CollectionApiTests(BackendTestMixin, TestCase):
             status=CollectionStatus.CONFIRMED,
             billable=True,
         )
-        original_total = collection.total_price
-
         response = self.owner_client.put(
             f"/collections/{collection.id}/",
             {
@@ -180,10 +178,10 @@ class CollectionApiTests(BackendTestMixin, TestCase):
                 "deduction_liters": "0.00",
                 "deduction_reason": "",
                 "deduction_notes": "",
-                "price_per_liter": "1.000",
+                "price_per_liter": "1.250",
                 "billable": True,
                 "status": CollectionStatus.PENDING_MEASUREMENT,
-                "notes": "Ajuste manual de litros sin recalcular importe abonado.",
+                "notes": "Ajuste de litros finales y precio por litro.",
             },
             format="json",
         )
@@ -193,7 +191,8 @@ class CollectionApiTests(BackendTestMixin, TestCase):
         self.assertEqual(collection.measured_liters, Decimal("100.00"))
         self.assertEqual(collection.status, CollectionStatus.PENDING_MEASUREMENT)
         self.assertEqual(collection.deduction_reason, "")
-        self.assertEqual(collection.total_price, original_total)
+        self.assertEqual(collection.price_per_liter, Decimal("1.250"))
+        self.assertEqual(collection.total_price, Decimal("125.00"))
 
     def test_update_requires_deduction_reason_when_deducting_liters(self):
         collection = Collection.objects.create(
@@ -218,8 +217,8 @@ class CollectionApiTests(BackendTestMixin, TestCase):
                 "collection_date": self.today().isoformat(),
                 "container_type": ContainerType.BIDONES,
                 "container_number": 1,
-                "measured_liters": "60.00",
-                "deduction_liters": "5.00",
+                "measured_liters": "55.00",
+                "deduction_liters": "0.00",
                 "deduction_reason": "",
                 "deduction_notes": "",
                 "price_per_liter": "1.000",
@@ -231,3 +230,28 @@ class CollectionApiTests(BackendTestMixin, TestCase):
         )
 
         self.assertEqual(response.status_code, 400)
+
+    def test_measured_liters_are_final_and_deduction_is_calculated(self):
+        collection = Collection.objects.create(
+            client=self.client_profile,
+            worker=self.owner_worker,
+            collection_date=self.today(),
+            container_type=ContainerType.BIDONES,
+            container_number=2,
+            measured_liters=Decimal("105.00"),
+            deduction_reason="RESIDUE",
+            price_per_liter=Decimal("1.00"),
+            status=CollectionStatus.CONFIRMED,
+            billable=True,
+        )
+
+        self.assertEqual(collection.estimated_liters, Decimal("120.00"))
+        self.assertEqual(collection.measured_liters, Decimal("105.00"))
+        self.assertEqual(collection.deduction_liters, Decimal("15.00"))
+        self.assertEqual(collection.total_price, Decimal("105.00"))
+
+        collection.container_number = 3
+        collection.save()
+
+        self.assertEqual(collection.estimated_liters, Decimal("120.00"))
+        self.assertEqual(collection.deduction_liters, Decimal("15.00"))

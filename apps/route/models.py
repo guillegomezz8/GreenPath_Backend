@@ -1,10 +1,13 @@
+from decimal import Decimal
+
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils.html import format_html
 from django.urls import reverse
 from django.utils.formats import date_format
 
 from apps.company.models import Company
-from apps.base.enums import Weekday, RouteDayStatus
+from apps.base.enums import Weekday, RouteDayStatus, RouteOptimizationStatus
 from apps.zone.models import Zone
 from apps.user.models.worker import Worker
 from apps.base.models import BaseModel
@@ -43,6 +46,15 @@ class Route(BaseModel):
         default=6,
         choices=Weekday.choices
     )
+    default_capacity_liters = models.DecimalField(
+        'Capacidad por viaje predeterminada (litros)',
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(Decimal('0.01'))],
+        help_text='Si se deja vacía, se utilizará la capacidad del camión asignado al trabajador.',
+    )
 
     class Meta:
         verbose_name = 'Ruta'
@@ -72,11 +84,31 @@ class RouteDay(models.Model):
     )
     
     daily_capacity_liters = models.DecimalField(
-        "Capacidad Diaria (litros)",
+        "Capacidad por viaje (litros)",
         max_digits=10,
         decimal_places=2, 
         null=True, 
         blank=True
+    )
+
+    optimization_status = models.CharField(
+        "Estado de optimización",
+        max_length=20,
+        choices=RouteOptimizationStatus.choices,
+        default=RouteOptimizationStatus.PENDING,
+    )
+
+    optimization_message = models.CharField(
+        "Detalle de optimización",
+        max_length=500,
+        blank=True,
+        default="",
+    )
+
+    optimized_at = models.DateTimeField(
+        "Última optimización",
+        null=True,
+        blank=True,
     )
 
     started_at = models.DateTimeField(

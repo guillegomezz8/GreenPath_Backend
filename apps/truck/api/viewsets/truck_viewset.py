@@ -121,17 +121,20 @@ class TruckViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         try:
-            company = serializer.validated_data.get("company")
+            user = self.request.user
+            company = getattr(getattr(user, "worker_profile", None), "company", None)
             driver = serializer.validated_data.get("driver")
 
             if not company:
-                logging.error("[truck_viewset - perform_create] Debe especificar la empresa (company) para crear un camión.")
+                logging.error("[truck_viewset - perform_create] El usuario no tiene una empresa asociada.")
                 raise ValidationError({DETAILS: NEED_COMPANY_FOR_TRUCK_CREATION})
 
-            user = self.request.user
-            if user.role_type != "owner" or _user_company_id(user) != company.id:
+            if user.role_type != "owner":
                 logging.error("[truck_viewset - perform_create] Solo los dueños pueden crear camiones para su propia empresa.")
                 raise ValidationError({DETAILS: ONLY_OWNERS_CAN_CREATE_TRUCKS})
+
+            if driver and not self._validate_driver_same_company(company=company, driver=driver):
+                raise ValidationError({DETAILS: DRIVER_TRUCK_SAME_COMPANY})
 
             if driver and hasattr(driver, "truck"):
                 old_truck = driver.truck if hasattr(driver, "truck") else None
@@ -140,7 +143,7 @@ class TruckViewSet(viewsets.ModelViewSet):
                     old_truck.driver = None
                     old_truck.save(update_fields=["driver"])
 
-            truck = serializer.save()
+            truck = serializer.save(company=company)
 
             logging.info(f"[truck_viewset - perform_create] Camión {truck.registration_number} creado correctamente (empresa {company.id}, conductor {driver.id if driver else 'sin asignar'})")
             return truck
@@ -154,18 +157,22 @@ class TruckViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         try:
             instance = self.get_object()
-            new_company = serializer.validated_data.get("company") or instance.company
-            if new_company is None:
-                logging.error("[truck_viewset - perform_update] Debe especificar la empresa (company) para actualizar un camion.")
+            company = instance.company
+            if company is None:
+                logging.error("[truck_viewset - perform_update] El camion no tiene una empresa asociada.")
                 raise ValidationError({DETAILS: NEED_COMPANY_FOR_TRUCK_CREATION})
 
             user = self.request.user
             if not (user.is_staff or user.is_superuser):
-                if user.role_type != "owner" or _user_company_id(user) != new_company.id:
+                if user.role_type != "owner" or _user_company_id(user) != company.id:
                     logging.error("[truck_viewset - perform_update] Solo puedes actualizar camiones de tu empresa.")
                     raise ValidationError({DETAILS: ONLY_UPDATE_TRUCKS_SAME_COMPANY})
 
-            serializer.save(company=new_company)
+            driver = serializer.validated_data.get("driver", instance.driver)
+            if driver and not self._validate_driver_same_company(company=company, driver=driver):
+                raise ValidationError({DETAILS: DRIVER_TRUCK_SAME_COMPANY})
+
+            serializer.save(company=company)
         except ValidationError:
             raise
         except Exception as e:

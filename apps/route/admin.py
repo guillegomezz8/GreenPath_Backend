@@ -18,8 +18,8 @@ class RouteDayClientInline(admin.TabularInline):
 class RouteDayInline(admin.TabularInline):
     model = RouteDay
     extra = 0
-    fields = ("date", "status", "started_at", "finished_at", "admin_link")
-    readonly_fields = ("admin_link",)
+    fields = ("date", "status", "optimization_status", "started_at", "finished_at", "admin_link")
+    readonly_fields = ("optimization_status", "admin_link")
     ordering = ("-date",)
 
 
@@ -35,6 +35,7 @@ class CollectionInline(admin.TabularInline):
         "net_liters",
         "total_price",
         "status",
+        "optimization_status",
     )
     readonly_fields = ("net_liters", "total_price")
     autocomplete_fields = ("client", "worker")
@@ -65,11 +66,12 @@ class RouteDayAdmin(admin.ModelAdmin):
         "clients_count",
         "admin_link",
     )
-    list_filter = ("status", "route", "date")
+    list_filter = ("status", "optimization_status", "route", "date")
     search_fields = ("route__name",)
     ordering = ("-date",)
     date_hierarchy = "date"
     autocomplete_fields = ("route",)
+    readonly_fields = ("optimization_status", "optimization_message", "optimized_at")
     inlines = (RouteDayClientInline,)
 
     def admin_link(self, obj):

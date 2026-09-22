@@ -40,6 +40,7 @@ from apps.collection.api.serializers.collection_serializers import (
     UpdateCollectionSerializer,
 )
 from apps.collection.models import Collection, CollectionRequest
+from apps.route.utils import refresh_planned_route_day_optimization
 
 configure_logging()
 
@@ -256,6 +257,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
             collection_request.answered_by = request.user
             collection_request.answered_at = timezone.now()
             collection_request.save(update_fields=["container_type", "container_number", "final_liters", "estimated_liters", "final_source", "status", "answered_by", "answered_at", "modified_date"])
+            refresh_planned_route_day_optimization(collection_request.route_day_client.route_day)
             logging.info(f"[collection_viewset - answer_request] Solicitud {collection_request.id} respondida por cliente {request.user.id}")
             return Response({MESSAGE: COLLECTION_REQUEST_ANSWERED_SUCCESS, "request": CollectionRequestSerializer(collection_request).data}, status=status.HTTP_200_OK)
         except ValidationError:
@@ -290,6 +292,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
             collection_request.manual_by = request.user
             collection_request.manual_at = timezone.now()
             collection_request.save(update_fields=["final_liters", "estimated_liters", "final_source", "status", "manual_by", "manual_at", "modified_date"])
+            refresh_planned_route_day_optimization(collection_request.route_day_client.route_day)
             logging.info(f"[collection_viewset - manual_request] Solicitud {collection_request.id} actualizada manualmente por usuario {request.user.id}")
             return Response({MESSAGE: COLLECTION_REQUEST_MANUAL_SUCCESS, "request": CollectionRequestSerializer(collection_request).data}, status=status.HTTP_200_OK)
         except ValidationError:

@@ -44,7 +44,12 @@ ENV PYTHONDONTWRITEBYTECODE=1
 
 COPY . .
 
-RUN chmod +x ./docker-entrypoint.sh ./deploy/*.sh
+RUN mkdir -p /src/media/exports \
+    && mkdir -p /src/deploy/initial-exports \
+    && cp /src/exports/greenpath_export_20260917_142638.json /src/deploy/initial-exports/ \
+    && rm -rf /src/exports \
+    && ln -s /src/media/exports /src/exports \
+    && chmod +x ./docker-entrypoint.sh ./deploy/*.sh
 
 ENTRYPOINT ["sh", "./docker-entrypoint.sh"]
 CMD ["sh", "./deploy/start-api.sh"]

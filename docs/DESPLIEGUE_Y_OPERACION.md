@@ -312,7 +312,7 @@ La URL no debe acabar en `/`. Tras modificarla hay que volver a desplegar el fro
 
 ### Persistencia y comprobacion
 
-La base de datos persiste en el volumen administrado por PostGIS. El volumen de `/src/media` conserva los archivos subidos por la API; `staticfiles` no necesita volumen porque se regenera al arrancar. Los archivos locales existentes no se copian automaticamente al volumen de Railway.
+La base de datos persiste en el volumen administrado por PostGIS. El volumen de `/src/media` conserva los archivos subidos por la API y las exportaciones generadas en `/src/media/exports`. La imagen ofrece tambien el acceso `/src/exports`, enlazado a ese directorio persistente, por lo que `python manage.py export_greenpath` puede seguir usando su ruta predeterminada. La exportacion inicial versionada se copia al volumen solo cuando no existe, sin sobrescribir copias posteriores. `staticfiles` no necesita volumen porque se regenera al arrancar. El resto de archivos locales no se copia automaticamente al volumen de Railway.
 
 Comprobaciones posteriores al despliegue:
 

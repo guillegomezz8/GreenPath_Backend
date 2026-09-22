@@ -81,8 +81,7 @@ Eso no significa que esten sin cubrir; significa que la estrategia correcta para
 Ubicaciones principales:
 
 - `apps/auth/tests/`
-- `apps/base/tests.py`
-- `apps/base/test_utils.py`
+- `apps/base/tests/`
 - `apps/company/tests/`
 - `apps/truck/tests/`
 - `apps/zone/tests/`
@@ -93,7 +92,7 @@ Ubicaciones principales:
 
 Helper comun destacado:
 
-- `apps/base/test_utils.py`
+- `apps/base/tests/helpers.py`
 
 Ese helper permite levantar contexto reusable de:
 
@@ -189,6 +188,7 @@ La suite backend valida hoy, al menos, estos bloques:
 - creacion de compradores
 - ventas con numero de factura manual
 - descarga de factura PDF generada bajo demanda
+- conservacion de datos fiscales y bancarios del emisor mediante snapshot de factura
 - resumen economico
 - restricciones owner-only
 
@@ -270,7 +270,7 @@ La suite frontend valida hoy estos puntos:
 
 Snapshot definido actualmente en codigo:
 
-- backend: `58` metodos `test_` dentro de la suite principal documentada
+- backend: `69` metodos `test_` dentro de la suite principal documentada
 - frontend: `32` escenarios `it(...)` repartidos en `18` ficheros `*.test.*`
 
 Estas cifras indican escenarios automatizados presentes. Para confirmar estado verde en una maquina concreta hay que ejecutar las suites indicadas en este documento.

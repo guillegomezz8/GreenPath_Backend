@@ -2,7 +2,7 @@ from django.test import TestCase
 from rest_framework.test import APIRequestFactory
 
 from apps.base.permissions import IsRouteCompanyGenerator
-from apps.base.test_utils import BackendTestMixin
+from apps.base.tests.helpers import BackendTestMixin
 from apps.base.utils import gen_password
 from apps.route.models import Route
 

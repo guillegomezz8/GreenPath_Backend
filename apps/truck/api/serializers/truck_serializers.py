@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from apps.truck.models import Truck
-from apps.company.models import Company
 from apps.user.models.worker import Worker
 from apps.base.enums import TruckStatus, Fuel
 import logging
@@ -55,7 +54,7 @@ class CreateTruckSerializer(serializers.ModelSerializer):
     status = serializers.ChoiceField(choices=TruckStatus.choices, required=False)
     fuel = serializers.ChoiceField(choices=Fuel.choices, required=False, allow_null=True)
     driver = serializers.PrimaryKeyRelatedField(queryset=Worker.objects.all(), required=False, allow_null=True)
-    company = serializers.PrimaryKeyRelatedField(queryset=Company.objects.all(), required=False, allow_null=True)
+    company = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = Truck
@@ -71,7 +70,7 @@ class UpdateTruckSerializer(serializers.ModelSerializer):
     status = serializers.ChoiceField(choices=TruckStatus.choices, required=True)
     fuel = serializers.ChoiceField(choices=Fuel.choices, required=True, allow_null=True)
     driver = serializers.PrimaryKeyRelatedField(queryset=Worker.objects.all(), required=False, allow_null=True)
-    company = serializers.PrimaryKeyRelatedField(queryset=Company.objects.all(), required=True, allow_null=True)
+    company = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = Truck
@@ -97,7 +96,7 @@ class PartialUpdateTruckSerializer(serializers.ModelSerializer):
     status = serializers.ChoiceField(choices=TruckStatus.choices, required=False)
     fuel = serializers.ChoiceField(choices=Fuel.choices, required=False, allow_null=True)
     driver = serializers.PrimaryKeyRelatedField(queryset=Worker.objects.all(), required=False, allow_null=True)
-    company = serializers.PrimaryKeyRelatedField(queryset=Company.objects.all(), required=False, allow_null=True)
+    company = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = Truck

@@ -7,8 +7,9 @@ from django.contrib.gis.geos import Point
 from django.test import TestCase, override_settings
 from django.utils import timezone
 
-from apps.base.enums import CollectionRequestStatus, CollectionStatus, RouteDayStatus
-from apps.base.test_utils import BackendTestMixin
+from apps.base.enums import CollectionRequestStatus, CollectionStatus, RouteDayStatus, RouteOptimizationStatus
+from apps.base.literals import ROUTE_DAY_CLIENT_LOCATION_REQUIRED
+from apps.base.tests.helpers import BackendTestMixin
 from apps.collection.models import Collection
 from apps.collection.models import CollectionRequest
 from apps.company.models import CompanyHub
@@ -46,6 +47,7 @@ class RouteApiTests(BackendTestMixin, TestCase):
                 "end_date": None,
                 "week_start": 0,
                 "week_end": 6,
+                "default_capacity_liters": "725.50",
             },
             format="json",
         )
@@ -56,6 +58,11 @@ class RouteApiTests(BackendTestMixin, TestCase):
         self.assertEqual(created_route.name, "Ruta Nueva Front")
         self.assertEqual(created_route.company_id, self.company.id)
         self.assertEqual(created_route.worker_id, worker.id)
+        self.assertEqual(created_route.default_capacity_liters, Decimal("725.50"))
+
+        detail_response = self.owner_client.get(f"/routes/{created_route.id}/")
+        self.assertEqual(detail_response.status_code, 200)
+        self.assertEqual(Decimal(detail_response.data["default_daily_capacity_liters"]), Decimal("725.50"))
 
     def test_zone_config_rejects_zones_from_another_company(self):
         _, _, other_company = self.create_owner_context("route-zone-other")
@@ -127,6 +134,7 @@ class RouteApiTests(BackendTestMixin, TestCase):
         self.assertEqual(route_day.ordered_clients.count(), 1)
         self.assertEqual(collection_request.status, CollectionRequestStatus.AUTO_ESTIMATED)
         self.assertIsNotNone(collection_request.final_liters)
+        self.assertEqual(response.data["route_days"][0]["optimization_status"], RouteOptimizationStatus.OPTIMIZED)
 
     def test_finish_route_day_requires_decision_when_pending_stops_exist(self):
         route_day = RouteDay.objects.create(
@@ -192,7 +200,7 @@ class RouteApiTests(BackendTestMixin, TestCase):
         route_day = RouteDay.objects.get(route=self.route, date=self.today())
         self.assertEqual(route_day.ordered_clients.count(), 1)
 
-    def test_generate_week_falls_back_to_estimated_liters_when_no_confirmed_history_exists(self):
+    def test_generate_week_uses_estimated_liters_and_keeps_client_for_another_trip(self):
         zone = self.create_zone(self.company, "Zona Estimacion Fallback")
         RouteZoneDay.objects.create(route=self.route, weekday=self.today().weekday()).zones.add(zone)
         _, client = self.create_client(
@@ -224,7 +232,53 @@ class RouteApiTests(BackendTestMixin, TestCase):
 
         self.assertEqual(response.status_code, 200)
         route_day = RouteDay.objects.get(route=self.route, date=self.today())
-        self.assertEqual(route_day.ordered_clients.count(), 0)
+        self.assertEqual(route_day.ordered_clients.count(), 1)
+        collection_request = CollectionRequest.objects.get(route_day_client__route_day=route_day)
+        self.assertEqual(collection_request.estimated_liters, Decimal("180.00"))
+
+    def test_generate_week_uses_capacity_as_per_trip_limit(self):
+        zone = self.create_zone(self.company, "Zona Varios Viajes")
+        RouteZoneDay.objects.create(route=self.route, weekday=self.today().weekday()).zones.add(zone)
+        for index in range(2):
+            self.create_client(
+                self.company,
+                f"multi-trip-client-{index}",
+                location=Point(-6.00 + (index * 0.001), 37.40, srid=4326),
+            )
+
+        response = self.owner_client.post(
+            f"/routes/{self.route.id}/generate-week/",
+            {
+                "week_start_date": self.today().isoformat(),
+                "daily_capacity_liters": "100.00",
+                "max_clients_per_day": 10,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        route_day = RouteDay.objects.get(route=self.route, date=self.today())
+        self.assertEqual(route_day.ordered_clients.count(), 2)
+        plan = build_route_day_operational_plan(route_day)
+        self.assertEqual(plan["segments_count"], 2)
+        self.assertEqual(plan["returns_to_hub_count"], 1)
+
+    def test_generate_week_rejects_due_clients_without_location(self):
+        zone = self.create_zone(self.company, "Zona Geoinformacion")
+        RouteZoneDay.objects.create(route=self.route, weekday=self.today().weekday()).zones.add(zone)
+        _, client = self.create_client(self.company, "client-without-geoinfo", location=None)
+
+        response = self.owner_client.post(
+            f"/routes/{self.route.id}/generate-week/",
+            {
+                "week_start_date": self.today().isoformat(),
+                "daily_capacity_liters": "1000.00",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(client.name, str(response.data))
 
     def test_generate_week_uses_consistent_default_max_clients_per_day(self):
         zone = self.create_zone(self.company, "Zona Max Clientes")
@@ -310,7 +364,7 @@ class RouteApiTests(BackendTestMixin, TestCase):
 
     @override_settings(GOOGLE_MAPS_API_KEY="test-key")
     @patch("apps.route.utils.requests.get")
-    def test_google_optimization_preserves_unlocated_stops_without_crashing(self, mock_get):
+    def test_google_optimization_rejects_unlocated_stops(self, mock_get):
         CompanyHub.objects.create(
             company=self.company,
             name="Nave optimizacion",
@@ -330,10 +384,19 @@ class RouteApiTests(BackendTestMixin, TestCase):
         google_response.json.return_value = {"routes": [{"waypoint_order": [1, 0]}]}
         mock_get.return_value = google_response
 
-        optimized = optimize_route_day_with_google(route_day)
+        with self.assertRaisesMessage(
+            ValueError,
+            ROUTE_DAY_CLIENT_LOCATION_REQUIRED.format(clients=client_without_location.name),
+        ):
+            optimize_route_day_with_google(route_day)
 
-        self.assertEqual([row.id for row in optimized], [stop_two.id, stop_without_location.id, stop_one.id])
-        self.assertEqual(list(route_day.ordered_clients.order_by("order").values_list("id", flat=True)), [stop_two.id, stop_without_location.id, stop_one.id])
+        mock_get.assert_not_called()
+        route_day.refresh_from_db()
+        self.assertEqual(route_day.optimization_status, RouteOptimizationStatus.FAILED)
+        self.assertEqual(
+            list(route_day.ordered_clients.order_by("order").values_list("id", flat=True)),
+            [stop_one.id, stop_without_location.id, stop_two.id],
+        )
 
     @override_settings(GOOGLE_MAPS_API_KEY="test-key")
     @patch("apps.route.utils.requests.get")
@@ -369,6 +432,78 @@ class RouteApiTests(BackendTestMixin, TestCase):
         self.assertEqual(mock_get.call_count, 2)
         self.assertEqual([row.id for row in optimized], [stops[1].id, stops[0].id, stops[3].id, stops[2].id])
         self.assertEqual(list(route_day.ordered_clients.order_by("order").values_list("id", flat=True)), [stops[1].id, stops[0].id, stops[3].id, stops[2].id])
+        route_day.refresh_from_db()
+        self.assertEqual(route_day.optimization_status, RouteOptimizationStatus.OPTIMIZED)
+
+    @override_settings(GOOGLE_MAPS_API_KEY="test-key")
+    @patch("apps.route.utils.requests.get")
+    def test_google_optimization_builds_capacity_segments_by_proximity_to_hub(self, mock_get):
+        CompanyHub.objects.create(
+            company=self.company,
+            name="Nave segmentos cercanos",
+            location=Point(-6.0000, 37.0000, srid=4326),
+        )
+        route_day = RouteDay.objects.create(
+            route=self.route,
+            date=self.today(),
+            daily_capacity_liters=Decimal("120.00"),
+        )
+        stop_specs = [
+            ("far-one", Point(-6.4000, 37.4000, srid=4326)),
+            ("near-one", Point(-6.0100, 37.0100, srid=4326)),
+            ("near-two", Point(-6.0200, 37.0200, srid=4326)),
+            ("far-two", Point(-6.4100, 37.4100, srid=4326)),
+        ]
+        stops = []
+        for index, (name, location) in enumerate(stop_specs):
+            _, client = self.create_client(self.company, name, location=location)
+            stop = RouteDayClient.objects.create(route_day=route_day, client=client, order=index + 1)
+            CollectionRequest.objects.create(route_day_client=stop, expires_at=timezone.now(), final_liters=Decimal("60.00"))
+            stops.append(stop)
+
+        google_response = Mock()
+        google_response.raise_for_status.return_value = None
+        google_response.json.return_value = {"routes": [{"waypoint_order": [0, 1]}]}
+        mock_get.return_value = google_response
+
+        optimized = optimize_route_day_with_google(route_day)
+
+        self.assertEqual(mock_get.call_count, 2)
+        self.assertEqual([row.id for row in optimized], [stops[1].id, stops[2].id, stops[0].id, stops[3].id])
+        self.assertEqual(
+            list(route_day.ordered_clients.order_by("order").values_list("id", flat=True)),
+            [stops[1].id, stops[2].id, stops[0].id, stops[3].id],
+        )
+
+    @override_settings(GOOGLE_MAPS_API_KEY="test-key")
+    @patch("apps.route.utils.requests.get")
+    def test_google_optimization_records_fallback_when_google_fails(self, mock_get):
+        CompanyHub.objects.create(
+            company=self.company,
+            name="Nave fallback",
+            location=Point(-6.0300, 37.3600, srid=4326),
+        )
+        route_day = RouteDay.objects.create(
+            route=self.route,
+            date=self.today(),
+            daily_capacity_liters=Decimal("1000.00"),
+        )
+        for index in range(2):
+            _, client = self.create_client(
+                self.company,
+                f"fallback-client-{index}",
+                location=Point(-6.0100 + (index * 0.01), 37.3800, srid=4326),
+            )
+            stop = RouteDayClient.objects.create(route_day=route_day, client=client, order=index + 1)
+            CollectionRequest.objects.create(route_day_client=stop, expires_at=timezone.now(), final_liters=Decimal("60.00"))
+
+        mock_get.side_effect = TimeoutError("Google timeout")
+
+        optimize_route_day_with_google(route_day)
+
+        route_day.refresh_from_db()
+        self.assertEqual(route_day.optimization_status, RouteOptimizationStatus.FALLBACK)
+        self.assertIn("Google timeout", route_day.optimization_message)
 
     def test_operational_plan_splits_segments_by_capacity_and_ignores_canceled_load(self):
         route_day = RouteDay.objects.create(
@@ -443,7 +578,7 @@ class RouteApiTests(BackendTestMixin, TestCase):
         self.assertEqual(plan.get("segments_count"), 1)
         self.assertEqual(Decimal(plan.get("planned_load_liters")), Decimal("60.00"))
 
-    def test_google_navigation_url_includes_hub_return_between_segments(self):
+    def test_google_navigation_creates_one_round_trip_per_capacity_segment(self):
         CompanyHub.objects.create(
             company=self.company,
             name="Nave test",
@@ -467,13 +602,14 @@ class RouteApiTests(BackendTestMixin, TestCase):
         CollectionRequest.objects.create(route_day_client=stop_two, expires_at=timezone.now(), final_liters=Decimal("60.00"))
         CollectionRequest.objects.create(route_day_client=stop_three, expires_at=timezone.now(), final_liters=Decimal("60.00"))
 
-        navigation_url = get_route_day_google_navigation_url(route_day)
-        query = parse_qs(urlparse(navigation_url).query)
-        waypoints = query.get("waypoints", [""])[0]
+        navigation_urls = get_route_day_google_navigation_urls(route_day)
 
-        self.assertEqual(query.get("origin", [""])[0], "37.36,-6.03")
-        self.assertEqual(query.get("destination", [""])[0], "37.36,-6.03")
-        self.assertIn("37.36,-6.03|37.39,-5.99", waypoints)
+        self.assertEqual(len(navigation_urls), 3)
+        for navigation_url in navigation_urls:
+            query = parse_qs(urlparse(navigation_url).query)
+            self.assertEqual(query.get("origin", [""])[0], "37.36,-6.03")
+            self.assertEqual(query.get("destination", [""])[0], "37.36,-6.03")
+            self.assertEqual(len(query.get("waypoints", [""])[0].split("|")), 1)
 
     def test_google_navigation_url_without_capacity_split_returns_to_hub_at_end(self):
         CompanyHub.objects.create(
@@ -529,10 +665,17 @@ class RouteApiTests(BackendTestMixin, TestCase):
 
         self.assertEqual(len(navigation_urls), 3)
         waypoint_lengths = []
+        previous_destination = None
         for navigation_url in navigation_urls:
             query = parse_qs(urlparse(navigation_url).query)
-            self.assertEqual(query.get("origin", [""])[0], "37.36,-6.03")
-            self.assertEqual(query.get("destination", [""])[0], "37.36,-6.03")
+            current_origin = query.get("origin", [""])[0]
+            current_destination = query.get("destination", [""])[0]
+            if previous_destination is None:
+                self.assertEqual(current_origin, "37.36,-6.03")
+            else:
+                self.assertEqual(current_origin, previous_destination)
             waypoints = query.get("waypoints", [""])[0]
             waypoint_lengths.append(len(waypoints.split("|")) if waypoints else 0)
-        self.assertEqual(waypoint_lengths, [4, 4, 2])
+            previous_destination = current_destination
+        self.assertEqual(previous_destination, "37.36,-6.03")
+        self.assertEqual(waypoint_lengths, [4, 3, 1])

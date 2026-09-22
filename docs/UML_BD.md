@@ -244,6 +244,36 @@ class Sale {
   +notes: text
 }
 
+class SaleLine {
+  +position: int
+  +product_description: text
+  +quantity: decimal
+  +unit: string
+  +unit_price: decimal
+  +tax_rate: decimal
+  +subtotal: decimal
+  +tax_amount: decimal
+  +total: decimal
+}
+
+class SaleInvoiceIssuerSnapshot {
+  +billing_business_name: string
+  +billing_tax_id: string
+  +billing_address: string
+  +billing_postal_code: string
+  +billing_city: string
+  +billing_province: string
+  +billing_country: string
+  +billing_phone: string
+  +billing_email: string
+  +billing_bank_account: string
+  +billing_logo: image
+  +billing_ler_code: string
+  +billing_footer: text
+  +data_hash: string
+  +created_date: datetime
+}
+
 BaseModel <|-- Company
 BaseModel <|-- CompanyHub
 BaseModel <|-- CompanySettings
@@ -268,6 +298,7 @@ Company "0..1" --> "0..*" Truck : trucks
 Company "1" --> "0..*" Route : routes
 Company "1" --> "0..*" Buyer : buyers
 Company "1" --> "0..*" Sale : sales
+Company "1" --> "0..*" SaleInvoiceIssuerSnapshot : sale_invoice_issuer_snapshots
 Company "0..*" --> "0..*" Client : companies
 
 Truck "0..1" --> "0..1" Worker : driver
@@ -288,6 +319,8 @@ CollectionRequest "0..*" --> "0..1" User : answered_by
 CollectionRequest "0..*" --> "0..1" User : manual_by
 
 Buyer "1" --> "0..*" Sale : sales
+SaleInvoiceIssuerSnapshot "1" --> "0..*" Sale : sales
+Sale "1" --> "1..*" SaleLine : lines
 ```
 
 ## 6. Diagramas por dominio
@@ -487,9 +520,31 @@ class Sale {
   +invoice_pdf: file [legacy/no operativo]
 }
 
+class SaleLine {
+  +position: int
+  +product_description: text
+  +quantity: decimal
+  +unit: string
+  +unit_price: decimal
+  +tax_rate: decimal
+  +subtotal: decimal
+  +tax_amount: decimal
+  +total: decimal
+}
+
+class SaleInvoiceIssuerSnapshot {
+  +billing_business_name: string
+  +billing_tax_id: string
+  +billing_bank_account: string
+  +data_hash: string
+}
+
 Company "1" --> "0..*" Buyer : buyers
 Company "1" --> "0..*" Sale : sales
+Company "1" --> "0..*" SaleInvoiceIssuerSnapshot : issuer_snapshots
 Buyer "1" --> "0..*" Sale : sales
+SaleInvoiceIssuerSnapshot "1" --> "0..*" Sale : sales
+Sale "1" --> "1..*" SaleLine : lines
 ```
 
 ## 7. Inventario de entidades
@@ -514,6 +569,8 @@ La siguiente tabla resume cada entidad desde el punto de vista funcional.
 | `Collection` | `collection` | recogida real | puede ser planificada o manual |
 | `Buyer` | `sale` | comprador interno | sin acceso a plataforma |
 | `Sale` | `sale` | venta con factura | concentra los datos economicos y documentales de la venta; el PDF se genera bajo demanda y no se persiste como flujo operativo activo |
+| `SaleLine` | `sale` | linea de factura | permite registrar varios conceptos por venta |
+| `SaleInvoiceIssuerSnapshot` | `sale` | foto fiscal del emisor | conserva datos fiscales y bancarios historicos para facturas ya creadas |
 
 ## 8. Relaciones clave explicadas
 
@@ -578,11 +635,12 @@ Esto significa que casi todos los modulos se segmentan realmente por empresa, in
 
 - `Buyer` representa un comprador interno sin acceso a la plataforma
 - `Sale` representa una venta con:
-  - concepto
+  - uno o varios conceptos mediante `SaleLine`
   - importes
   - IVA
   - numero de factura
   - referencia documental funcional para construir la factura PDF bajo demanda
+- `SaleInvoiceIssuerSnapshot` conserva los datos fiscales y bancarios del emisor usados por la factura
 - `invoice_number` se gestiona manualmente a nivel funcional, aunque el modelo mantenga campos internos (`invoice_year`, `invoice_sequence`) por compatibilidad y trazabilidad
 - los campos `invoice_pdf` e `invoice_generated_at` deben entenderse actualmente como legado del modelo, no como parte del comportamiento funcional vigente del sistema
 
@@ -615,6 +673,8 @@ Esta seccion es importante porque algunas relaciones expresan reglas de negocio 
 | `Buyer.company -> Company` | FK | `CASCADE` | el comprador interno pertenece a una empresa |
 | `Sale.company -> Company` | FK | `CASCADE` | la venta pertenece a una empresa concreta |
 | `Sale.buyer -> Buyer` | FK | `PROTECT` | no debe eliminarse un comprador con ventas asociadas |
+| `Sale.invoice_issuer -> SaleInvoiceIssuerSnapshot` | FK | `PROTECT` | no debe eliminarse la foto fiscal usada por facturas asociadas |
+| `SaleLine.sale -> Sale` | FK | `CASCADE` | las lineas dependen de la venta que detallan |
 
 ## 10. Restricciones funcionales importantes
 
@@ -639,6 +699,8 @@ Las restricciones son una parte esencial del modelo porque encapsulan reglas de 
 - `Sale` es unica por:
   - `(company, invoice_year, invoice_sequence)`
   - `(company, invoice_number)`
+- `SaleLine` es unica por `(sale, position)`
+- `SaleInvoiceIssuerSnapshot` es unico por `(company, data_hash)`
 
 ### 10.2 Restricciones de consistencia operativa
 
@@ -672,6 +734,7 @@ La estructura actual de la base de datos tambien contempla campos persistentes p
 
 - `Company.logo`: logo general de empresa
 - `CompanySettings.billing_logo`: logo fiscal usado en facturacion
+- `SaleInvoiceIssuerSnapshot.billing_logo`: copia historica del logo fiscal usado por una factura
 - `Worker.photo`: imagen de perfil de trabajadores y propietarios
 - `Client.photo`: imagen de perfil de clientes
 - `Sale.invoice_pdf`: fichero historico de factura; actualmente el flujo funcional genera el PDF bajo demanda y no depende de este binario
@@ -740,7 +803,7 @@ Este circuito cubre:
 
 ### 14.3 Circuito economico
 
-`CompanySettings + Collection + Buyer + Sale`
+`CompanySettings + Collection + Buyer + Sale + SaleLine + SaleInvoiceIssuerSnapshot`
 
 Este circuito cubre:
 
@@ -759,9 +822,9 @@ El UML refleja algunas decisiones importantes del proyecto:
 - cada ruta plantilla tiene un unico trabajador asignado en el modelo actual
 - las rutas no almacenan litros previstos por cliente, eso se resuelve en planificacion y solicitudes
 - las recogidas mantienen independencia historica aunque la parada planificada pueda desaparecer
-- la venta y la factura se agrupan en una misma entidad (`Sale`), lo que simplifica el flujo actual
+- la venta y la factura se agrupan en `Sale`, con `SaleLine` para conceptos y `SaleInvoiceIssuerSnapshot` para datos fiscales historicos del emisor
 - el numero de factura es manual a nivel de negocio, mientras que `invoice_year` e `invoice_sequence` quedan como soporte interno del modelo
-- la factura comercial se reconstruye en cada descarga, por lo que el valor de `Sale` esta en sus datos economicos y fiscales, no en almacenar el binario como documento operativo
+- la factura comercial se reconstruye en cada descarga, por lo que el valor documental esta en `Sale`, sus lineas y su snapshot fiscal, no en almacenar el binario como documento operativo
 
 ## 16. Observaciones de lectura para defensa
 
@@ -770,7 +833,7 @@ Si este UML se utiliza en una memoria o defensa, conviene remarcar:
 - que `Company` es el eje del aislamiento multiempresa
 - que el circuito operativo y el circuito economico comparten datos, pero no se confunden
 - que `Collection.billable` permite separar dato operativo de impacto economico
-- que `Sale` concentra tanto la venta como la referencia documental necesaria para reconstruir el PDF bajo demanda
+- que `Sale`, `SaleLine` y `SaleInvoiceIssuerSnapshot` concentran la informacion necesaria para reconstruir el PDF bajo demanda sin perder datos fiscales historicos
 
 ## 17. Relacion con librerias e integraciones del proyecto
 
@@ -779,7 +842,7 @@ Aunque el UML modela solo persistencia, varias decisiones de este esquema estan 
 - `PostGIS` da soporte a `PointField` y `PolygonField`, que permiten geolocalizar clientes, dibujar zonas y seleccionar paradas por territorio real
 - `Google Maps Platform` se apoya en `CompanyHub.location`, `Client.location` y la estructura `Route -> RouteDay -> RouteDayClient` para optimizar orden y abrir navegacion externa
 - `Celery` y `Redis` interactuan especialmente con `CollectionRequest`, que conserva informacion de programacion para autoestimacion y notificaciones
-- `WeasyPrint` consume los datos de `Sale`, `Buyer` y `CompanySettings` para generar facturas PDF con formato documental sin necesidad de persistir el fichero como parte activa del modelo
+- `WeasyPrint` consume los datos de `Sale`, `SaleLine`, `Buyer` y `SaleInvoiceIssuerSnapshot` para generar facturas PDF con formato documental sin necesidad de persistir el fichero como parte activa del modelo
 - `Leaflet / React Leaflet` se apoyan en `Zone`, `CompanyHub` y `Client.location` para trasladar el modelo relacional a una experiencia cartografica comprensible en frontend
 
 Esto permite defender que el valor del modelo no es solo relacional, sino tambien integrador: sirve como base para procesos geograficos, asincronos, documentales y comerciales dentro de una misma plataforma.

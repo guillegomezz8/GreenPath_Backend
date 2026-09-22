@@ -163,7 +163,18 @@ class RouteViewSet(viewsets.ModelViewSet):
                 max_clients_per_day=validated.get('max_clients_per_day', 10),
                 optimize_with_google=True,
             )
-            payload = [{'id': route_day.id, 'date': route_day.date, 'daily_capacity_liters': resolve_route_day_capacity_liters(route_day), 'stops': route_day.ordered_clients.count()} for route_day in route_days]
+            payload = [
+                {
+                    'id': route_day.id,
+                    'date': route_day.date,
+                    'daily_capacity_liters': resolve_route_day_capacity_liters(route_day),
+                    'stops': route_day.ordered_clients.count(),
+                    'optimization_status': route_day.optimization_status,
+                    'optimization_message': route_day.optimization_message,
+                    'optimized_at': route_day.optimized_at,
+                }
+                for route_day in route_days
+            ]
             logging.info(f'[route_viewset - generate_week] Semana operativa generada para ruta {route.id} con {len(payload)} dias')
             return Response({MESSAGE: WEEKLY_OPERATIONAL_ROUTE_GENERATED, 'route_days': payload}, status=status.HTTP_200_OK)
         except ValidationError:
@@ -415,6 +426,9 @@ class RouteViewSet(viewsets.ModelViewSet):
                     'date': route_day.date,
                     'status': route_day.status,
                     'daily_capacity_liters': resolve_route_day_capacity_liters(route_day),
+                    'optimization_status': route_day.optimization_status,
+                    'optimization_message': route_day.optimization_message,
+                    'optimized_at': route_day.optimized_at,
                     'started_at': route_day.started_at,
                     'finished_at': route_day.finished_at,
                     'stops': len(clients_payload),

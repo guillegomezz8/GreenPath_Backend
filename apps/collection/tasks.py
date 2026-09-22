@@ -84,6 +84,8 @@ def auto_estimate_collection_request_liters(self, collection_request_id):
                 "modified_date",
             ]
         )
+        from apps.route.utils import refresh_planned_route_day_optimization
+        refresh_planned_route_day_optimization(collection_request.route_day_client.route_day)
         logging.info(f"[collection_tasks - auto_estimate_collection_request_liters] Solicitud {collection_request.id} autoestimada con {estimated} litros")
     except Exception as e:
         logging.error(f"[collection_tasks - auto_estimate_collection_request_liters] Error en autoestimacion para solicitud {collection_request_id}: {str(e)}")

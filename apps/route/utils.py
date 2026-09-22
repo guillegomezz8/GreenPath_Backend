@@ -13,7 +13,7 @@ from django.db import IntegrityError, transaction
 from django.db.models import Q, Max, Avg
 from django.utils import timezone
 
-from apps.base.enums import PickupFrequency, CollectionRequestStatus, CollectionStatus, RouteDayStatus, PlannedSource, ContainerType
+from apps.base.enums import PickupFrequency, CollectionRequestStatus, CollectionStatus, RouteDayStatus, RouteOptimizationStatus, PlannedSource, ContainerType
 from apps.base.literals import (
     ROUTE_WEEK_GENERATION_IN_PROGRESS,
     ROUTE_WEEK_OUTSIDE_ROUTE_RANGE,
@@ -25,6 +25,13 @@ from apps.base.literals import (
     ROUTE_DAY_STOP_OUT_OF_ORDER,
     ROUTE_DAY_GOOGLE_NAVIGATION_EMPTY,
     ROUTE_DAY_GOOGLE_HUB_REQUIRED,
+    ROUTE_DAY_CLIENT_LOCATION_REQUIRED,
+    ROUTE_OPTIMIZATION_NOT_REQUIRED,
+    ROUTE_OPTIMIZATION_HUB_REQUIRED,
+    ROUTE_OPTIMIZATION_API_KEY_REQUIRED,
+    ROUTE_OPTIMIZATION_SUCCESS,
+    ROUTE_OPTIMIZATION_FALLBACK,
+    ROUTE_OPTIMIZATION_INVALID_RESULT,
     ROUTE_DAY_FINISH_DECISION_REQUIRED,
     ROUTE_DAY_FINISH_CLOSE_ACTION_INVALID,
     ROUTE_DAY_GENERATION_LOCKED,
@@ -41,6 +48,7 @@ from apps.base.logger import configure_logging
 configure_logging()
 
 GOOGLE_MAPS_NAVIGATION_MAX_WAYPOINTS = 8
+GOOGLE_DIRECTIONS_MAX_WAYPOINTS = 23
 
 
 def _gmail_ready_for_notifications():
@@ -243,25 +251,41 @@ def _apply_auto_estimate_without_contact(collection_request):
     logging.info(f"[route_utils - _apply_auto_estimate_without_contact] Solicitud {collection_request.id} autoestimada sin contacto con {estimated} litros")
 
 
-def _schedule_collection_request(route_day_client, route_day_start, auto_estimate_without_contact=False):
+def _schedule_collection_request(route_day_client, route_day_start, auto_estimate_without_contact=False, planned_liters=None):
     expires_at = route_day_start - timedelta(hours=36)
     created = False
+    normalized_planned_liters = None
+    if planned_liters is not None:
+        normalized_planned_liters = Decimal(planned_liters).quantize(Decimal("0.01"))
 
     with transaction.atomic():
         try:
             collection_request = CollectionRequest.objects.select_for_update().get(route_day_client=route_day_client)
         except CollectionRequest.DoesNotExist:
             try:
-                collection_request = CollectionRequest.objects.create(route_day_client=route_day_client, expires_at=expires_at)
+                collection_request = CollectionRequest.objects.create(
+                    route_day_client=route_day_client,
+                    expires_at=expires_at,
+                    estimated_liters=normalized_planned_liters,
+                )
                 created = True
             except IntegrityError:
                 collection_request = CollectionRequest.objects.select_for_update().get(route_day_client=route_day_client)
 
         old_task_id = collection_request.auto_estimate_task_id
         updated_expiration = False
+        updated_estimate = False
         if collection_request.expires_at != expires_at:
             collection_request.expires_at = expires_at
             updated_expiration = True
+
+        if (
+            normalized_planned_liters is not None
+            and collection_request.status == CollectionRequestStatus.PENDING
+            and collection_request.estimated_liters != normalized_planned_liters
+        ):
+            collection_request.estimated_liters = normalized_planned_liters
+            updated_estimate = True
 
         if auto_estimate_without_contact:
             if old_task_id:
@@ -271,8 +295,13 @@ def _schedule_collection_request(route_day_client, route_day_start, auto_estimat
                 except Exception as e:
                     logging.warning(f"[route_utils - _schedule_collection_request] No se pudo revocar task anterior {old_task_id} para solicitud {collection_request.id}: {str(e)}")
 
-            if updated_expiration:
-                collection_request.save(update_fields=["expires_at", "modified_date"])
+            if updated_expiration or updated_estimate:
+                update_fields = ["modified_date"]
+                if updated_expiration:
+                    update_fields.append("expires_at")
+                if updated_estimate:
+                    update_fields.append("estimated_liters")
+                collection_request.save(update_fields=update_fields)
 
             if collection_request.status in [CollectionRequestStatus.ANSWERED, CollectionRequestStatus.MANUAL]:
                 logging.info(f"[route_utils - _schedule_collection_request] Solicitud {collection_request.id} conservada en estado {collection_request.status} sin notificacion")
@@ -288,7 +317,10 @@ def _schedule_collection_request(route_day_client, route_day_start, auto_estimat
             if should_schedule:
                 collection_request.auto_estimate_task_id = task_id
                 collection_request.auto_estimate_scheduled_at = timezone.now()
-                collection_request.save(update_fields=["expires_at", "auto_estimate_task_id", "auto_estimate_scheduled_at", "modified_date"])
+                update_fields = ["expires_at", "auto_estimate_task_id", "auto_estimate_scheduled_at", "modified_date"]
+                if updated_estimate:
+                    update_fields.append("estimated_liters")
+                collection_request.save(update_fields=update_fields)
                 if old_task_id and old_task_id != task_id:
                     try:
                         current_app.control.revoke(old_task_id, terminate=False)
@@ -296,10 +328,20 @@ def _schedule_collection_request(route_day_client, route_day_start, auto_estimat
                     except Exception as e:
                         logging.warning(f"[route_utils - _schedule_collection_request] No se pudo revocar task anterior {old_task_id} para solicitud {collection_request.id}: {str(e)}")
                 _enqueue_auto_estimate_task(collection_request, task_id)
-            elif updated_expiration:
-                collection_request.save(update_fields=["expires_at", "modified_date"])
-        elif updated_expiration:
-            collection_request.save(update_fields=["expires_at", "modified_date"])
+            elif updated_expiration or updated_estimate:
+                update_fields = ["modified_date"]
+                if updated_expiration:
+                    update_fields.append("expires_at")
+                if updated_estimate:
+                    update_fields.append("estimated_liters")
+                collection_request.save(update_fields=update_fields)
+        elif updated_expiration or updated_estimate:
+            update_fields = ["modified_date"]
+            if updated_expiration:
+                update_fields.append("expires_at")
+            if updated_estimate:
+                update_fields.append("estimated_liters")
+            collection_request.save(update_fields=update_fields)
 
         if created:
             _enqueue_collection_request_notification(collection_request)
@@ -315,13 +357,42 @@ def _route_day_client_has_location(row):
     return bool(getattr(row.client, "location", None))
 
 
+def _distance_between_points(first, second):
+    if not first or not second:
+        return Decimal("0.00")
+    lat_diff = Decimal(str(first.y)) - Decimal(str(second.y))
+    lng_diff = Decimal(str(first.x)) - Decimal(str(second.x))
+    return (lat_diff * lat_diff) + (lng_diff * lng_diff)
+
+
+def _client_sort_index(items):
+    return {item.id: index for index, item in enumerate(items)}
+
+
+def _row_sort_index(items):
+    return {item.id: index for index, item in enumerate(items)}
+
+
+def _route_day_clients_without_location(route_day_clients):
+    return [row for row in route_day_clients if not _route_day_client_has_location(row)]
+
+
+def _raise_for_route_day_clients_without_location(route_day_clients):
+    missing_rows = _route_day_clients_without_location(route_day_clients)
+    if not missing_rows:
+        return
+
+    client_names = ", ".join(row.client.name for row in missing_rows)
+    raise ValueError(ROUTE_DAY_CLIENT_LOCATION_REQUIRED.format(clients=client_names))
+
+
 def _planned_liters_for_optimization(row, planned_liters_by_row=None):
     if planned_liters_by_row and row.id in planned_liters_by_row:
         return Decimal(planned_liters_by_row[row.id] or 0).quantize(Decimal("0.01"))
     return _planned_stop_liters(row).quantize(Decimal("0.01"))
 
 
-def _split_route_day_clients_by_capacity(route_day_clients, capacity_limit, planned_liters_by_row=None):
+def _order_rows_into_capacity_segments(route_day_clients, capacity_limit, hub, planned_liters_by_row=None):
     if not route_day_clients:
         return []
 
@@ -329,24 +400,79 @@ def _split_route_day_clients_by_capacity(route_day_clients, capacity_limit, plan
     if capacity_limit <= 0:
         return [route_day_clients]
 
+    original_index = _row_sort_index(route_day_clients)
+    remaining = list(route_day_clients)
     segments = []
-    current_segment = []
-    current_liters = Decimal("0.00")
+    current_point = hub.location if hub and hub.location else None
 
-    for row in route_day_clients:
-        row_liters = _planned_liters_for_optimization(row, planned_liters_by_row)
-        if current_segment and current_liters > 0 and current_liters + row_liters > capacity_limit:
-            segments.append(current_segment)
-            current_segment = []
-            current_liters = Decimal("0.00")
+    while remaining:
+        segment = []
+        segment_liters = Decimal("0.00")
 
-        current_segment.append(row)
-        current_liters += row_liters
+        while remaining:
+            fitting_rows = [
+                row for row in remaining
+                if not segment
+                or segment_liters + _planned_liters_for_optimization(row, planned_liters_by_row) <= capacity_limit
+            ]
+            if not fitting_rows:
+                break
 
-    if current_segment:
-        segments.append(current_segment)
+            next_row = min(
+                fitting_rows,
+                key=lambda row: (
+                    _distance_between_points(current_point, row.client.location),
+                    original_index[row.id],
+                ),
+            )
+            remaining.remove(next_row)
+            segment.append(next_row)
+            segment_liters += _planned_liters_for_optimization(next_row, planned_liters_by_row)
+            current_point = next_row.client.location
+
+        if segment:
+            segments.append(segment)
+            current_point = hub.location if hub and hub.location else None
+            continue
+
+        oversized_row = remaining.pop(0)
+        segments.append([oversized_row])
+        current_point = hub.location if hub and hub.location else None
 
     return segments
+
+
+def _select_clients_for_route_day(
+    due_clients,
+    existing_client_ids,
+    reserved_client_ids,
+    max_clients_limit,
+    hub,
+):
+    due_index = _client_sort_index(due_clients)
+    remaining = [
+        client for client in due_clients
+        if client.id not in existing_client_ids and client.id not in reserved_client_ids
+    ]
+    selected = []
+    current_point = hub.location if hub and hub.location else None
+
+    while remaining:
+        if max_clients_limit > 0 and len(existing_client_ids) + len(selected) >= max_clients_limit:
+            break
+
+        next_client = min(
+            remaining,
+            key=lambda client: (
+                _distance_between_points(current_point, client.location),
+                due_index[client.id],
+            ),
+        )
+        remaining.remove(next_client)
+        selected.append(next_client)
+        current_point = next_client.location
+
+    return selected
 
 
 def _merge_optimized_located_rows_preserving_unlocated(segment_rows, optimized_located_rows):
@@ -360,13 +486,12 @@ def _merge_optimized_located_rows_preserving_unlocated(segment_rows, optimized_l
     return merged
 
 
-def _optimize_route_day_segment_with_google(route_day, segment_rows, hub, api_key, segment_number):
-    located_rows = [row for row in segment_rows if _route_day_client_has_location(row)]
-    if len(located_rows) < 2:
-        return segment_rows
+def _optimize_route_day_segment_chunk_with_google(route_day, rows, hub, api_key, segment_number, chunk_number):
+    if len(rows) < 2:
+        return rows, None
 
     origin = f"{hub.location.y},{hub.location.x}"
-    waypoints = "|".join(f"{row.client.location.y},{row.client.location.x}" for row in located_rows)
+    waypoints = "|".join(f"{row.client.location.y},{row.client.location.x}" for row in rows)
 
     params = {
         "origin": origin,
@@ -380,30 +505,61 @@ def _optimize_route_day_segment_with_google(route_day, segment_rows, hub, api_ke
         response.raise_for_status()
         data = response.json()
     except Exception as exc:
-        logging.error(f"[route_utils - optimize_route_day_with_google] Error consultando Google Directions API en route_day {route_day.id}, segmento {segment_number}: {exc}")
-        return segment_rows
+        reason = f"segmento {segment_number}, bloque {chunk_number}: {exc}"
+        logging.error(f"[route_utils - optimize_route_day_with_google] Error consultando Google Directions API en route_day {route_day.id}, {reason}")
+        return rows, reason
 
     routes = data.get("routes") or []
     if not routes:
         google_status = data.get("status")
         google_error = data.get("error_message")
         if google_status or google_error:
-            logging.warning(f"[route_utils - optimize_route_day_with_google] Segmento {segment_number} no optimizado en route_day {route_day.id}: status={google_status}, error={google_error}")
+            reason = f"segmento {segment_number}, bloque {chunk_number}: status={google_status}, error={google_error or '-'}"
         else:
-            logging.warning(f"[route_utils - optimize_route_day_with_google] Segmento {segment_number} no optimizado en route_day {route_day.id}: Google Directions sin rutas validas")
-        return segment_rows
+            reason = f"segmento {segment_number}, bloque {chunk_number}: Google Directions sin rutas válidas"
+        logging.warning(f"[route_utils - optimize_route_day_with_google] No optimizado en route_day {route_day.id}: {reason}")
+        return rows, reason
 
     waypoint_order = routes[0].get("waypoint_order", [])
     valid_order = (
-        len(waypoint_order) == len(located_rows)
-        and all(isinstance(index, int) and 0 <= index < len(located_rows) for index in waypoint_order)
+        len(waypoint_order) == len(rows)
+        and len(set(waypoint_order)) == len(rows)
+        and all(isinstance(index, int) and 0 <= index < len(rows) for index in waypoint_order)
     )
     if not valid_order:
-        logging.warning(f"[route_utils - optimize_route_day_with_google] Segmento {segment_number} no optimizado en route_day {route_day.id}: respuesta de Google invalida")
-        return segment_rows
+        reason = f"segmento {segment_number}, bloque {chunk_number}: {ROUTE_OPTIMIZATION_INVALID_RESULT}"
+        logging.warning(f"[route_utils - optimize_route_day_with_google] No optimizado en route_day {route_day.id}: {reason}")
+        return rows, reason
 
-    optimized_located_rows = [located_rows[index] for index in waypoint_order]
-    return _merge_optimized_located_rows_preserving_unlocated(segment_rows, optimized_located_rows)
+    return [rows[index] for index in waypoint_order], None
+
+
+def _optimize_route_day_segment_with_google(route_day, segment_rows, hub, api_key, segment_number):
+    optimized_rows = []
+    errors = []
+    chunks = _chunk_list(segment_rows, GOOGLE_DIRECTIONS_MAX_WAYPOINTS)
+
+    for chunk_number, rows in enumerate(chunks, start=1):
+        optimized_chunk, error = _optimize_route_day_segment_chunk_with_google(
+            route_day,
+            rows,
+            hub,
+            api_key,
+            segment_number,
+            chunk_number,
+        )
+        optimized_rows.extend(optimized_chunk)
+        if error:
+            errors.append(error)
+
+    return optimized_rows, "; ".join(errors) if errors else None
+
+
+def _set_route_day_optimization_status(route_day, status_value, message):
+    route_day.optimization_status = status_value
+    route_day.optimization_message = message
+    route_day.optimized_at = timezone.now()
+    route_day.save(update_fields=["optimization_status", "optimization_message", "optimized_at"])
 
 
 def _persist_route_day_client_order(route_day, ordered_rows):
@@ -429,47 +585,76 @@ def _persist_route_day_client_order(route_day, ordered_rows):
 
 def optimize_route_day_with_google(route_day, planned_liters_by_row=None):
     route_day_clients = list(route_day.ordered_clients.select_related("client").order_by("order"))
+    try:
+        _raise_for_route_day_clients_without_location(route_day_clients)
+    except ValueError as exc:
+        _set_route_day_optimization_status(route_day, RouteOptimizationStatus.FAILED, str(exc))
+        raise
+
     if len(route_day_clients) < 2:
+        _set_route_day_optimization_status(route_day, RouteOptimizationStatus.OPTIMIZED, ROUTE_OPTIMIZATION_NOT_REQUIRED)
         logging.info(f"[route_utils - optimize_route_day_with_google] Optimizacion Google no aplicada en route_day {route_day.id}: menos de 2 paradas")
         return route_day_clients
 
-    located_rows = [row for row in route_day_clients if _route_day_client_has_location(row)]
-    if len(located_rows) < 2:
-        logging.info(f"[route_utils - optimize_route_day_with_google] Optimizacion Google no aplicada en route_day {route_day.id}: menos de 2 paradas con ubicacion")
-        return route_day_clients
-
-    skipped_without_location = len(route_day_clients) - len(located_rows)
-    if skipped_without_location > 0:
-        logging.warning(f"[route_utils - optimize_route_day_with_google] {skipped_without_location} paradas sin ubicacion se conservaran en su posicion relativa en route_day {route_day.id}")
-
     hub = CompanyHub.objects.filter(company=route_day.route.company, location__isnull=False).first()
     if not hub:
+        _set_route_day_optimization_status(route_day, RouteOptimizationStatus.FAILED, ROUTE_OPTIMIZATION_HUB_REQUIRED)
         logging.info(f"[route_utils - optimize_route_day_with_google] Optimizacion Google no aplicada en route_day {route_day.id}: no hay hub para company {route_day.route.company_id}")
         return route_day_clients
 
     api_key = settings.GOOGLE_MAPS_API_KEY if hasattr(settings, "GOOGLE_MAPS_API_KEY") else ""
     if not api_key:
+        _set_route_day_optimization_status(route_day, RouteOptimizationStatus.FAILED, ROUTE_OPTIMIZATION_API_KEY_REQUIRED)
         logging.warning(f"[route_utils - optimize_route_day_with_google] Optimizacion Google no aplicada en route_day {route_day.id}: GOOGLE_MAPS_API_KEY no configurada")
         return route_day_clients
 
     capacity_limit = Decimal(route_day.daily_capacity_liters or 0)
-    segments = _split_route_day_clients_by_capacity(route_day_clients, capacity_limit, planned_liters_by_row=planned_liters_by_row)
+    segments = _order_rows_into_capacity_segments(route_day_clients, capacity_limit, hub, planned_liters_by_row=planned_liters_by_row)
     optimized = []
+    optimization_errors = []
     for segment_number, segment_rows in enumerate(segments, start=1):
-        optimized.extend(_optimize_route_day_segment_with_google(route_day, segment_rows, hub, api_key, segment_number))
+        optimized_segment, error = _optimize_route_day_segment_with_google(route_day, segment_rows, hub, api_key, segment_number)
+        optimized.extend(optimized_segment)
+        if error:
+            optimization_errors.append(error)
 
     if len(optimized) != len(route_day_clients):
+        _set_route_day_optimization_status(route_day, RouteOptimizationStatus.FAILED, ROUTE_OPTIMIZATION_INVALID_RESULT)
         logging.warning(f"[route_utils - optimize_route_day_with_google] Optimizacion Google no aplicada en route_day {route_day.id}: resultado segmentado invalido")
         return route_day_clients
 
     updated_rows = _persist_route_day_client_order(route_day, optimized)
 
+    if optimization_errors:
+        message = ROUTE_OPTIMIZATION_FALLBACK.format(reason="; ".join(optimization_errors))
+        _set_route_day_optimization_status(route_day, RouteOptimizationStatus.FALLBACK, message)
+    else:
+        _set_route_day_optimization_status(route_day, RouteOptimizationStatus.OPTIMIZED, ROUTE_OPTIMIZATION_SUCCESS)
+
     if updated_rows == 0:
         logging.info(f"[route_utils - optimize_route_day_with_google] Optimizacion Google sin cambios en route_day {route_day.id}")
     else:
-        logging.info(f"[route_utils - optimize_route_day_with_google] Optimizacion Google segmentada aplicada en route_day {route_day.id}: {updated_rows} paradas reordenadas en {len(segments)} segmentos")
+        logging.info(f"[route_utils - optimize_route_day_with_google] Optimizacion Google segmentada por capacidad aplicada en route_day {route_day.id}: {updated_rows} paradas reordenadas en {len(segments)} segmentos")
 
     return optimized
+
+
+def refresh_planned_route_day_optimization(route_day):
+    if route_day.status != RouteDayStatus.PLANNED:
+        logging.info(
+            f"[route_utils - refresh_planned_route_day_optimization] Reoptimizacion omitida "
+            f"para route_day {route_day.id} en estado {route_day.status}"
+        )
+        return []
+
+    try:
+        return optimize_route_day_with_google(route_day)
+    except Exception as exc:
+        logging.error(
+            f"[route_utils - refresh_planned_route_day_optimization] No se pudo reoptimizar "
+            f"route_day {route_day.id}: {exc}"
+        )
+        return []
 
 
 def generate_route_day_clients(route_day, regenerate=False, reserved_client_ids=None, auto_estimate_without_contact=False, optimize_with_google=True, max_clients_per_day=MAX_CLIENTS_PER_DAY):
@@ -505,24 +690,26 @@ def generate_route_day_clients(route_day, regenerate=False, reserved_client_ids=
                 logging.warning(f"[route_utils - generate_route_day_clients] Eliminadas {len(duplicate_row_ids)} paradas duplicadas en route_day {route_day.id}")
 
         if not zone_day:
+            _set_route_day_optimization_status(route_day, RouteOptimizationStatus.OPTIMIZED, ROUTE_OPTIMIZATION_NOT_REQUIRED)
             logging.info(f"[route_utils - generate_route_day_clients] Sin paradas en route_day {route_day.id}: no hay RouteZoneDay configurado para weekday {route_day.weekday}")
             return []
 
         zones = list(zone_day.zones.filter(company=route_day.route.company))
         if not zones:
+            _set_route_day_optimization_status(route_day, RouteOptimizationStatus.OPTIMIZED, ROUTE_OPTIMIZATION_NOT_REQUIRED)
             logging.info(f"[route_utils - generate_route_day_clients] Sin paradas en route_day {route_day.id}: RouteZoneDay sin zonas asignadas")
             return []
 
         zone_filters = [Q(location__within=zone.polygon) for zone in zones if zone.polygon]
         if not zone_filters:
+            _set_route_day_optimization_status(route_day, RouteOptimizationStatus.OPTIMIZED, ROUTE_OPTIMIZATION_NOT_REQUIRED)
             logging.info(f"[route_utils - generate_route_day_clients] Sin paradas en route_day {route_day.id}: zonas sin geometria valida")
             return []
 
         spatial_q = reduce(lambda acc, item: acc | item, zone_filters)
-        clients_qs = (
+        company_clients_qs = (
             Client.objects
-            .filter(companies=route_day.route.company, location__isnull=False)
-            .filter(spatial_q)
+            .filter(companies=route_day.route.company)
             .annotate(
                 last_collection_date=Max(
                     "collections__collection_date",
@@ -545,6 +732,23 @@ def generate_route_day_clients(route_day, regenerate=False, reserved_client_ids=
             )
             .distinct()
         )
+
+        missing_location_due_clients = [
+            client
+            for client in company_clients_qs.filter(location__isnull=True)
+            if client.id not in reserved_client_ids
+            and _is_client_due(
+                client,
+                route_day.date,
+                last_collection_date=client.last_collection_date,
+                last_planned_date=client.last_planned_date,
+            )
+        ]
+        if missing_location_due_clients:
+            client_names = ", ".join(sorted(client.name for client in missing_location_due_clients))
+            raise ValueError(ROUTE_DAY_CLIENT_LOCATION_REQUIRED.format(clients=client_names))
+
+        clients_qs = company_clients_qs.filter(location__isnull=False).filter(spatial_q)
 
         due_clients = [
             client for client in clients_qs
@@ -581,37 +785,27 @@ def generate_route_day_clients(route_day, regenerate=False, reserved_client_ids=
         planned_liters_by_row = {row.id: _planned_stop_liters(row) for row in current_rows}
         existing_client_ids = set(item.client_id for item in current_rows)
         max_clients_limit = int(max_clients_per_day or 0)
-        capacity_limit = Decimal(route_day.daily_capacity_liters or 0)
-        current_planned_liters = sum((_planned_stop_liters(item) for item in current_rows), Decimal("0.00"))
+        hub = CompanyHub.objects.filter(company=route_day.route.company, location__isnull=False).first()
+        selected_clients = _select_clients_for_route_day(
+            due_clients=due_clients,
+            existing_client_ids=existing_client_ids,
+            reserved_client_ids=reserved_client_ids,
+            max_clients_limit=max_clients_limit,
+            hub=hub,
+        )
 
         next_order = int(route_day.ordered_clients.aggregate(max_order=Max("order"))["max_order"] or 0) + 1
-        skipped_by_capacity = 0
         created_rows = 0
 
-        for client in due_clients:
-            if client.id in existing_client_ids:
-                continue
-            if client.id in reserved_client_ids:
-                continue
-            if max_clients_limit > 0 and (len(existing_client_ids) >= max_clients_limit):
-                break
-
-            planned_liters = planned_liters_by_client.get(client.id, Decimal("60.00"))
-            if capacity_limit > 0 and (current_planned_liters + planned_liters > capacity_limit):
-                skipped_by_capacity += 1
-                continue
-
+        for client in selected_clients:
             route_day_client = RouteDayClient.objects.create(route_day=route_day, client=client, order=next_order)
-            planned_liters_by_row[route_day_client.id] = planned_liters
+            planned_liters_by_row[route_day_client.id] = planned_liters_by_client.get(client.id, Decimal("60.00"))
             next_order += 1
             created_rows += 1
             existing_client_ids.add(client.id)
-            current_planned_liters += planned_liters
 
         if max_clients_limit > 0 and len(existing_client_ids) >= max_clients_limit:
             logging.info(f"[route_utils - generate_route_day_clients] Limite max_clients_per_day alcanzado en route_day {route_day.id}: {max_clients_limit}")
-        if skipped_by_capacity > 0:
-            logging.info(f"[route_utils - generate_route_day_clients] {skipped_by_capacity} clientes omitidos por capacidad en route_day {route_day.id}")
         if created_rows > 0:
             logging.info(f"[route_utils - generate_route_day_clients] {created_rows} paradas creadas en route_day {route_day.id}")
 
@@ -623,7 +817,12 @@ def generate_route_day_clients(route_day, regenerate=False, reserved_client_ids=
         route_day_start = _route_day_start_datetime(route_day)
 
         for row in optimized_rows:
-            _schedule_collection_request(row, route_day_start, auto_estimate_without_contact=auto_estimate_without_contact)
+            _schedule_collection_request(
+                row,
+                route_day_start,
+                auto_estimate_without_contact=auto_estimate_without_contact,
+                planned_liters=planned_liters_by_row.get(row.id),
+            )
 
         if route_day.status == RouteDayStatus.CANCELED and route_day.ordered_clients.exists():
             route_day.status = RouteDayStatus.PLANNED
@@ -903,16 +1102,33 @@ def _chunk_list(items, chunk_size):
     return [items[index:index + chunk_size] for index in range(0, len(items), chunk_size)]
 
 
-def _build_google_navigation_url(origin, waypoint_points):
+def _build_google_navigation_url(origin, destination, waypoint_points):
     params = {
         "api": "1",
         "origin": origin,
-        "destination": origin,
+        "destination": destination,
         "travelmode": "driving",
     }
     if waypoint_points:
         params["waypoints"] = "|".join(waypoint_points)
     return f"https://www.google.com/maps/dir/?{urlencode(params, safe='|,')}"
+
+
+def _build_google_navigation_urls_for_segment(origin, segment_points, max_waypoints):
+    remaining_points = list(segment_points)
+    current_origin = origin
+    urls = []
+
+    while len(remaining_points) > max_waypoints:
+        take_count = min(max_waypoints + 1, len(remaining_points) - 1)
+        current_points = remaining_points[:take_count]
+        destination = current_points[-1]
+        urls.append(_build_google_navigation_url(current_origin, destination, current_points[:-1]))
+        current_origin = destination
+        remaining_points = remaining_points[take_count:]
+
+    urls.append(_build_google_navigation_url(current_origin, origin, remaining_points))
+    return urls
 
 
 def _route_day_navigation_segment_points(route_day):
@@ -954,21 +1170,11 @@ def _route_day_navigation_segment_points(route_day):
 
 def get_route_day_google_navigation_urls(route_day, max_waypoints=GOOGLE_MAPS_NAVIGATION_MAX_WAYPOINTS):
     origin, segment_stop_points = _route_day_navigation_segment_points(route_day)
-
-    waypoint_points = []
-    for segment_index, segment_points in enumerate(segment_stop_points):
-        waypoint_points.extend(segment_points)
-        if segment_index < len(segment_stop_points) - 1:
-            waypoint_points.append(origin)
-
     max_waypoints = max(int(max_waypoints or GOOGLE_MAPS_NAVIGATION_MAX_WAYPOINTS), 1)
-    if len(waypoint_points) <= max_waypoints:
-        return [_build_google_navigation_url(origin, waypoint_points)]
 
     urls = []
     for segment_points in segment_stop_points:
-        for chunk in _chunk_list(segment_points, max_waypoints):
-            urls.append(_build_google_navigation_url(origin, chunk))
+        urls.extend(_build_google_navigation_urls_for_segment(origin, segment_points, max_waypoints))
 
     return urls
 
@@ -1022,6 +1228,10 @@ def get_operational_week_start(route, reference_date):
 def _resolve_route_default_capacity_liters(route):
     try:
         if hasattr(route, "_default_capacity_liters_cache"):
+            return route._default_capacity_liters_cache
+
+        if route.default_capacity_liters is not None:
+            route._default_capacity_liters_cache = route.default_capacity_liters
             return route._default_capacity_liters_cache
 
         worker = route.worker

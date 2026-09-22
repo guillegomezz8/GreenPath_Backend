@@ -414,7 +414,7 @@ Las facturas de venta no requieren restaurar binarios PDF historicos en el flujo
 - diferencias entre entorno Windows host y contenedores Docker
 - PDFs no descargables si faltan dependencias del sistema para WeasyPrint
 
-La imagen de produccion valida WeasyPrint durante el build mediante un PDF minimo. El runtime Debian incluye explicitamente Pango, PangoFT2, HarfBuzz Subset y Cairo para que los errores de bibliotecas nativas se detecten antes de publicar la API.
+El runtime Debian incluye explicitamente Pango, PangoFT2, HarfBuzz Subset y Cairo para soportar la generacion de facturas con WeasyPrint.
 
 ## 11.1 Dependencias externas y degradacion
 

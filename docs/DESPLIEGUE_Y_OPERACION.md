@@ -1,6 +1,6 @@
 # Despliegue y Operacion GreenPath
 
-Fecha de revision: 2026-05-27
+Fecha de revision: 2026-09-22
 
 ## 1. Objetivo del documento
 
@@ -237,6 +237,92 @@ URLs locales del entorno actual:
 - `operational-overview` accesible para al menos una ruta
 - venta de prueba visible
 - factura PDF descargable
+
+## 6.6 Despliegue en Railway
+
+La topologia recomendada para produccion usa cinco servicios dentro del mismo proyecto de Railway:
+
+- `greenpath-api`: repositorio del backend, dominio publico y volumen de media
+- `greenpath-worker`: mismo repositorio, sin dominio publico
+- `greenpath-beat`: mismo repositorio, sin dominio publico y con una sola replica
+- `PostGIS`: plantilla de PostgreSQL con la extension espacial habilitada
+- `Redis`: broker y backend de resultados de Celery
+
+Los tres servicios de aplicacion deben construir `Dockerfile.prod`. En cada uno se configura:
+
+```env
+RAILWAY_DOCKERFILE_PATH=Dockerfile.prod
+```
+
+### API
+
+`Dockerfile.prod` arranca la API por defecto mediante `deploy/start-api.sh`, por lo que no necesita un Start Command personalizado. El script ejecuta `collectstatic` y levanta Gunicorn en el puerto proporcionado por Railway.
+
+Configurar en `greenpath-api`:
+
+- Pre-deploy Command: `python manage.py migrate`
+- Healthcheck Path: `/health/`
+- volumen persistente montado exactamente en `/src/media`
+- dominio publico generado desde `Settings > Networking`
+
+No se debe ejecutar `makemigrations` en Railway. Las migraciones se crean y versionan durante el desarrollo; produccion solo ejecuta `migrate` una vez en el pre-deploy de la API.
+
+### Worker y Beat
+
+Configurar estos Start Commands:
+
+```text
+greenpath-worker: sh ./deploy/start-worker.sh
+greenpath-beat:   sh ./deploy/start-beat.sh
+```
+
+Worker y beat no deben tener dominio, healthcheck HTTP ni volumen de media. Beat debe mantener una sola replica para evitar que una tarea periodica se programe mas de una vez.
+
+### Variables compartidas
+
+Las variables se configuran en API, worker y beat. Las referencias apuntan a los servicios reales de Railway; si se renombran, se debe actualizar el nombre de la referencia.
+
+```env
+SECRET_KEY=<clave-larga-y-aleatoria>
+DEBUG=0
+DATABASE_URL=${{PostGIS.DATABASE_URL}}
+REDIS_URL=${{Redis.REDIS_URL}}
+ALLOWED_HOSTS=.up.railway.app
+CORS_ALLOW_ALL_ORIGINS=0
+CORS_ALLOWED_ORIGINS=https://tu-frontend.vercel.app
+CSRF_TRUSTED_ORIGINS=https://tu-frontend.vercel.app https://*.up.railway.app
+SECURE_SSL_REDIRECT=1
+SESSION_COOKIE_SECURE=1
+CSRF_COOKIE_SECURE=1
+GOOGLE_CLIENT_ID=<cliente-web-de-google>
+GOOGLE_MAPS_API_KEY=<clave-de-google-maps>
+```
+
+Las variables de Gmail y SMTP se anaden cuando se quiera habilitar el envio real de correos. `DATABASE_URL` tiene prioridad sobre `DB_*`; `REDIS_URL` alimenta tanto el broker como el backend de resultados, salvo que se definan las variables especificas de Celery.
+
+### Conexion con Vercel
+
+Una vez generado el dominio de `greenpath-api`, configurar en Vercel:
+
+```env
+VITE_APP_API_URL=https://dominio-real-del-backend.up.railway.app
+```
+
+La URL no debe acabar en `/`. Tras modificarla hay que volver a desplegar el frontend. El mismo origen de Vercel debe figurar en `CORS_ALLOWED_ORIGINS`, y el origen de Vercel debe estar autorizado tambien en el cliente web de Google OAuth.
+
+### Persistencia y comprobacion
+
+La base de datos persiste en el volumen administrado por PostGIS. El volumen de `/src/media` conserva los archivos subidos por la API; `staticfiles` no necesita volumen porque se regenera al arrancar. Los archivos locales existentes no se copian automaticamente al volumen de Railway.
+
+Comprobaciones posteriores al despliegue:
+
+1. abrir `https://dominio-backend/health/` y comprobar `{"status": "ok"}`
+2. abrir `/admin/` y `/docs/`
+3. ejecutar `python manage.py createsuperuser` desde una shell del servicio API si no existe un administrador
+4. verificar en logs que worker conecta con Redis
+5. verificar en logs que beat usa `DatabaseScheduler`
+6. subir un archivo, redesplegar la API y confirmar que sigue disponible
+7. iniciar sesion desde Vercel y comprobar una peticion autenticada
 
 ## 7. Operacion funcional diaria
 

@@ -1,0 +1,17 @@
+.git
+.gitignore
+.env
+.env.*
+.venv
+venv
+__pycache__
+*.py[cod]
+*.log
+.pytest_cache
+.coverage
+htmlcov
+staticfiles
+media
+exports
+google_credentials
+ngrok.exe

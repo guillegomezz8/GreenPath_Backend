@@ -88,3 +88,15 @@ class PlannedSource(models.TextChoices):
     CLIENT = "CLIENT", "Cliente"
     AUTO = "AUTO", "Automático"
     MANUAL = "MANUAL", "Manual"
+
+
+class QuantityUnit(models.TextChoices):
+    KILOGRAM = "KG", "Kilogramos"
+    UNIT = "UD", "Unidades"
+    LITER = "L", "Litros"
+
+
+class BulkCollectionCalculationMode(models.TextChoices):
+    TOTAL = "TOTAL", "Calcular importe final"
+    UNIT_PRICE = "UNIT_PRICE", "Calcular precio unitario"
+    QUANTITY = "QUANTITY", "Calcular cantidad"

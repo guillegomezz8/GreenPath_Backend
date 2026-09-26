@@ -16,6 +16,8 @@ class CompanyApiTests(BackendTestMixin, TestCase):
             "/companies/settings/",
             {
                 "default_price_per_liter": "1.450",
+                "collections_enabled": False,
+                "bulk_collections_enabled": False,
                 "billing_business_name": "GreenPath Fiscal",
                 "billing_tax_id": "B12345678",
                 "hub_name": "Nave Central",
@@ -32,6 +34,8 @@ class CompanyApiTests(BackendTestMixin, TestCase):
 
         self.assertEqual(str(settings_obj.default_price_per_liter), "1.450")
         self.assertEqual(settings_obj.billing_business_name, "GreenPath Fiscal")
+        self.assertTrue(settings_obj.collections_enabled)
+        self.assertTrue(settings_obj.bulk_collections_enabled)
         self.assertEqual(hub.name, "Nave Central")
         self.assertAlmostEqual(hub.location.y, 37.4001, places=4)
         self.assertAlmostEqual(hub.location.x, -6.0012, places=4)
@@ -46,3 +50,26 @@ class CompanyApiTests(BackendTestMixin, TestCase):
 
         self.assertEqual(get_response.status_code, 200)
         self.assertEqual(put_response.status_code, 403)
+
+    def test_features_endpoint_returns_company_modules(self):
+        self.company.settings.collections_enabled = False
+        self.company.settings.bulk_collections_enabled = True
+        self.company.settings.save()
+
+        response = self.owner_client.get("/companies/features/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.data["collections_enabled"])
+        self.assertTrue(response.data["bulk_collections_enabled"])
+
+    def test_superuser_owner_still_respects_company_modules(self):
+        self.owner_user.is_staff = True
+        self.owner_user.is_superuser = True
+        self.owner_user.save(update_fields=["is_staff", "is_superuser"])
+        self.company.settings.bulk_collections_enabled = False
+        self.company.settings.save(update_fields=["bulk_collections_enabled"])
+
+        response = self.owner_client.get("/companies/features/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.data["bulk_collections_enabled"])

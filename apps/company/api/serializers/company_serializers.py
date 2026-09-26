@@ -1,10 +1,14 @@
 from rest_framework import serializers
 from django.contrib.gis.geos import Point
+from django.db import transaction
 from apps.company.models import Company, CompanyHub, CompanySettings
 import logging
 from apps.base.logger import configure_logging
+from apps.base.literals import COMPANY_HUB_COORDINATES_REQUIRED, COMPANY_SETTINGS_UPDATE_ERROR
 
 configure_logging()
+
+HUB_INPUT_FIELDS = ("hub_name", "hub_lat", "hub_lng")
 
 
 class CompanySerializer(serializers.ModelSerializer):
@@ -87,6 +91,9 @@ class CompanySettingsSerializer(serializers.ModelSerializer):
             "company_id",
             "company_name",
             "default_price_per_liter",
+            "collections_enabled",
+            "bulk_collections_enabled",
+            "oil_density_kg_per_liter",
             "billing_business_name",
             "billing_tax_id",
             "billing_address",
@@ -103,6 +110,12 @@ class CompanySettingsSerializer(serializers.ModelSerializer):
             "hub_name",
             "hub_lat",
             "hub_lng",
+        )
+        read_only_fields = (
+            "company_id",
+            "company_name",
+            "collections_enabled",
+            "bulk_collections_enabled",
         )
 
     def get_hub(self, obj):
@@ -125,50 +138,47 @@ class CompanySettingsSerializer(serializers.ModelSerializer):
         hub_lng_in_request = "hub_lng" in initial_data
 
         if hub_lat_in_request != hub_lng_in_request:
-            logging.error("[company_serializers - validate] Debes indicar latitud y longitud del hub")
-            raise serializers.ValidationError("Debes indicar latitud y longitud del hub.")
+            logging.error(f"[company_serializers - validate] {COMPANY_HUB_COORDINATES_REQUIRED}")
+            raise serializers.ValidationError(COMPANY_HUB_COORDINATES_REQUIRED)
 
         return attrs
 
+    @transaction.atomic
     def update(self, instance, validated_data):
         try:
-            initial_data = self.initial_data
-            hub_name_in_request = "hub_name" in initial_data
-            hub_lat_in_request = "hub_lat" in initial_data
-            hub_lng_in_request = "hub_lng" in initial_data
-
-            hub_name = validated_data.pop("hub_name", "") if hub_name_in_request else ""
-            hub_lat = validated_data.pop("hub_lat", None) if hub_lat_in_request else None
-            hub_lng = validated_data.pop("hub_lng", None) if hub_lng_in_request else None
-
-            for attr, value in validated_data.items():
-                setattr(instance, attr, value)
-            instance.save()
-
-            if hub_name_in_request or hub_lat_in_request or hub_lng_in_request:
-                existing_hub = instance.company.hub if hasattr(instance.company, "hub") and instance.company.hub else None
-                default_hub_name = existing_hub.name if existing_hub and existing_hub.name else f"Nave {instance.company.name}"
-
-                hub, _ = CompanyHub.objects.get_or_create(
-                    company=instance.company,
-                    defaults={"name": default_hub_name},
-                )
-
-                if hub_name_in_request:
-                    hub.name = hub_name.strip() if hub_name.strip() else default_hub_name
-
-                if hub_lat_in_request and hub_lng_in_request:
-                    if hub_lat is None and hub_lng is None:
-                        hub.location = None
-                    else:
-                        hub.location = Point(float(hub_lng), float(hub_lat), srid=4326)
-
-                if not hub.name:
-                    hub.name = default_hub_name
-
-                hub.save()
-
+            hub_data = self._pop_hub_data(validated_data)
+            instance = super().update(instance, validated_data)
+            if hub_data:
+                self._update_hub(instance, hub_data)
             return instance
+        except serializers.ValidationError:
+            raise
         except Exception as e:
             logging.error(f"[company_serializers - update] Error actualizando configuracion de empresa {instance.company_id}: {str(e)}")
-            raise serializers.ValidationError(f"Error actualizando configuracion: {str(e)}")
+            raise serializers.ValidationError(COMPANY_SETTINGS_UPDATE_ERROR.format(error=str(e)))
+
+    def _pop_hub_data(self, validated_data):
+        return {
+            field: validated_data.pop(field, None)
+            for field in HUB_INPUT_FIELDS
+            if field in self.initial_data
+        }
+
+    @staticmethod
+    def _update_hub(instance, hub_data):
+        existing_hub = getattr(instance.company, "hub", None)
+        default_name = existing_hub.name if existing_hub and existing_hub.name else f"Nave {instance.company.name}"
+        hub, _ = CompanyHub.objects.get_or_create(
+            company=instance.company,
+            defaults={"name": default_name},
+        )
+
+        if "hub_name" in hub_data:
+            hub.name = (hub_data["hub_name"] or "").strip() or default_name
+        if "hub_lat" in hub_data:
+            latitude = hub_data["hub_lat"]
+            longitude = hub_data["hub_lng"]
+            hub.location = None if latitude is None else Point(float(longitude), float(latitude), srid=4326)
+
+        hub.name = hub.name or default_name
+        hub.save()

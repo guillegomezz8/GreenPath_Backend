@@ -10,7 +10,7 @@ from django_filters.rest_framework import (
 from django.db.models import Q
 from apps.base.logger import configure_logging
 from apps.company.models import Company
-from apps.company.utils import get_or_create_company_settings, resolve_user_company
+from apps.company.utils import get_or_create_company_settings, get_user_company_features, resolve_user_company
 from apps.base.permissions import IsOwnerUser
 from apps.company.api.serializers.company_serializers import (
     CompanySerializer,
@@ -98,11 +98,15 @@ class CompanyViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy', 'list', 'retrieve']:
             self.permission_classes = [IsOwnerUser, IsAuthenticated]
-        elif self.action == 'company_settings':
+        elif self.action in ['company_settings', 'features']:
             self.permission_classes = [IsAuthenticated]
         else:
             self.permission_classes = [IsAuthenticated]
         return super(CompanyViewSet, self).get_permissions()
+
+    @action(detail=False, methods=['get'], url_path='features')
+    def features(self, request):
+        return Response(get_user_company_features(request.user), status=status.HTTP_200_OK)
 
     def perform_create(self, serializer):
         try:

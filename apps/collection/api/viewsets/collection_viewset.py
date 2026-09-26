@@ -40,6 +40,7 @@ from apps.collection.api.serializers.collection_serializers import (
     UpdateCollectionSerializer,
 )
 from apps.collection.models import Collection, CollectionRequest
+from apps.company.permissions import IsCollectionsEnabled
 from apps.route.utils import refresh_planned_route_day_optimization
 
 configure_logging()
@@ -140,13 +141,13 @@ class CollectionViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action == "create":
-            self.permission_classes = [IsAuthenticated]
+            self.permission_classes = [IsAuthenticated, IsCollectionsEnabled]
         elif self.action in ["update", "partial_update", "destroy"]:
-            self.permission_classes = [IsAuthenticated, IsOwnerUser]
+            self.permission_classes = [IsAuthenticated, IsCollectionsEnabled, IsOwnerUser]
         elif self.action == "list":
-            self.permission_classes = [IsAuthenticated]
+            self.permission_classes = [IsAuthenticated, IsCollectionsEnabled]
         else:
-            self.permission_classes = [IsAuthenticated]
+            self.permission_classes = [IsAuthenticated, IsCollectionsEnabled]
         return super(CollectionViewSet, self).get_permissions()
 
     def perform_create(self, serializer):

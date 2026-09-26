@@ -101,6 +101,9 @@ class CompanyHub {
 
 class CompanySettings {
   +default_price_per_liter: decimal
+  +collections_enabled: bool
+  +bulk_collections_enabled: bool
+  +oil_density_kg_per_liter: decimal
   +billing_business_name: string
   +billing_tax_id: string
   +billing_address: string
@@ -209,6 +212,18 @@ class Collection {
   +notes: text
 }
 
+class BulkCollection {
+  +collection_date: date
+  +invoice_file: file
+  +unit: string
+  +calculation_mode: string
+  +quantity: decimal
+  +unit_price: decimal
+  +total_price: decimal
+  +billable: bool
+  +notes: text
+}
+
 class Buyer {
   +fiscal_name: string
   +tax_id: string
@@ -283,6 +298,7 @@ BaseModel <|-- Zone
 BaseModel <|-- Route
 BaseModel <|-- Collection
 BaseModel <|-- CollectionRequest
+BaseModel <|-- BulkCollection
 BaseModel <|-- Buyer
 BaseModel <|-- Sale
 
@@ -298,6 +314,7 @@ Company "1" --> "0..*" Route : routes
 Company "1" --> "0..*" Buyer : buyers
 Company "1" --> "0..*" Sale : sales
 Company "1" --> "0..*" SaleInvoiceIssuerSnapshot : sale_invoice_issuer_snapshots
+Company "1" --> "0..*" BulkCollection : bulk_collections
 Company "0..*" --> "0..*" Client : companies
 
 Truck "0..1" --> "0..1" Worker : driver
@@ -314,6 +331,7 @@ RouteZoneDay "0..*" --> "0..*" Zone : zones
 RouteDayClient "1" --> "0..1" CollectionRequest : collection_request
 RouteDayClient "1" --> "0..*" Collection : collections
 Client "1" --> "0..*" Collection : collections
+Client "1" --> "0..*" BulkCollection : bulk_collections
 CollectionRequest "0..*" --> "0..1" User : answered_by
 CollectionRequest "0..*" --> "0..1" User : manual_by
 
@@ -506,6 +524,17 @@ class Buyer {
   +province: string
 }
 
+class BulkCollection {
+  +collection_date: date
+  +unit: KG | UD | L
+  +calculation_mode: string
+  +quantity: decimal
+  +unit_price: decimal
+  +total_price: decimal
+  +billable: bool
+  +invoice_file: file
+}
+
 class Sale {
   +invoice_date: date
   +invoice_number: string
@@ -540,6 +569,8 @@ class SaleInvoiceIssuerSnapshot {
 Company "1" --> "0..*" Buyer : buyers
 Company "1" --> "0..*" Sale : sales
 Company "1" --> "0..*" SaleInvoiceIssuerSnapshot : issuer_snapshots
+Company "1" --> "0..*" BulkCollection : bulk_collections
+Client "1" --> "0..*" BulkCollection : bulk_collections
 Buyer "1" --> "0..*" Sale : sales
 SaleInvoiceIssuerSnapshot "1" --> "0..*" Sale : sales
 Sale "1" --> "1..*" SaleLine : lines
@@ -565,6 +596,7 @@ La siguiente tabla resume cada entidad desde el punto de vista funcional.
 | `RouteDayClient` | `route` | parada planificada | ordena clientes por jornada |
 | `CollectionRequest` | `collection` | peticion previa de estimacion | una por parada planificada |
 | `Collection` | `collection` | recogida real | puede ser planificada o manual |
+| `BulkCollection` | `bulk_collection` | recogida directa al por mayor | admite kg, unidades o litros y calcula cantidad, precio o total a partir de los otros dos valores |
 | `Buyer` | `sale` | comprador interno | sin acceso a plataforma |
 | `Sale` | `sale` | venta con factura | concentra los datos economicos y documentales de la venta; el PDF se genera bajo demanda y no se persiste como flujo operativo activo |
 | `SaleLine` | `sale` | linea de factura | permite registrar varios conceptos por venta |
@@ -628,6 +660,13 @@ Esto significa que casi todos los modulos se segmentan realmente por empresa, in
 - `Collection` representa la recogida real registrada
 - una `Collection` puede estar vinculada a una `RouteDayClient`, pero tambien puede ser manual
 - `Collection.billable` determina si la recogida entra en agregados economicos
+- `BulkCollection` registra una recogida directa sin ruta ni medicion y conserva cantidad, precio unitario e importe final
+- `BulkCollection.calculation_mode` indica cual de esos tres valores fue derivado por el backend
+- solo las recogidas al por mayor facturables entran en costes
+- las cantidades compradas y vendidas se agregan por separado en litros y kilogramos; las unidades se excluyen de estas estadisticas fisicas
+- `CompanySettings.collections_enabled` y `CompanySettings.bulk_collections_enabled` controlan el acceso a cada modulo por empresa
+- `CompanySettings.oil_density_kg_per_liter` define la conversion auditable entre litros y kilogramos para estadisticas
+- `BulkCollection.invoice_file` permite conservar la factura original en PDF, JPG o PNG
 
 ### 8.7 Bloque comercial
 
@@ -668,6 +707,8 @@ Esta seccion es importante porque algunas relaciones expresan reglas de negocio 
 | `CollectionRequest.route_day_client -> RouteDayClient` | OneToOne | `CASCADE` | la solicitud depende de la parada |
 | `CollectionRequest.answered_by -> User` | FK | `SET_NULL` | conserva la solicitud aunque el usuario deje de existir |
 | `CollectionRequest.manual_by -> User` | FK | `SET_NULL` | conserva la trazabilidad funcional sin bloquear borrados |
+| `BulkCollection.company -> Company` | FK | `CASCADE` | la recogida pertenece al espacio economico de la empresa |
+| `BulkCollection.client -> Client` | FK | `PROTECT` | evita borrar un cliente con recogidas historicas asociadas |
 | `Buyer.company -> Company` | FK | `CASCADE` | el comprador interno pertenece a una empresa |
 | `Sale.company -> Company` | FK | `CASCADE` | la venta pertenece a una empresa concreta |
 | `Sale.buyer -> Buyer` | FK | `PROTECT` | no debe eliminarse un comprador con ventas asociadas |
@@ -801,12 +842,13 @@ Este circuito cubre:
 
 ### 14.3 Circuito economico
 
-`CompanySettings + Collection + Buyer + Sale + SaleLine + SaleInvoiceIssuerSnapshot`
+`CompanySettings + Collection + BulkCollection + Buyer + Sale + SaleLine + SaleInvoiceIssuerSnapshot`
 
 Este circuito cubre:
 
 - precio por litro
 - costes de recogidas
+- costes y cantidades de recogidas al por mayor por litros, kilogramos o unidades
 - ingresos por ventas
 - facturacion PDF bajo demanda
 - estadisticas economicas

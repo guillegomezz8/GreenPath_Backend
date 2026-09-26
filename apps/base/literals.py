@@ -29,6 +29,9 @@ COMPANY_SETTINGS_UPDATED = 'Configuración de empresa actualizada correctamente.
 COMPANY_SETTINGS_FORBIDDEN = 'Solo owner o worker de la empresa pueden consultar esta configuración.'
 COMPANY_SETTINGS_UPDATE_FORBIDDEN = 'Solo los dueños pueden actualizar la configuración de empresa.'
 COMPANY_SETTINGS_NOT_FOUND = 'No se ha encontrado una empresa asociada al usuario.'
+COMPANY_NOT_FOUND = 'Empresa no encontrada.'
+COMPANY_HUB_COORDINATES_REQUIRED = 'Debes indicar latitud y longitud del hub.'
+COMPANY_SETTINGS_UPDATE_ERROR = 'Error actualizando configuración: {error}'
 
 #Trabajadores
 ERROR_CREATING_WORKER = 'Error creando trabajador'
@@ -101,6 +104,20 @@ COLLECTION_REQUEST_CLIENT_LIST_FORBIDDEN = 'Solo clientes pueden consultar sus s
 COLLECTION_REQUEST_NOTIFY_SUBJECT = 'Nueva solicitud de estimación de recogida'
 COLLECTION_REQUEST_NOTIFY_BODY = 'Hola, tienes una solicitud de estimación para la ruta {route_name} del día {route_date}. Por favor responde antes de {expires_at}.'
 COLLECTION_DEDUCTION_LITERS_INVALID = 'Los litros descontados no pueden ser mayores que los litros medidos.'
+
+# Recogidas al por mayor y conversion de cantidades
+COMPANY_FEATURE_DISABLED = 'Este modulo esta deshabilitado para la empresa.'
+BULK_COLLECTION_CLIENT_INVALID = 'El cliente no pertenece a la empresa de la recogida.'
+BULK_COLLECTION_POSITIVE_VALUE_REQUIRED = 'El valor debe ser mayor que cero.'
+BULK_COLLECTION_CALCULATION_VALUE_REQUIRED = 'Este valor debe ser mayor que cero para realizar el calculo.'
+BULK_COLLECTION_INTEGER_UNITS_REQUIRED = "La cantidad debe ser un numero entero cuando la unidad es 'Unidades'."
+BULK_COLLECTION_INVOICE_TOO_LARGE = 'La factura no puede superar los 10 MB.'
+BULK_COLLECTION_INVOICE_TYPE_INVALID = 'Adjunta una factura PDF, JPG o PNG.'
+SUMMARY_DATE_RANGE_REQUIRED = 'Debes indicar start_date y end_date juntos.'
+SUMMARY_START_DATE_INVALID = 'Formato de fecha inicial invalido. Usa YYYY-MM-DD.'
+SUMMARY_END_DATE_INVALID = 'Formato de fecha final invalido. Usa YYYY-MM-DD.'
+SUMMARY_DATE_ORDER_INVALID = 'start_date no puede ser posterior a end_date.'
+OIL_DENSITY_POSITIVE = 'La densidad del aceite debe ser mayor que cero.'
 
 #Dashboard
 ERROR_GETTING_DASHBOARD_DATA = 'Error obteniendo datos del dashboard'

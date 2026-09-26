@@ -83,6 +83,15 @@ class CompanySettings(BaseModel):
         default=Decimal("1.200"),
         validators=[MinValueValidator(Decimal("0.00"))],
     )
+    collections_enabled = models.BooleanField("Modulo de recogidas activo", default=True)
+    bulk_collections_enabled = models.BooleanField("Modulo de recogidas al por mayor activo", default=True)
+    oil_density_kg_per_liter = models.DecimalField(
+        "Densidad del aceite (kg/L)",
+        max_digits=7,
+        decimal_places=4,
+        default=Decimal("0.9200"),
+        validators=[MinValueValidator(Decimal("0.0001"))],
+    )
     billing_business_name = models.CharField("Razon social", max_length=255, blank=True, default="")
     billing_tax_id = models.CharField("CIF", max_length=20, blank=True, default="")
     billing_address = models.CharField("Direccion fiscal", max_length=255, blank=True, default="")

@@ -8,10 +8,11 @@ from rest_framework.test import APIClient
 from apps.base.enums import CollectionStatus, ContainerType, DeductionReason, Role
 from apps.collection.models import Collection
 from apps.company.models import Company
-from apps.sale.models import Buyer, Sale
+from apps.sale.models import Buyer, Sale, SaleLine
 from apps.user.models.client import Client
 from apps.user.models.user import User
 from apps.user.models.worker import Worker
+from apps.bulk_collection.models import BulkCollection
 
 
 class SaleEconomicSummaryApiTests(TestCase):
@@ -162,6 +163,71 @@ class SaleEconomicSummaryApiTests(TestCase):
         response = self.client.get("/sales/economic-summary/")
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_economic_summary_separates_sale_quantities_by_unit_and_lines(self):
+        today = date.today()
+        sale = Sale.objects.create(
+            company=self.company,
+            buyer=self.buyer,
+            sale_date=today,
+            invoice_date=today,
+            product_description="Venta mixta",
+            quantity=Decimal("1.00"),
+            unit="varias",
+            unit_price=Decimal("1.00"),
+        )
+        SaleLine.objects.create(sale=sale, position=0, product_description="Aceite", quantity=Decimal("40.00"), unit="kg", unit_price=Decimal("2.00"))
+        SaleLine.objects.create(sale=sale, position=1, product_description="Envases", quantity=Decimal("5.00"), unit="uds", unit_price=Decimal("3.00"))
+
+        self.authenticate_owner()
+        response = self.client.get("/sales/economic-summary/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["sold_quantities"]["KG"].quantize(Decimal("0.01")), Decimal("40.00"))
+        self.assertEqual(response.data["sold_quantities"]["L"].quantize(Decimal("0.01")), Decimal("43.48"))
+        self.assertEqual(response.data["ignored_quantities"]["sales"], 1)
+
+    def test_economic_summary_excludes_units_and_only_counts_billable_costs(self):
+        today = date.today()
+        BulkCollection.objects.create(
+            company=self.company,
+            client=self.client_profile,
+            collection_date=today,
+            unit="L",
+            calculation_mode="TOTAL",
+            quantity=Decimal("120.00"),
+            unit_price=Decimal("0.7500"),
+            billable=True,
+        )
+        BulkCollection.objects.create(
+            company=self.company,
+            client=self.client_profile,
+            collection_date=today,
+            unit="KG",
+            calculation_mode="TOTAL",
+            quantity=Decimal("40.00"),
+            unit_price=Decimal("2.0000"),
+            billable=True,
+        )
+        BulkCollection.objects.create(
+            company=self.company,
+            client=self.client_profile,
+            collection_date=today,
+            unit="UD",
+            calculation_mode="TOTAL",
+            quantity=Decimal("10.00"),
+            unit_price=Decimal("3.0000"),
+            billable=False,
+        )
+
+        self.authenticate_owner()
+        response = self.client.get("/sales/economic-summary/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["total_cost"], Decimal("170.00"))
+        self.assertEqual(response.data["bulk_collection_cost"], Decimal("170.00"))
+        self.assertEqual(response.data["total_bought_volume"].quantize(Decimal("0.01")), Decimal("163.48"))
+        self.assertEqual(response.data["ignored_quantities"]["bulk_collections"], 1)
 
     def test_economic_summary_can_be_filtered_by_date_range(self):
         Sale.objects.create(

@@ -15,6 +15,7 @@ BUSINESS_APP_LABELS = (
     "zone",
     "route",
     "collection",
+    "wholesale",  # Stable Django app label for apps.bulk_collection.
     "sale",
 )
 

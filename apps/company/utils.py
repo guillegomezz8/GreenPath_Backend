@@ -25,6 +25,36 @@ def get_or_create_company_settings(company):
     return settings_obj
 
 
+def get_user_company_features(user):
+    defaults = {
+        "collections_enabled": False,
+        "bulk_collections_enabled": False,
+    }
+    if not getattr(user, "is_authenticated", False):
+        return defaults
+
+    company = resolve_user_company(user)
+    if company:
+        settings_obj = get_or_create_company_settings(company)
+        return {
+            "collections_enabled": settings_obj.collections_enabled,
+            "bulk_collections_enabled": settings_obj.bulk_collections_enabled,
+        }
+
+    if user.is_staff or user.is_superuser:
+        return {key: True for key in defaults}
+
+    if user.role_type == "client" and hasattr(user, "client_profile"):
+        return {
+            "collections_enabled": any(
+                get_or_create_company_settings(company).collections_enabled
+                for company in user.client_profile.companies.all()
+            ),
+            "bulk_collections_enabled": False,
+        }
+    return defaults
+
+
 def resolve_default_collection_price_per_liter(company=None, client=None, worker=None, route_day_client=None):
     try:
         resolved_company = company

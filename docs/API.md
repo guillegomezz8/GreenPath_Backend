@@ -310,6 +310,9 @@ Payload actual:
   "billing_bank_account": "ES7620770024003102575766",
   "billing_ler_code": "20 01 25",
   "billing_footer": "Factura generada desde GreenPath.",
+  "collections_enabled": true,
+  "bulk_collections_enabled": true,
+  "oil_density_kg_per_liter": "0.9200",
   "hub_name": "Nave Principal Coria",
   "hub_lat": 37.453664,
   "hub_lng": -5.973891
@@ -321,6 +324,11 @@ Uso actual:
 - precio por litro por defecto para recogidas creadas desde ejecucion de ruta
 - datos fiscales y bancarios usados como plantilla para nuevas facturas de venta
 - configuracion del hub para operativa de rutas
+- consulta del estado de los modulos de recogidas y recogidas al por mayor
+
+`GET /companies/features/` devuelve solo los indicadores de modulos de la empresa del usuario. El frontend usa este endpoint para ocultar las secciones desactivadas y el backend tambien bloquea sus endpoints.
+
+`collections_enabled` y `bulk_collections_enabled` son campos de solo lectura en la API. Su activacion se gestiona exclusivamente desde Django Admin.
 
 Nota:
 - el modelo conserva `billing_logo` para facturacion, aunque el endpoint actual de settings no lo expone en el payload principal
@@ -771,6 +779,7 @@ Interpretacion:
 - `400` en `collections` si la medicion o las deducciones son inconsistentes
 - `400` en `sales` si el numero de factura ya existe para la misma empresa
 - `403` cuando un rol intenta acceder a bloques owner-only como `buyers`, `sales` o configuracion
+- `403` cuando la empresa tiene desactivado el modulo de recogidas o recogidas al por mayor
 - `404` cuando el recurso existe pero no pertenece al ambito visible del usuario autenticado
 
 ## 9. Flujo de planificacion semanal (operativo)
@@ -817,6 +826,20 @@ Interpretacion:
 - `CollectionRequestStatus`: `PENDING`, `ANSWERED`, `AUTO_ESTIMATED`, `MANUAL`
 - `PlannedSource`: `CLIENT`, `AUTO`, `MANUAL`
 - `ContainerType`: `BIDONES`, `IBC`
+- `QuantityUnit`: `KG`, `UD`, `L`
+- `BulkCollectionCalculationMode`: `TOTAL`, `UNIT_PRICE`, `QUANTITY`
+
+## 11.1 Recogidas al por mayor y estadisticas
+
+- CRUD owner-only: `/bulk-collections/`
+- acepta JSON y `multipart/form-data`
+- `invoice_file` admite facturas PDF, JPG o PNG de hasta 10 MB
+- deben enviarse dos valores validos entre `quantity`, `unit_price` y `total_price`; `calculation_mode` indica cual recalcula el backend
+- las recogidas al por mayor con `billable=true` se incorporan a los costes economicos
+- `GET /sales/economic-summary/` devuelve `bought_quantities` y `sold_quantities` equivalentes en `L` y `KG`, tanto en el total como en cada elemento de `monthly`
+- las cantidades se normalizan primero a litros con `oil_density_kg_per_liter` y despues se expresan en la unidad seleccionada
+- las lineas expresadas en unidades (`UD`) se conservan en ventas, pero se excluyen de las estadisticas de cantidad porque no representan volumen ni masa
+- las lineas de venta se agregan por su propia unidad; las ventas antiguas sin lineas usan la unidad de la venta principal
 
 ## 12. Ejemplos rapidos (curl)
 

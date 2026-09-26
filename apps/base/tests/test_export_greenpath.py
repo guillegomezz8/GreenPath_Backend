@@ -9,6 +9,7 @@ from django.test import TestCase
 
 from apps.base.tests.helpers import BackendTestMixin
 from apps.sale.models import Sale, SaleLine
+from apps.bulk_collection.models import BulkCollection
 
 
 class ExportGreenPathCommandTests(BackendTestMixin, TestCase):
@@ -93,3 +94,27 @@ class ExportGreenPathCommandTests(BackendTestMixin, TestCase):
 
         self.assertEqual(sale_row["fields"]["invoice_issuer"], snapshot_row["pk"])
         self.assertEqual(line_row["fields"]["product_description"], "Linea exportada")
+
+    def test_export_contains_bulk_collections(self):
+        _, _, company = self.create_owner_context("export-wholesale")
+        _, client = self.create_client(company, "export-wholesale-client")
+        purchase = BulkCollection.objects.create(
+            company=company,
+            client=client,
+            collection_date=date(2026, 9, 24),
+            unit="KG",
+            calculation_mode="TOTAL",
+            quantity=Decimal("25.00"),
+            unit_price=Decimal("1.5000"),
+        )
+
+        with TemporaryDirectory() as temp_dir:
+            output_path = Path(temp_dir) / "greenpath.json"
+            call_command("export_greenpath", output=str(output_path), verbosity=0)
+            rows = json.loads(output_path.read_text(encoding="utf-8"))
+
+        purchase_row = next(
+            row for row in rows
+            if row["model"] == "wholesale.bulkcollection" and row["pk"] == purchase.pk
+        )
+        self.assertEqual(purchase_row["fields"]["total_price"], "37.50")

@@ -20,6 +20,9 @@ class CompanySettingsInline(admin.StackedInline):
     max_num = 1
     can_delete = False
     fields = (
+        "collections_enabled",
+        "bulk_collections_enabled",
+        "oil_density_kg_per_liter",
         "default_price_per_liter",
         "billing_business_name",
         "billing_tax_id",
@@ -76,7 +79,11 @@ class CompanyHubAdmin(GISModelAdmin):
 
 @admin.register(CompanySettings)
 class CompanySettingsAdmin(admin.ModelAdmin):
-    list_display = ("id", "company", "default_price_per_liter", "billing_business_name", "billing_tax_id")
+    list_display = (
+        "id", "company", "collections_enabled", "bulk_collections_enabled",
+        "default_price_per_liter", "billing_business_name", "billing_tax_id",
+    )
+    list_filter = ("collections_enabled", "bulk_collections_enabled")
     search_fields = ("company__name",)
     autocomplete_fields = ("company",)
     ordering = ("company__name",)

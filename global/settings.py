@@ -73,6 +73,7 @@ LOCAL_APPS = [
     'apps.company',
     'apps.route',
     'apps.collection',
+    'apps.bulk_collection',
     'apps.sale',
     'apps.zone',
     'apps.truck',

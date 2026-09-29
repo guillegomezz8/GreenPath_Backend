@@ -39,6 +39,27 @@ class BulkCollectionApiTests(BackendTestMixin, TestCase):
         self.assertEqual(bulk_collection.company, self.company)
         self.assertEqual(bulk_collection.total_price, Decimal("100.40"))
 
+    def test_accepts_3750_liters_and_kilograms(self):
+        for unit in ("L", "KG"):
+            with self.subTest(unit=unit):
+                response = self.api.post(
+                    "/bulk-collections/",
+                    {
+                        "client": self.client_profile.id,
+                        "collection_date": "2026-09-29",
+                        "unit": unit,
+                        "calculation_mode": "TOTAL",
+                        "quantity": "3750",
+                        "unit_price": "0.8000",
+                        "billable": True,
+                    },
+                    format="json",
+                )
+
+                self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+                self.assertEqual(Decimal(response.data["quantity"]), Decimal("3750.00"))
+                self.assertEqual(Decimal(response.data["total_price"]), Decimal("3000.00"))
+
     def test_quantity_and_total_calculate_unit_price(self):
         response = self.api.post(
             "/bulk-collections/",

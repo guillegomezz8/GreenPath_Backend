@@ -241,7 +241,7 @@ def _invoice_template_context(sale, settings_obj):
         "quantity_label": f"{_format_decimal(sale.quantity, decimals=0)} {sale.unit}".strip(),
         "quantity": _format_decimal(sale.quantity, decimals=0),
         "product_description": sale.product_description,
-        "unit_price": _format_money(sale.unit_price, sale.currency, decimals=3),
+        "unit_price": _format_money(sale.unit_price, sale.currency, decimals=2),
         "subtotal": _format_money(sale.subtotal, sale.currency),
         "tax_rate": _format_decimal(sale.tax_rate),
         "tax_amount": _format_money(sale.tax_amount, sale.currency),

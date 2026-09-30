@@ -128,7 +128,7 @@ class SaleUtilsTests(BackendTestMixin, TestCase):
             product_description="Producto con precio preciso",
             quantity=Decimal("1.00"),
             unit="ud",
-            unit_price=Decimal("1.2345"),
+            unit_price=Decimal("1.21499999"),
             tax_rate=Decimal("21.00"),
         )
         line.save(recalculate_sale=False)
@@ -138,10 +138,10 @@ class SaleUtilsTests(BackendTestMixin, TestCase):
         html = render_to_string("sale/invoice.html", context)
         line.refresh_from_db()
 
-        self.assertEqual(line.unit_price, Decimal("1.2345"))
-        self.assertEqual(context["items"][0]["precio_unitario"], "1,23 €")
-        self.assertIn(">1,23 €<", html)
-        self.assertNotIn("1,2345", html)
+        self.assertEqual(line.unit_price, Decimal("1.21499999"))
+        self.assertEqual(context["items"][0]["precio_unitario"], "1,21 €")
+        self.assertIn(">1,21 €<", html)
+        self.assertNotIn("1,21499999", html)
 
     def test_invoice_template_uses_frozen_company_billing_data(self):
         settings_obj = self.company.settings

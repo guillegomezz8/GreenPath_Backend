@@ -138,6 +138,37 @@ class BuyerAndSaleApiTests(BackendTestMixin, TestCase):
             ).exists()
         )
 
+    def test_sale_line_accepts_unit_price_with_eight_decimal_places(self):
+        buyer = self.create_buyer(self.company, "Comprador Precio Preciso", "B24242424")
+
+        response = self.owner_client.post(
+            "/sales/",
+            {
+                "buyer": buyer.id,
+                "invoice_number": "024/2026",
+                "invoice_date": "2026-09-29",
+                "currency": "EUR",
+                "lines": [
+                    {
+                        "product_description": "Aceite vegetal usado sin filtrar",
+                        "quantity": "9239.09",
+                        "unit": "kg",
+                        "unit_price": "1.21499999",
+                        "tax_rate": "21.00",
+                    },
+                ],
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201, response.data)
+        sale = Sale.objects.get(company=self.company, invoice_number="024/2026")
+        line = sale.lines.get()
+        self.assertEqual(line.unit_price, Decimal("1.21499999"))
+        self.assertEqual(line.subtotal, Decimal("11225.49"))
+        self.assertEqual(line.tax_amount, Decimal("2357.35"))
+        self.assertEqual(line.total, Decimal("13582.84"))
+
     @patch("apps.sale.api.viewsets.sale_viewset.generate_sale_invoice_pdf")
     def test_download_invoice_generates_pdf_on_demand_without_storing_file(self, generate_pdf_mock):
         buyer = self.create_buyer(self.company, "Comprador PDF", "B33333333")

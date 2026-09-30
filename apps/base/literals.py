@@ -1,3 +1,6 @@
+from decimal import Decimal
+
+
 MESSAGE = 'Mensaje'
 PASSWORD_SUCCESSFULLY_UPDATED = 'Contraseña actualizada correctamente'
 DETAILS = 'Detalles'
@@ -118,6 +121,9 @@ SUMMARY_START_DATE_INVALID = 'Formato de fecha inicial invalido. Usa YYYY-MM-DD.
 SUMMARY_END_DATE_INVALID = 'Formato de fecha final invalido. Usa YYYY-MM-DD.'
 SUMMARY_DATE_ORDER_INVALID = 'start_date no puede ser posterior a end_date.'
 OIL_DENSITY_POSITIVE = 'La densidad del aceite debe ser mayor que cero.'
+
+# Ventas
+UNIT_PRICE_QUANTUM = Decimal('0.00000001')
 
 #Dashboard
 ERROR_GETTING_DASHBOARD_DATA = 'Error obteniendo datos del dashboard'

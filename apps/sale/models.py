@@ -5,6 +5,7 @@ from decimal import Decimal
 from django.core.validators import MinValueValidator
 from django.db import models
 
+from apps.base.literals import UNIT_PRICE_QUANTUM
 from apps.base.models import BaseModel
 from apps.company.models import Company, CompanySettings
 
@@ -197,8 +198,8 @@ class Sale(BaseModel):
     unit = models.CharField("Unidad", max_length=20, default="L")
     unit_price = models.DecimalField(
         "Precio unitario",
-        max_digits=12,
-        decimal_places=4,
+        max_digits=18,
+        decimal_places=8,
         validators=[MinValueValidator(Decimal("0.00"))],
     )
     subtotal = models.DecimalField("Base imponible", max_digits=12, decimal_places=2, editable=False, default=Decimal("0.00"))
@@ -267,9 +268,9 @@ class Sale(BaseModel):
         self.quantity = quantity
         self.unit = units.pop() if len(units) == 1 else "varias"
         self.unit_price = (
-            (subtotal / quantity).quantize(Decimal("0.0001"))
+            (subtotal / quantity).quantize(UNIT_PRICE_QUANTUM)
             if quantity
-            else Decimal("0.0000")
+            else Decimal("0.00000000")
         )
         self.tax_rate = tax_rates.pop() if len(tax_rates) == 1 else Decimal("0.00")
         self.subtotal = subtotal.quantize(Decimal("0.01"))
@@ -312,8 +313,8 @@ class SaleLine(models.Model):
     unit = models.CharField("Unidad", max_length=20, default="L")
     unit_price = models.DecimalField(
         "Precio unitario",
-        max_digits=12,
-        decimal_places=4,
+        max_digits=18,
+        decimal_places=8,
         validators=[MinValueValidator(Decimal("0.00"))],
     )
     tax_rate = models.DecimalField(

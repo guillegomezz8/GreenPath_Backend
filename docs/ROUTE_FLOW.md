@@ -1,6 +1,6 @@
 # Route Flow - Flujo de Rutas GreenPath
 
-Fecha de revision: 2026-05-27
+Fecha de revision: 2026-10-09
 
 ## 1. Objetivo del documento
 
@@ -207,8 +207,7 @@ El sistema no altera sus paradas ni su capacidad.
 
 ### 8.4 Capacidad diaria
 
-La capacidad diaria se aplica de forma estricta.
-Si una nueva parada hace superar el total planificado del dia, no se inserta.
+La capacidad diaria se usa para construir segmentos operativos con retornos al hub. No excluye clientes durante la seleccion inicial: esta aplica geografia, frecuencia, reservas semanales y limite de clientes.
 
 ### 8.5 Limite maximo de clientes por dia
 
@@ -217,7 +216,7 @@ El backend respeta `max_clients_per_day` antes de seguir anadiendo clientes al `
 Criterio operativo actual:
 
 - el valor funcional por defecto del sistema es `10` clientes por jornada
-- ese limite se aplica junto con `daily_capacity_liters`
+- el limite de clientes actua en la seleccion; `daily_capacity_liters` actua despues en segmentacion
 - si una jornada alcanza el tope de clientes aunque todavia quede capacidad, no se siguen insertando mas paradas en ese dia
 
 Este criterio responde a una decision de negocio deliberada: no basta con llenar la jornada por litros; tambien hay que evitar dias artificialmente saturados en numero de paradas, porque eso penaliza tiempos de desplazamiento, carga cognitiva del conductor y calidad del servicio.
@@ -234,7 +233,8 @@ Pasos principales:
 4. calcular historico previo del cliente dentro de la misma empresa
 5. aplicar frecuencia de recogida
 6. evitar duplicidades de un mismo cliente en la misma semana
-7. insertar paradas respetando capacidad y limite diario
+7. seleccionar por proximidad e insertar paradas respetando limite diario de clientes
+8. agrupar por capacidad y optimizar cada segmento
 
 ## 10. Reglas de frecuencia de cliente
 
@@ -267,7 +267,7 @@ En terminos funcionales, esta regla es clave para el enfoque multiempresa del TF
 2. calcula segmentos segun capacidad diaria y litros previstos
 3. usa `CompanyHub.location` como origen y destino de cada segmento
 4. envia a Google las paradas ubicadas con `waypoints=optimize:true|...`
-5. conserva las paradas sin ubicacion en su posicion relativa
+5. rechaza paradas sin ubicacion antes de llamar a Google
 6. reescribe `RouteDayClient.order` si la respuesta es valida
 
 ### Cuando no se aplica
@@ -275,14 +275,14 @@ En terminos funcionales, esta regla es clave para el enfoque multiempresa del TF
 La optimizacion no se aplica si:
 
 - hay menos de 2 paradas
-- hay menos de 2 paradas con ubicacion
+- existen paradas sin ubicacion (se rechazan con error de validacion)
 - la empresa no tiene hub
 - no existe `GOOGLE_MAPS_API_KEY`
 - Google responde error o estructura invalida
 
 ### Fallback
 
-En todos esos casos se conserva el orden existente y el flujo no se rompe.
+Con menos de dos paradas se registra `OPTIMIZED` sin llamada externa. Sin hub o API key se conserva el orden y se registra `FAILED`. Si Google falla se conserva el orden local por proximidad y capacidad del bloque afectado y se registra `FALLBACK`. Las paradas sin ubicacion se rechazan; ese error puede interrumpir la generacion.
 
 ### Alcance real de la optimizacion
 
@@ -294,7 +294,7 @@ Si la capacidad diaria obliga a volver al hub, el backend no manda todo el dia c
 hub -> paradas del segmento -> hub
 ```
 
-No es todavia un VRP completo. No decide automaticamente reparto entre varios trabajadores, ventanas horarias, turnos, tiempo de servicio ni reasignacion de clientes omitidos por capacidad.
+No es todavia un VRP completo. No decide automaticamente reparto entre varios trabajadores, ventanas horarias, turnos, tiempo de servicio ni reasignacion de clientes omitidos por limite de clientes.
 
 Eso no reduce el valor del modulo; al contrario, refleja una decision tecnica sensata para un TFG con foco realista. Se implementa una optimizacion util y defendible para el negocio actual, sin sobredisenar un solucionador de rutas global cuando el modelo operativo vigente trabaja con una ruta y un trabajador asignado.
 
@@ -654,10 +654,10 @@ Una validacion funcional minima del flujo de rutas deberia cubrir:
 Las lineas de evolucion mas razonables del modulo de rutas son:
 
 - sacar la optimizacion de Google fuera de la transaccion principal o ejecutarla de forma asincrona
-- persistir metadata de optimizacion: aplicada, omitida, motivo, segmentos y fecha
-- mostrar en UI clientes omitidos por capacidad y paradas sin ubicacion
+- ampliar la metadata ya persistida (`optimization_status`, `optimization_message`, `optimized_at`) con detalle por segmento y tiempos de respuesta
+- mostrar en UI clientes omitidos por limite de clientes y paradas sin ubicacion
 - exponer `max_clients_per_day` y capacidad por dia si el owner necesita control fino
-- anadir fallback local con heuristica simple cuando Google no este disponible
+- mejorar la heuristica local por proximidad y capacidad ya usada antes de consultar Google
 - estudiar matrices de distancia o Google Routes API si se necesita mas precision
 - evaluar OR-Tools solo si aparece necesidad real de multi-vehiculo, ventanas horarias o optimizacion global
 - persistir subviajes, retornos a hub o descargas reales si la operativa necesita trazabilidad avanzada
@@ -670,3 +670,17 @@ Las lineas de evolucion mas razonables del modulo de rutas son:
 - `docs/ARQUITECTURA_TECNICA.md`
 - `docs/FRONTEND_PANTALLAS.md`
 - `docs/DESPLIEGUE_Y_OPERACION.md`
+
+## 28. Capacidad por defecto y trazabilidad de optimizacion
+
+`Route.default_capacity_liters` permite fijar capacidad sin depender del camion.
+`default_daily_capacity_liters` expone la capacidad resuelta de ruta: valor
+explicito y despues camion del trabajador. La jornada prioriza su propia
+`daily_capacity_liters`. El payload semanal sigue exigiendo capacidad global o
+`days`; fechas no especificadas conservan o resuelven la capacidad por defecto.
+
+`RouteDay` guarda estado `PENDING`, `OPTIMIZED`, `FALLBACK` o `FAILED`, mensaje y
+fecha del resultado. Estos campos aparecen en generacion y detalle operativo.
+La metadata guardada dentro de una transaccion puede revertirse si esta falla.
+Una respuesta o resolucion manual de solicitud puede reoptimizar una jornada
+que siga `PLANNED`; no reordena jornadas ya iniciadas.

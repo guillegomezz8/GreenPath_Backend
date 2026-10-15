@@ -1,6 +1,6 @@
 # Manual de Usuario GreenPath
 
-Fecha de revision: 2026-05-27
+Fecha de revision: 2026-10-09
 
 ## 1. Objetivo del documento
 
@@ -163,7 +163,7 @@ Desde el modulo de recogidas, el owner puede:
 - consultar detalle
 - editar una recogida
 - medir litros reales
-- aplicar deducciones
+- revisar el descuento automatico e indicar su motivo cuando sea positivo
 - marcar la recogida como facturable o no facturable
 
 La casilla `Facturable` es importante porque decide si la recogida entra en estadisticas economicas.
@@ -353,3 +353,22 @@ Este manual se complementa especialmente con:
 - `docs/FUNCIONAL.md`
 - `docs/CASOS_DE_USO.md`
 - `docs/API.md`
+
+## Reglas actuales de medicion y recogidas al por mayor
+
+En la edicion de una recogida introduce los litros finales pagables. El campo
+de litros deducidos se calcula y no se edita: es la diferencia positiva entre
+estimacion inicial y medicion. Si hay diferencia indica su motivo. El importe
+es litros finales por precio, sin restar el descuento otra vez.
+
+El owner puede usar el modulo de recogidas al por mayor si esta habilitado
+para su empresa. Selecciona cliente, fecha, unidad y modo de calculo; introduce
+los dos valores necesarios para obtener cantidad, precio o importe. Las
+unidades deben ser enteras. Puede adjuntar factura PDF/JPEG/PNG hasta 10 MiB.
+La configuracion de habilitacion la administra Django Admin.
+
+Las estadisticas muestran equivalencias litros/kilogramos segun densidad;
+las unidades no representan volumen. Las compras no facturables no suman
+costes, aunque sus cantidades fisicas convertibles aparecen en el resumen.
+Al planificar rutas, la capacidad puede requerir retornos al hub y no excluye
+clientes por volumen total; el limite de clientes sigue siendo independiente.

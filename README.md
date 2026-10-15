@@ -92,6 +92,7 @@ apps/
   zone/          Zonas geograficas de recogida
   route/         Rutas plantilla, jornadas operativas, paradas y navegacion
   collection/    Solicitudes de recogida, recogidas reales y consolidacion
+  bulk_collection/ Recogidas al por mayor, adjuntos y calculos economicos
   sale/          Compradores, ventas, importes y facturas PDF
   truck/         Camiones y asignacion de conductores
 global/          Settings, urls, celery, wsgi/asgi
@@ -210,13 +211,13 @@ Renderiza facturas PDF desde plantillas HTML/CSS sin persistir binarios innecesa
 Desde `E:\UNIVERSIDAD\TFG\GreenPath_Backend`:
 
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
 Para arrancar contenedores ya creados:
 
 ```bash
-docker-compose start
+docker compose start
 ```
 
 Servicios principales:
@@ -267,6 +268,9 @@ DB_USER=
 DB_PASSWORD=
 DB_HOST=
 DB_PORT=
+DB_CONN_MAX_AGE=
+MEDIA_ROOT=
+SECURE_REFERRER_POLICY=
 
 CELERY_BROKER_URL=
 CELERY_RESULT_BACKEND=
@@ -315,6 +319,7 @@ Entradas principales del backend:
 - `/trucks/`
 - `/routes/`
 - `/collections/`
+- `/bulk-collections/`
 - `/buyers/`
 - `/sales/`
 
@@ -354,6 +359,22 @@ python manage.py loaddata \
 Consulta `apps/user/fixtures/README.md` para el detalle del dataset.
 
 El dataset incluye vehiculos, clientes por zonas, rutas, recogidas, configuracion de empresa, compradores y ventas coherentes con las estadisticas economicas.
+
+## Demo comercial con muchos datos
+
+Para anadir una empresa independiente con 80 clientes, 1104 recogidas,
+6 rutas, 96 ventas y el resto de modulos preparados para presentaciones:
+
+```bash
+docker compose exec web python manage.py load_demo_data
+```
+
+Carga [demo_datos.json](apps/user/fixtures/demo_datos.json) sin modificar
+los datos existentes y omite la carga si esa demo ya existe. El owner es
+`propietario@demo.com` y la contrasena inicial `pass12345`.
+Usa `--dry-run` para validar sin guardar o `--namespace demo-octubre` para crear
+otra empresa demo. Consulta [la guia de fixtures](apps/user/fixtures/README.md)
+para cuentas worker/client, opciones y formato del JSON.
 
 ## Comandos utiles
 
@@ -404,11 +425,14 @@ celery -A global flower --port=5555 --basic_auth=admin:adminpassword
 - Solo `owner` puede generar semanas operativas.
 - `regenerate=true` solo se admite cuando la semana sigue siendo editable.
 - Los dias ya operados se preservan si no se regenera.
-- La capacidad diaria se aplica de forma estricta.
+- La capacidad divide la jornada en tramos con retorno al hub; la seleccion de clientes se limita por `max_clients_per_day`, frecuencia y geografia.
 - Una parada cancelada cuenta como procesada para poder cerrar la jornada.
 - Una recogida no facturable existe a nivel operativo, pero no entra en estadisticas economicas.
 - Las ventas computan como ingreso.
-- Las recogidas confirmadas y facturables computan como coste.
+- Las recogidas confirmadas y facturables y las recogidas al por mayor facturables computan como coste.
+- `measured_liters` son litros finales pagables; el descuento se calcula como la diferencia positiva frente a la estimacion inicial.
+- Las lineas de venta aceptan precios unitarios con hasta ocho decimales; los importes finales se redondean a dos.
+- `UD` no se convierte a litros o kilogramos en estadisticas de cantidades.
 - La factura PDF se genera bajo demanda, pero los datos fiscales del emisor se toman del snapshot guardado en la venta.
 
 ## Documentacion del TFG
@@ -443,3 +467,38 @@ Lectura recomendada para entender el proyecto completo:
 ## Valor del proyecto
 
 GreenPath no es un CRUD aislado. Es una plataforma que conecta operacion real, logistica, economia, documentacion e integraciones externas. Su valor tecnico esta en la combinacion de API REST, geolocalizacion, optimizacion de rutas, procesos asincronos, facturacion PDF, autenticacion por roles y una base documental preparada para justificar el alcance funcional de un TFG.
+
+## Recogidas al por mayor
+
+`apps/bulk_collection` expone `/bulk-collections/` para el owner de la empresa.
+Admite cantidades en `KG`, `L` o `UD`, factura adjunta y calculo de cantidad,
+precio unitario o importe a partir de los otros dos valores. El acceso depende
+de `CompanySettings.bulk_collections_enabled`, gestionado desde Django Admin.
+El modulo de recogidas ordinarias depende de `collections_enabled`.
+
+Consulta [API](docs/API.md) para payloads, filtros, calculos y resumen economico.
+
+## Primer arranque y comprobaciones
+
+El entrypoint local no aplica migraciones automaticamente. Con los servicios
+levantados, ejecutar antes de usar la API:
+
+```bash
+docker compose exec web python manage.py migrate
+docker compose exec web python manage.py check
+```
+
+En Docker, usa `DB_HOST=my-postgres` y `REDIS_URL=redis://redis:6379/0`.
+Para un proceso ejecutado en el host, Redis publicado por este Compose usa
+`redis://localhost:6379/0`; el fallback de settings (`localhost:8004`) no coincide
+con ese puerto, por lo que debe configurarse expresamente.
+El frontend se arranca por separado desde el proyecto hermano `GreenPath_Frontend`.
+Los scripts del escritorio y las URLs de ngrok son propios de cada instalacion.
+`GET /health/` devuelve `{"status":"ok"}` y solo comprueba respuesta HTTP del
+proceso; no consulta PostGIS, Redis ni servicios externos.
+
+Pruebas backend completas (en base de datos de test):
+
+```bash
+docker compose exec web python manage.py test apps.auth.tests apps.base.tests apps.company.tests apps.truck.tests apps.zone.tests apps.user.tests apps.collection.tests apps.bulk_collection.tests apps.route.tests apps.sale.tests --noinput
+```

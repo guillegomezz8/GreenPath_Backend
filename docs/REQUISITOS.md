@@ -1,6 +1,6 @@
 # Catalogo de Requisitos GreenPath
 
-Fecha de revision: 2026-05-27
+Fecha de revision: 2026-10-09
 
 ## 1. Objetivo del documento
 
@@ -185,7 +185,7 @@ Para facilitar la lectura, los requisitos se clasifican con los siguientes prefi
 | RF-046 | El owner debe poder crear, editar, listar y consultar recogidas. |
 | RF-047 | Una recogida debe poder nacer desde operacion de ruta o desde alta manual. |
 | RF-048 | Una recogida debe admitir estado pendiente de medicion, confirmada o cancelada. |
-| RF-049 | El sistema debe permitir introducir litros medidos, deducciones y precio por litro. |
+| RF-049 | El sistema debe permitir introducir litros finales medidos y precio por litro, calcular el descuento frente a la estimacion inicial y exigir motivo si hay descuento. |
 | RF-050 | El sistema debe permitir marcar una recogida como facturable o no facturable. |
 | RF-051 | El detalle de recogida debe mostrar claramente si es facturable. |
 | RF-052 | El listado de recogidas debe permitir filtrar por `billable`. |
@@ -678,3 +678,20 @@ Este documento debe leerse junto con:
 - `docs/ARQUITECTURA_TECNICA.md`
 - `docs/PLANIFICACION_Y_COSTES.md`
 - `docs/TESTING.md`
+
+## Requisitos complementarios del alcance implementado
+
+| Identificador | Requisito |
+| --- | --- |
+| RF-ACT-001 | El owner debe gestionar recogidas al por mayor en `KG`, `L` o `UD` y adjuntar factura PDF/JPEG/PNG de hasta 10 MiB. |
+| RF-ACT-002 | El backend debe calcular cantidad, precio unitario o importe segun modo, validar entradas positivas y exigir cantidad entera para `UD`. |
+| RF-ACT-003 | Cada empresa debe poder habilitar los modulos de recogidas desde Django Admin; la API expone los indicadores de solo lectura. |
+| RF-ACT-004 | Las compras facturables deben sumarse a costes; las cantidades convertibles al por mayor deben agregarse independientemente de `billable`. |
+| RF-ACT-005 | Las estadisticas deben convertir `L` y `KG` con densidad positiva y excluir `UD` del volumen/masa, informando filas ignoradas. |
+| RF-ACT-006 | Las rutas deben admitir capacidad por defecto explicita y usar capacidad de camion como alternativa; la jornada tiene prioridad. |
+| RF-ACT-007 | La capacidad debe segmentar la jornada; la seleccion de clientes debe respetar frecuencia, geografia, reservas y limite de clientes, sin excluir por litros totales. |
+| RF-ACT-008 | La jornada debe guardar estado, mensaje y fecha del resultado de optimizacion; coordenadas ausentes deben provocar validacion. |
+| RF-ACT-009 | Los precios unitarios de venta deben admitir ocho decimales; los importes finales deben calcularse en backend con dos. |
+
+Estos requisitos detallan el comportamiento implementado y completan los
+requisitos previos sin renumerar referencias existentes.

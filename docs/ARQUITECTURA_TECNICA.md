@@ -1,6 +1,6 @@
 # Arquitectura Tecnica del Proyecto
 
-Fecha de revision: 2026-05-27
+Fecha de revision: 2026-10-09
 
 ## 1. Objetivo de esta documentacion
 
@@ -50,7 +50,7 @@ GreenPath se apoya en varios principios tecnicos:
 ### 3.3 Infraestructura local
 
 - Docker Compose
-- contenedores para backend, frontend, postgres, redis, celery, celery beat y flower
+- el Compose del backend contiene web, my-postgres, redis, celery, celery_beat y flower; el frontend se arranca desde su proyecto
 
 ### 3.4 Complejidad tecnica derivada del stack
 
@@ -136,7 +136,17 @@ Responsabilidades:
 - tareas Celery asociadas a expiraciones y notificaciones
 - respuestas del cliente y resolucion manual
 
-### 4.8 `apps/sale`
+### 4.8 `apps/bulk_collection`
+
+Responsabilidades:
+
+- `BulkCollection`: compras directas en `KG`, `L` o `UD`
+- calculo de cantidad, precio unitario o importe
+- factura adjunta opcional y aislamiento por empresa
+- API owner-only condicionada por `bulk_collections_enabled`
+- conserva el app label Django `wholesale` para migraciones y fixtures
+
+### 4.9 `apps/sale`
 
 Responsabilidades:
 
@@ -176,7 +186,7 @@ La accion `POST /routes/{route_id}/generate-week/` hace, a grandes rasgos, lo si
 5. obtiene las zonas del dia desde `RouteZoneDay`
 6. selecciona clientes geograficamente dentro de las zonas
 7. filtra por frecuencia y planificacion previa de la misma empresa
-8. aplica limite de capacidad y maximo de clientes
+8. selecciona por proximidad y limita el maximo de clientes; la capacidad se usa al segmentar despues
 9. crea o actualiza `RouteDayClient`
 10. optimiza orden con Google si procede
 11. crea o actualiza `CollectionRequest`
@@ -263,7 +273,9 @@ Elementos clave:
 
 - `price_per_liter` puede venir por defecto de `CompanySettings`
 - `billable` decide si la recogida participa en estadisticas economicas
-- los importes agregados de cliente, trabajador y resumen economico filtran por `CONFIRMED` y `billable=true`
+- los importes de recogidas ordinarias agregados filtran por `CONFIRMED` y `billable=true`
+- `measured_liters` son litros finales pagables; `deduction_liters` se deriva de la diferencia con la estimacion, sin descontarlo de nuevo
+- el resumen economico suma tambien compras al por mayor facturables; su cantidad fisica incluye compras convertibles no facturables
 
 ## 10. Flujo tecnico de ventas y facturacion
 
@@ -598,3 +610,21 @@ Para una defensa o entrega del TFG, esta arquitectura se complementa con:
 - `docs/PLANIFICACION_Y_COSTES.md` para la dimension metodologica
 - `docs/UML_BD.md` para explicar el modelo de datos
 
+## 26. Detalles de persistencia y contratos vigentes
+
+- `Route.default_capacity_liters` prevalece sobre capacidad del camion; cada
+  `RouteDay.daily_capacity_liters` prevalece sobre ambos.
+- `RouteDay` persiste `optimization_status`, `optimization_message`,
+  `optimized_at`. Google se consulta por bloques dentro de segmentos formados
+  por proximidad al hub y capacidad. Si falla, se conserva el orden local del
+  bloque y se registra `FALLBACK`. Sin hub o API key se registra `FAILED`.
+  Paradas sin coordenadas se rechazan antes de consultar Google.
+- `apps/base/unit_conversion.py` normaliza alias y convierte entre `L` y `KG`
+  con la densidad de `CompanySettings`. `UD` queda fuera de volumen/masa.
+- `apps/sale/services/economic_summary.py` separa costes facturables de
+  cantidades fisicas, y agrega las lineas de venta por su propia unidad.
+- `Sale.unit_price` y `SaleLine.unit_price` usan ocho decimales; los importes
+  monetarios finales siguen teniendo dos.
+- El entrypoint no ejecuta migraciones; localmente se aplican expresamente y
+  en despliegue se ejecutan como pre-deploy. `/health/` es una comprobacion
+  HTTP del proceso y no comprueba dependencias.

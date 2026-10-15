@@ -1,6 +1,6 @@
 # UML de Base de Datos
 
-Fecha de revision: 2026-05-27
+Fecha de revision: 2026-10-09
 
 ## 1. Objetivo
 
@@ -164,6 +164,7 @@ class Route {
   +end_date: date
   +week_start: int
   +week_end: int
+  +default_capacity_liters: decimal
 }
 
 class RouteZoneDay {
@@ -174,6 +175,9 @@ class RouteDay {
   +date: date
   +status: string
   +daily_capacity_liters: decimal
+  +optimization_status: string
+  +optimization_message: text
+  +optimized_at: datetime
   +started_at: datetime
   +finished_at: datetime
 }
@@ -428,6 +432,7 @@ class Route {
   +end_date: date
   +week_start: int
   +week_end: int
+  +default_capacity_liters: decimal
 }
 
 class RouteZoneDay {
@@ -438,6 +443,9 @@ class RouteDay {
   +date: date
   +status: string
   +daily_capacity_liters: decimal
+  +optimization_status: string
+  +optimization_message: text
+  +optimized_at: datetime
 }
 
 class RouteDayClient {
@@ -907,3 +915,20 @@ Este documento es especialmente util cuando se necesita:
 - `docs/INTEGRACIONES_Y_APIS_EXTERNAS.md`
 - `docs/PLANIFICACION_Y_COSTES.md`
 - `docs/CASOS_DE_USO.md`
+
+## Actualizacion de reglas del modelo
+
+- `Collection.measured_liters` representa litros finales pagables.
+  `deduction_liters = max(0, estimated_liters - measured_liters)` es derivado;
+  el motivo es obligatorio si el resultado es positivo. El importe usa la
+  medicion final y no vuelve a restar el descuento.
+- `Route.default_capacity_liters` es nullable y tiene prioridad sobre camion;
+  la capacidad propia de `RouteDay` prevalece sobre el valor de ruta.
+- `RouteDay.optimization_status`, `optimization_message` y `optimized_at`
+  guardan el ultimo resultado, sin constituir un historico de intentos.
+- `Sale` y `SaleLine` admiten `unit_price` de ocho decimales (18 digitos total).
+  `BulkCollection.unit_price` mantiene cuatro; importes finales usan dos.
+- El paquete `apps.bulk_collection` conserva el label Django `wholesale`:
+  el identificador de fixture de su modelo es `wholesale.bulkcollection`.
+- Las unidades `UD` no tienen factor de conversion a litros; solo `L` y `KG`
+  se convierten mediante `oil_density_kg_per_liter`.

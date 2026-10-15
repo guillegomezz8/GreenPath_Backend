@@ -1,6 +1,6 @@
 # Guia de Pantallas Frontend GreenPath
 
-Fecha de revision: 2026-05-27
+Fecha de revision: 2026-10-09
 
 ## 1. Objetivo del documento
 
@@ -802,3 +802,20 @@ El frontend no es una capa decorativa del backend. En GreenPath cumple un papel 
 - permite que ventas, facturas, configuracion y estadisticas sean manejables desde una interfaz coherente
 
 Este enfoque es importante para la defensa del TFG porque muestra que la experiencia de usuario se ha trabajado como parte del dominio, no como una capa final añadida.
+
+## Pantallas y contratos actuales de recogidas al por mayor
+
+`src/pages/bulkCollections/` contiene `BulkCollectionsList`,
+`BulkCollectionCreate`, `BulkCollectionEdit`, `BulkCollectionDetail` y
+`BulkCollectionForm`. Consumen `/bulk-collections/` con cantidades `KG`, `L`
+o `UD`, tres modos de calculo y factura adjunta opcional. La disponibilidad
+depende de los indicadores de empresa consultados por la interfaz.
+
+`CollectionEdit` permite litros finales y muestra descuento calculado en campo
+deshabilitado; no debe interpretarse como una deduccion editable sobre una
+medicion bruta. La API recalcula descuento e importe al guardar.
+
+`Stats` consume `bought_quantities`, `sold_quantities` y costes al por mayor;
+consulta el contador de compras facturables si el modulo esta habilitado.
+Las cantidades fisicas al por mayor del resumen incluyen tambien no
+facturables. Las cantidades `UD` se excluyen de volumen/masa.

@@ -36,3 +36,15 @@ La exportacion incluye tambien `sale.saleinvoiceissuersnapshot` y
 asociada a cada factura y sus conceptos de venta. Esto permite restaurar
 facturas antiguas sin depender de la configuracion fiscal global que exista en
 `CompanySettings` en el momento de la restauracion.
+
+## Modelos y archivos de recogidas al por mayor
+
+La exportacion incluye `wholesale.bulkcollection`: el paquete es
+`apps.bulk_collection`, pero conserva el label Django `wholesale`.
+Se exportan tambien capacidades por defecto y metadata de optimizacion de las
+rutas, al serializar sus campos persistidos actuales.
+
+Los campos de archivo guardan rutas, no contenido binario. Para restaurar las
+facturas adjuntas de `BulkCollection` y otros medios hay que conservar tambien
+`MEDIA_ROOT`, incluidos `bulk_collections/invoices/`. El JSON por si solo no
+recrea esos ficheros.

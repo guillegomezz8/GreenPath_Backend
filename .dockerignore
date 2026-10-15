@@ -12,7 +12,8 @@ __pycache__
 htmlcov
 staticfiles
 media
-exports/*
-!exports/greenpath_export_20260917_142638.json
+exports
+tmp
+temp
 google_credentials
 ngrok.exe

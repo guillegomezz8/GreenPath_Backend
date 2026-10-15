@@ -1,6 +1,6 @@
 # Despliegue y Operacion GreenPath
 
-Fecha de revision: 2026-09-22
+Fecha de revision: 2026-10-09
 
 ## 1. Objetivo del documento
 
@@ -177,10 +177,10 @@ El cliente HTTP del frontend anade tambien el header `ngrok-skip-browser-warning
 ## 6.1 Arranque inicial
 
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
-El `docker-compose.yml` del backend levanta API, PostgreSQL/PostGIS, Redis, Celery, Celery Beat y Flower. El frontend tiene su propio `docker-compose.yml` en `D:\TFG\front\GreenPath_Frontend`.
+El `docker-compose.yml` del backend levanta API, PostgreSQL/PostGIS, Redis, Celery, Celery Beat y Flower. El frontend tiene su propio proyecto hermano `GreenPath_Frontend`; su ruta absoluta depende de la instalacion.
 
 ## 6.2 Migraciones
 
@@ -312,7 +312,7 @@ La URL no debe acabar en `/`. Tras modificarla hay que volver a desplegar el fro
 
 ### Persistencia y comprobacion
 
-La base de datos persiste en el volumen administrado por PostGIS. El volumen de `/src/media` conserva los archivos subidos por la API y las exportaciones generadas en `/src/media/exports`. La imagen ofrece tambien el acceso `/src/exports`, enlazado a ese directorio persistente, por lo que `python manage.py export_greenpath` puede seguir usando su ruta predeterminada. La exportacion inicial versionada se copia al volumen solo cuando no existe, sin sobrescribir copias posteriores. `staticfiles` no necesita volumen porque se regenera al arrancar. El resto de archivos locales no se copia automaticamente al volumen de Railway.
+La base de datos persiste en el volumen administrado por PostGIS. El volumen de `/src/media` conserva los archivos subidos por la API y las exportaciones generadas en `/src/media/exports`. La imagen ofrece tambien el acceso `/src/exports`, enlazado a ese directorio persistente, por lo que `python manage.py export_greenpath` puede seguir usando su ruta predeterminada. Las exportaciones son privadas y no se incluyen en la imagen ni se copian automaticamente desde el repositorio; las copias que ya existan en el volumen se conservan. `staticfiles` no necesita volumen porque se regenera al arrancar. El resto de archivos locales no se copia automaticamente al volumen de Railway.
 
 Comprobaciones posteriores al despliegue:
 
@@ -470,3 +470,23 @@ Para ampliar este documento conviene consultar:
 - `docs/INTEGRACIONES_Y_APIS_EXTERNAS.md`
 - `docs/PLANIFICACION_Y_COSTES.md`
 - `docs/TESTING.md`
+
+## 15. Arranque local y alcance del health check
+
+`docker-entrypoint.sh` solo ejecuta el comando del servicio. En el primer
+arranque local hay que aplicar migraciones expresamente:
+
+```bash
+docker compose exec web python manage.py migrate
+docker compose exec web python manage.py check
+```
+
+El backend publica Redis en `6379`; configurar `REDIS_URL=redis://redis:6379/0`
+para los contenedores y `redis://localhost:6379/0` para procesos del host.
+El fallback de settings usa `localhost:8004` y no corresponde al Compose.
+La base de datos del Compose se resuelve por `DB_HOST=my-postgres`.
+
+`GET /health/` devuelve `{"status":"ok"}` sin consultar base de datos ni Redis.
+Verificar esas dependencias por separado si se necesita comprobar el servicio
+completo. `MEDIA_ROOT` incluye las facturas adjuntas de compras al por mayor;
+conservar sus archivos junto con la copia de datos de negocio.

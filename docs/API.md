@@ -1,6 +1,6 @@
 # API GreenPath (Backend Django)
 
-Fecha de revision: 2026-05-27
+Fecha de revision: 2026-10-09
 
 ## 1. Objetivo de este documento
 
@@ -455,7 +455,7 @@ Reglas:
 - `regenerate=true` solo se permite si todos los `RouteDay` de la semana siguen siendo editables, sin ejecucion previa ni recogidas asociadas.
 - Si la semana contiene dias no editables o con trazabilidad operativa previa, devuelve `400`.
 - Si `regenerate=false`, los `RouteDay` ya operados se preservan y no se modifican.
-- La capacidad diaria se respeta de forma estricta: no se crea una parada si hace que el total planificado supere `daily_capacity_liters`.
+- La capacidad determina segmentos y retornos al hub, no un tope de litros para seleccionar clientes. La seleccion se limita por frecuencia, zonas, reservas semanales y `max_clients_per_day`.
 - el criterio funcional actual aplica tambien un maximo por defecto de `10` clientes por jornada.
 - Si ya existe una generacion en curso para misma ruta+semana, devuelve `409`.
 
@@ -495,7 +495,15 @@ Response 200:
 {
   "message": "Ruta operativa semanal generada correctamente",
   "route_days": [
-    {"id": 101, "date": "2026-02-23", "daily_capacity_liters": "1500.00", "stops": 12}
+    {
+      "id": 101,
+      "date": "2026-02-23",
+      "daily_capacity_liters": "1500.00",
+      "stops": 10,
+      "optimization_status": "OPTIMIZED",
+      "optimization_message": "<mensaje del resultado>",
+      "optimized_at": "2026-02-20T10:00:00Z"
+    }
   ]
 }
 ```
@@ -685,7 +693,7 @@ Reglas:
 - internamente `sale_date` se sincroniza con `invoice_date` para mantener compatibilidad del modelo.
 - al crear una venta se vincula un snapshot fiscal del emisor (`SaleInvoiceIssuerSnapshot`) con razon social, CIF, direccion, telefono, email, cuenta bancaria, logo, LER y pie de factura.
 - si los datos fiscales actuales coinciden con un snapshot anterior de la misma empresa, se reutiliza; si cambian, se crea uno nuevo para las nuevas facturas.
-- cada linea calcula su base, IVA y total.
+- cada linea calcula su base, IVA y total. `unit_price` admite hasta ocho decimales (18 digitos en total); `quantity` admite dos. Base, IVA y total se redondean a dos decimales.
 - `subtotal`, `tax_amount` y `total` de la venta se obtienen sumando sus lineas.
 - los payloads antiguos de un solo concepto siguen siendo compatibles.
 - el PDF no se almacena: se genera bajo demanda cuando se descarga, usando la venta, el comprador y el snapshot fiscal asociado.
@@ -724,6 +732,11 @@ Response 200:
   "net_profit": "58868.38",
   "total_bought_volume": "12110.00",
   "total_sold_volume": "61540.00",
+  "bought_quantities": {"L": "12110.0000", "KG": "11141.2000"},
+  "sold_quantities": {"L": "61540.0000", "KG": "56616.8000"},
+  "bulk_collection_cost": "0.00",
+  "ignored_quantities": {"bulk_collections": 0, "sales": 0},
+  "conversion": {"base_unit": "L", "oil_density_kg_per_liter": "0.9200"},
   "monthly": [
     {
       "year": 2026,
@@ -731,19 +744,20 @@ Response 200:
       "income": "23568.62",
       "cost": "2140.20",
       "profit": "21428.42",
-      "sold_volume": "19450.00",
-      "bought_volume": "1830.00"
+      "sold_quantities": {"L": "19450.0000", "KG": "17894.0000"},
+      "bought_quantities": {"L": "1830.0000", "KG": "1683.6000"},
+      "ignored_quantities": {"bulk_collections": 0, "sales": 0}
     }
   ]
 }
 ```
 
 Interpretacion:
-- `total_cost`: coste confirmado procedente de recogidas (`Collection`) con `billable=true`
+- `total_cost`: coste de recogidas (`Collection`) confirmadas y facturables mas recogidas al por mayor facturables
 - `total_income`: ingresos de ventas (`Sale`)
 - `net_profit`: ingresos menos costes
 - `monthly`: serie mensual para panel economico
-- `total_bought_volume`: solo volumen de recogidas confirmadas y facturables
+- `total_bought_volume`: litros medidos de recogidas confirmadas y facturables mas cantidad convertible de recogidas al por mayor (incluye tambien las no facturables)
 
 ## 7. Convenciones transversales de la API
 
@@ -790,13 +804,13 @@ Interpretacion:
 4. Para cada dia editable, busca `RouteZoneDay` por `weekday`.
 5. Selecciona clientes por geofiltro (`location__within` de los poligonos de zona) y por frecuencia/vencimiento de recogida.
 6. Ordena candidatos usando la fecha efectiva mas reciente entre ultima recogida real y ultima planificacion previa.
-7. Inserta `RouteDayClient` con orden secuencial inicial sin sobrepasar `max_clients_per_day` ni `daily_capacity_liters`.
+7. Selecciona por proximidad al hub y a la ultima parada elegida, hasta `max_clients_per_day`; inserta `RouteDayClient` con orden secuencial. La capacidad se usa posteriormente para formar segmentos.
 8. Optimiza orden con Google Directions por segmentos de capacidad:
 - origen: `CompanyHub.location`
 - waypoints: clientes con ubicacion
 - cada segmento se optimiza con salida y vuelta al hub
-- si un segmento falla, conserva su orden previo
-- las paradas sin ubicacion se conservan en su posicion relativa
+- si Google falla en un bloque, se conserva el orden local de ese bloque dentro de los segmentos calculados y se registra `FALLBACK`
+- las paradas sin ubicacion se rechazan al optimizar; se registra `FAILED` y se lanza un error de validacion
 - si la capacidad obliga a segmentar la jornada, inserta el hub entre segmentos al exportar navegacion
 - la navegacion exportada empieza en el hub y termina tambien en el hub
 9. Reescribe `order` en `RouteDayClient`.
@@ -822,6 +836,7 @@ Interpretacion:
 ## 11. Valores enumerados importantes
 
 - `PickupFrequency`: `WEEKLY`, `2_WEEKS`, `3_WEEKS`, `4_WEEKS`
+- `RouteOptimizationStatus`: `PENDING`, `OPTIMIZED`, `FALLBACK`, `FAILED`
 - `RouteDayStatus`: `PLANNED`, `IN_PROGRESS`, `COMPLETED`, `PARTIAL`, `CANCELED`
 - `CollectionRequestStatus`: `PENDING`, `ANSWERED`, `AUTO_ESTIMATED`, `MANUAL`
 - `PlannedSource`: `CLIENT`, `AUTO`, `MANUAL`
@@ -838,7 +853,7 @@ Interpretacion:
 - las recogidas al por mayor con `billable=true` se incorporan a los costes economicos
 - `GET /sales/economic-summary/` devuelve `bought_quantities` y `sold_quantities` equivalentes en `L` y `KG`, tanto en el total como en cada elemento de `monthly`
 - las cantidades se normalizan primero a litros con `oil_density_kg_per_liter` y despues se expresan en la unidad seleccionada
-- las lineas expresadas en unidades (`UD`) se conservan en ventas, pero se excluyen de las estadisticas de cantidad porque no representan volumen ni masa
+- las cantidades expresadas en unidades (`UD`) de ventas y recogidas al por mayor se excluyen de estadisticas fisicas y se cuentan en `ignored_quantities`; sus importes siguen computando cuando corresponda
 - las lineas de venta se agregan por su propia unidad; las ventas antiguas sin lineas usan la unidad de la venta principal
 
 ## 12. Ejemplos rapidos (curl)
@@ -878,3 +893,101 @@ curl -X POST http://localhost:8000/collections/requests/55/manual/ \
 
 - Para contrato exacto de schemas, usa siempre `GET /schema/` o `GET /docs/`.
 - Esta guia sirve como referencia funcional y de negocio de la API real del proyecto.
+
+## 14. Contratos actualizados de rutas, recogidas y compras
+
+### 14.1 Capacidad por defecto y resultado de optimizacion
+
+El CRUD de rutas admite `default_capacity_liters` nullable. La lectura expone
+`default_daily_capacity_liters`: primero capacidad explicita de la ruta y, si
+no existe, capacidad del camion del trabajador asignado. Para una jornada,
+`daily_capacity_liters` propia tiene prioridad. En generacion con `days`, las
+fechas no incluidas conservan su capacidad o usan ese valor por defecto.
+El payload de `generate-week` sigue requiriendo capacidad global o `days`.
+
+`generate-week` y `operational-overview` devuelven por jornada
+`optimization_status`, `optimization_message` y `optimized_at`:
+
+| Estado | Significado |
+| --- | --- |
+| `PENDING` | Aun no se ha registrado un resultado. |
+| `OPTIMIZED` | Optimizacion correcta o innecesaria por menos de dos paradas. |
+| `FALLBACK` | Google falla; se usa el orden local por proximidad y capacidad en los bloques afectados. |
+| `FAILED` | Falta hub, API key, coordenadas o el resultado segmentado es invalido. |
+
+Falta de hub o key conserva el orden sin bloquear la generacion. Una parada sin
+coordenadas se rechaza con `ValueError` en la funcion de optimizacion; si llega
+al endpoint de generacion devuelve `400`. La generacion es transaccional, por
+lo que un fallo que revierte la transaccion puede revertir tambien la metadata.
+`optimized_at` registra el momento del resultado, incluso si fue fallido.
+
+### 14.2 Medicion final de recogidas
+
+`estimated_liters` queda fijado al crear la recogida a partir de sus envases.
+`measured_liters` es la cantidad final pagable, no una medida bruta a descontar.
+`deduction_liters` es de solo lectura y se calcula como
+`max(0, estimated_liters - measured_liters)`. Si el descuento es positivo,
+`deduction_reason` es obligatorio (`WATER`, `RESIDUE`, `MIXED`, `OTHER`);
+si no hay descuento se limpia el motivo. Sin medicion se limpia el descuento.
+
+`total_price = measured_liters * price_per_liter` cuando hay medicion;
+sin medicion usa la estimacion; una recogida cancelada tiene total cero.
+`CONFIRMED` exige medicion. En escritura, enviar medicion sin estado explicito
+normaliza el estado a `CONFIRMED`. En lectura, `status` es la etiqueta y
+`status_code` contiene el codigo del enum.
+
+Ejemplo: estimacion inicial 120 L (dos bidones), medicion final 90 L, precio 0.50 EUR/L:
+descuento calculado 30 L e importe 45.00 EUR. Se envia el motivo, pero no se
+vuelven a restar esos 30 L de la medicion final.
+
+### 14.3 CRUD de recogidas al por mayor
+
+`GET/POST /bulk-collections/` y `GET/PUT/PATCH/DELETE /bulk-collections/{id}/`.
+Requiere JWT, owner de la empresa y modulo habilitado; `company` se asigna en
+backend y es de solo lectura. El cliente debe estar vinculado a esa empresa.
+
+Campos: `client`, `collection_date`, `unit`, `calculation_mode`, `quantity`,
+`unit_price`, `total_price`, `billable` (por defecto `true`), `notes` e
+`invoice_file` opcional. Filtros: `client` (id), `unit`, `billable`, `start_date`,
+`end_date` y `search` (nombre, CIF o notas). Usa paginacion global.
+
+| `calculation_mode` | Valores de entrada positivos | Valor calculado |
+| --- | --- | --- |
+| `TOTAL` (defecto) | `quantity`, `unit_price` | `total_price = quantity * unit_price` |
+| `UNIT_PRICE` | `quantity`, `total_price` | `unit_price = total_price / quantity` |
+| `QUANTITY` | `unit_price`, `total_price` | `quantity = total_price / unit_price` |
+
+Cantidad e importe tienen dos decimales, precio unitario cuatro; se redondea
+con `ROUND_HALF_UP`. `UD` exige cantidad entera. En PATCH pueden reutilizarse
+los valores existentes; el campo calculado se recalcula siempre al guardar.
+
+```json
+{
+  "client": 1,
+  "collection_date": "2026-10-09",
+  "unit": "L",
+  "calculation_mode": "TOTAL",
+  "quantity": "3750.00",
+  "unit_price": "0.4500",
+  "billable": true,
+  "notes": "Compra directa"
+}
+```
+
+Resultado calculado: `total_price = "1687.50"`. Para adjuntar factura, enviar
+`multipart/form-data`; `invoice_file` admite PDF, JPEG o PNG hasta 10 MiB.
+
+### 14.4 Cantidades y costes del resumen economico
+
+`bought_quantities` y `sold_quantities` contienen equivalencias `L` y `KG` con
+cuatro decimales. Conversion: `L = KG / oil_density_kg_per_liter` y
+`KG = L * oil_density_kg_per_liter`. No existe conversion fisica para `UD`.
+`ignored_quantities` cuenta filas no convertibles de `bulk_collections` y
+`sales`; aparece en el total y por mes. `conversion` informa de la unidad base
+`L` y densidad utilizada. `total_bought_volume` y `total_sold_volume` mantienen
+compatibilidad como volumen en litros.
+
+El coste al por mayor filtra `billable=true`; su volumen incluye todos los
+registros convertibles del periodo. Las recogidas ordinarias se agregan
+confirmadas y facturables. Las ventas usan las unidades de sus lineas; si no
+hay lineas se usa la cantidad/unidad de la venta principal.

@@ -1,6 +1,6 @@
 # Casos de Uso GreenPath
 
-Fecha de revision: 2026-05-27
+Fecha de revision: 2026-10-09
 
 ## 1. Objetivo del documento
 
@@ -241,7 +241,7 @@ La revision actual incorpora el alcance completo del TFG: gestion multiempresa, 
 
 1. el owner abre el detalle o la edicion de la recogida
 2. introduce litros medidos
-3. introduce deducciones si procede
+3. revisa el descuento calculado automaticamente e introduce motivo si es positivo
 4. revisa el precio por litro
 5. marca si la recogida es facturable
 6. guarda la informacion
@@ -685,3 +685,21 @@ Tambien conviene leer este documento junto con:
 - `docs/REQUISITOS.md`
 - `docs/MANUAL_USUARIO.md`
 - `docs/ROUTE_FLOW.md`
+
+## CU complementario: Registrar recogida al por mayor
+
+Actor: owner con modulo habilitado para su empresa.
+
+1. Selecciona cliente vinculado a la empresa y fecha.
+2. Elige `KG`, `L` o `UD` y el valor que debe calcular el sistema.
+3. Introduce los dos valores positivos necesarios y marca facturable si procede.
+4. Adjunta opcionalmente PDF/JPEG/PNG de hasta 10 MiB.
+5. El backend valida empresa, permisos y cantidad entera para `UD`, calcula el
+   valor restante y guarda el registro.
+6. El coste facturable aparece en resumen economico; el volumen/masa convertible
+   se agrega incluso si la compra es no facturable. `UD` se excluye de cantidades.
+
+En consolidacion ordinaria los litros medidos son finales: estimar 120 L (dos bidones) y
+medir 90 L a 0.50 EUR/L produce descuento 30 L e importe 45.00 EUR, con motivo.
+En generacion de rutas la capacidad divide en tramos; no elimina clientes por
+litros totales. Deben corregirse coordenadas ausentes si la validacion lo exige.

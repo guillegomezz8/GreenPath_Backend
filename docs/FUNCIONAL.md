@@ -1,6 +1,6 @@
 # Documento Funcional GreenPath
 
-Fecha de revision: 2026-05-27
+Fecha de revision: 2026-10-09
 Version funcional: 1.4
 
 ## 1. Proposito del documento
@@ -591,7 +591,7 @@ Construir la semana operativa a partir de una ruta plantilla.
 - solo owner puede ejecutar `generate-week`
 - `regenerate=true` solo se permite si toda la semana sigue siendo editable
 - si `regenerate=false`, los dias ya operados se preservan
-- se respetan frecuencia, empresa, capacidad y limite maximo de clientes por dia
+- se respetan frecuencia, empresa y limite maximo de clientes por dia; la capacidad determina tramos y retornos al hub
 - el criterio funcional actual usa `10` clientes por jornada como valor por defecto
 - la optimizacion con Google es opcional y no bloquea la generacion si falla o falta API key
 
@@ -660,7 +660,7 @@ Registrar y consolidar el resultado real de una recogida.
 - edicion posterior para medicion en nave
 - gestion de envases
 - deducciones por agua, residuo, mezcla u otros motivos
-- calculo de litros netos
+- uso de litros finales pagables sin doble descuento
 - calculo de importe
 - marca de `facturable`
 
@@ -782,7 +782,7 @@ Ofrecer una vision sintetica del estado operativo y economico del negocio.
 #### Reglas de negocio
 
 - el bloque economico separa costes e ingresos
-- el coste viene de recogidas `CONFIRMED` y `billable=true`
+- el coste viene de recogidas `CONFIRMED` y `billable=true` mas compras al por mayor facturables
 - el ingreso viene de ventas registradas
 - el beneficio neto se calcula como ingresos menos costes
 
@@ -872,8 +872,8 @@ Durante esta fase, el sistema deja preparada tambien la base operativa de la eje
 ### 14.5 Medicion y cierre economico en nave
 
 1. Una recogida registrada en calle puede quedar pendiente de medicion.
-2. En nave se completan litros medidos, deducciones y motivo.
-3. Se recalculan litros netos.
+2. En nave se introducen litros finales medidos y motivo si son inferiores a la estimacion; el descuento se calcula automaticamente.
+3. Se calcula la diferencia positiva frente a estimacion como descuento, sin volver a restarlo de la medicion.
 4. Se recalcula el importe total segun precio por litro.
 5. Se decide si la recogida es facturable o no.
 6. Solo si esta confirmada y facturable impacta en reporting economico.
@@ -929,7 +929,7 @@ Durante esta fase, el sistema deja preparada tambien la base operativa de la eje
 - la inclusion de clientes depende de zona, frecuencia y empresa
 - no se debe duplicar el mismo cliente dos veces en la misma semana
 - `max_clients_per_day` se respeta antes de cerrar el dia
-- `daily_capacity_liters` se aplica de forma estricta desde la primera parada
+- `daily_capacity_liters` agrupa las paradas en tramos y retornos al hub; no limita el total de litros seleccionado para la jornada
 
 ### 16.2 Reglas de Google Directions
 
@@ -965,10 +965,10 @@ Durante esta fase, el sistema deja preparada tambien la base operativa de la eje
 
 ### 16.6 Reglas de estadisticas
 
-- coste = suma de `Collection.total_price` de recogidas `CONFIRMED` y `billable=true`
+- coste = suma de `Collection.total_price` de recogidas `CONFIRMED` y `billable=true` mas `BulkCollection.total_price` facturable
 - ingreso = suma de `Sale.total`
 - beneficio neto = ingreso - coste
-- volumen comprado = litros netos de recogidas que computan
+- volumen comprado = litros finales de recogidas que computan mas cantidades convertibles al por mayor, incluidas las no facturables
 - volumen vendido = cantidad registrada en ventas
 
 ### 16.7 Reglas de seguridad funcional
@@ -1166,7 +1166,7 @@ Los indicadores mas relevantes que hoy soporta GreenPath son:
 - una recogida debe poder quedar pendiente de medicion
 - una recogida debe poder incorporar deducciones y motivo de deduccion
 - una recogida debe poder marcarse como facturable o no facturable
-- solo las recogidas confirmadas y facturables deben entrar en el resumen economico
+- solo las recogidas ordinarias confirmadas y facturables deben entrar en costes, junto con las compras al por mayor facturables
 - la operacion de ruta debe poder sugerir la siguiente parada pendiente correcta segun el plan operativo interno
 - el sistema debe poder representar retornos al hub cuando la capacidad prevista diaria lo exija
 
@@ -1326,3 +1326,28 @@ Para ampliar este documento conviene consultar:
 - `docs/MANUAL_USUARIO.md`
 - `docs/DESPLIEGUE_Y_OPERACION.md`
 - `docs/BIBLIOGRAFIA_Y_FUENTES.md`
+
+## 30. Reglas funcionales vigentes de compras y consolidacion
+
+Las recogidas al por mayor son compras directas gestionadas por el owner,
+independientes de solicitudes y rutas. Admiten `KG`, `L` y `UD`, factura adjunta
+y calculo automatico de cantidad, precio o total con los otros dos valores.
+La empresa puede habilitar cada modulo de recogidas desde Django Admin; esos
+indicadores son de solo lectura en la API de configuracion.
+
+En recogidas ordinarias, la medicion ya es final y pagable. El descuento es la
+diferencia positiva respecto a litros estimados al crear la recogida, exige
+motivo y no se resta otra vez para calcular el importe. Una cancelada tiene
+importe cero; una confirmada necesita medicion.
+
+El resumen economico incorpora costes al por mayor facturables. Sus cantidades
+convertibles incluyen tambien registros no facturables, mientras las recogidas
+ordinarias se agregan confirmadas y facturables. Solo `L` y `KG` se convierten
+con densidad; `UD` mantiene su valor comercial pero no volumen ni masa.
+Las ventas permiten precios unitarios de ocho decimales y totales de dos.
+
+La capacidad explicita de ruta tiene prioridad sobre el camion. Cada jornada
+puede sobrescribirla. La seleccion limita numero de clientes y usa proximidad;
+la capacidad determina los tramos. La jornada guarda el resultado de
+optimizacion, su motivo y fecha. Si hay clientes pendientes sin coordenadas,
+la generacion puede exigir corregirlos antes de continuar.

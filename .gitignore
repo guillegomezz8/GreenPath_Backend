@@ -252,3 +252,9 @@ $RECYCLE.BIN/
 
 # Local Google OAuth credentials
 /google_credentials/
+
+# Temporary files, private exports and local tools
+tmp/
+temp/
+/exports/
+/ngrok.exe

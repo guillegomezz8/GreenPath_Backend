@@ -1,6 +1,6 @@
 # Guia de Testing GreenPath
 
-Fecha de revision: 2026-05-27
+Fecha de revision: 2026-10-09
 
 ## 1. Objetivo del documento
 
@@ -87,6 +87,7 @@ Ubicaciones principales:
 - `apps/zone/tests/`
 - `apps/user/tests/`
 - `apps/collection/tests/`
+- `apps/bulk_collection/tests/`
 - `apps/route/tests/`
 - `apps/sale/tests/`
 
@@ -282,7 +283,7 @@ Estas cifras no representan cobertura total de lineas, sino volumen de escenario
 ### 8.1 Opcion recomendada dentro del contenedor backend
 
 ```bash
-python manage.py test apps.auth.tests apps.base.tests apps.company.tests apps.truck.tests apps.zone.tests apps.user.tests apps.collection.tests apps.route.tests apps.sale.tests
+python manage.py test apps.auth.tests apps.base.tests apps.company.tests apps.truck.tests apps.zone.tests apps.user.tests apps.collection.tests apps.bulk_collection.tests apps.route.tests apps.sale.tests
 ```
 
 ### 8.2 Checks complementarios recomendados
@@ -419,3 +420,56 @@ Existe una base automatizada suficiente para detectar regresiones importantes en
 - resumen economico
 
 El siguiente salto natural ya no es empezar a testear, sino ampliar con criterio la cobertura sobre mapas, E2E y flujos mas largos.
+
+## 15. Cobertura backend incorporada
+
+Casos existentes que completan el mapa de pruebas:
+
+- `apps/collection/tests/test_collection_api.py`: medicion final, calculo
+  automatico de descuento, motivo obligatorio e importe sin doble descuento.
+- `apps/bulk_collection/tests/test_bulk_collection_api.py`: los tres modos de
+  calculo, litros/kilogramos, permisos owner, aislamiento, cliente de otra
+  empresa, modulo deshabilitado y factura adjunta.
+- `apps/base/tests/test_unit_conversion.py`: alias, conversion `L`/`KG`,
+  exclusion de `UD` y contador de cantidades ignoradas.
+- `apps/route/tests/test_route_api.py`: capacidad explicita de ruta, rechazo de
+  paradas sin coordenadas, agrupacion por capacidad/proximidad y fallback por
+  error de Google con metadata persistida.
+- `apps/sale/tests/test_buyer_sale_api.py`: precio unitario con ocho decimales,
+  lineas de venta y PDF bajo demanda.
+- `apps/sale/tests/test_economic_summary_api.py`: costes al por mayor,
+  conversion de cantidades y exclusion de unidades no fisicas.
+
+Para ejecutar la suite backend en el entorno Docker existente:
+
+```bash
+docker compose exec web python manage.py test apps.auth.tests apps.base.tests apps.company.tests apps.truck.tests apps.zone.tests apps.user.tests apps.collection.tests apps.bulk_collection.tests apps.route.tests apps.sale.tests --noinput
+```
+
+Requiere acceso a PostGIS y permisos para crear la base de test. Los tests
+mockean las integraciones pertinentes; la validacion de servicios reales y
+maquetacion PDF sigue siendo complementaria.
+
+Validacion de esta revision documental (2026-10-09): la suite completa anterior
+ha ejecutado 99 tests en Docker con resultado `OK`. El system check de Django
+no ha encontrado incidencias. Se han comprobado ademas ejemplos JSON, cierre
+de bloques Markdown, enlaces locales y `git diff --check`.
+Esta ejecucion no valida credenciales externas reales ni el frontend completo.
+
+## 16. Pruebas del cargador de demo comercial
+
+`apps/user/tests/test_load_demo_data.py` verifica carga completa del JSON,
+conservacion de datos previos, repeticion sin duplicados ni cambio de clave,
+simulacion sin persistencia, rollback ante colision tardia, namespaces
+independientes y rechazo de PK o relaciones a objetos existentes. Tambien
+comprueba que el owner puede consultar resumen economico y detalle operativo.
+
+```bash
+docker compose exec web python manage.py test apps.user.tests.test_load_demo_data --noinput --keepdb
+```
+
+La prueba de carga completa tambien verifica que las ocho recogidas mas
+recientes incluyen estados confirmada, pendiente y cancelada, que los ingresos
+mensuales fluctuan y que `refresh_demo_data` actualiza una fila legacy,
+revierte una simulacion y puede repetirse sin duplicar recogidas ni cambiar
+cuentas de otras empresas.

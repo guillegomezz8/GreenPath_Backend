@@ -1,6 +1,6 @@
 # Integraciones y APIs Externas GreenPath
 
-Fecha de revision: 2026-05-27
+Fecha de revision: 2026-10-09
 
 ## 1. Objetivo del documento
 
@@ -122,8 +122,8 @@ El sistema se ha disenado para no depender de Google como condicion indispensabl
 Si la clave no existe o la llamada falla:
 
 - la geocodificacion no se completa automaticamente
-- la optimizacion de paradas se omite
-- el backend deja trazabilidad por logging
+- sin key se conserva orden y se registra `FAILED`; si falla Google se usa el orden local por proximidad/capacidad y se registra `FALLBACK`
+- el backend deja trazabilidad por logging y campos de `RouteDay`
 - la aplicacion sigue pudiendo funcionar con orden secuencial o datos ya guardados
 
 Esto es importante porque evita que una integracion opcional tumbe el flujo principal del negocio.
@@ -412,3 +412,16 @@ Para ampliar esta informacion conviene consultar tambien:
 - `docs/MEMORIA_FUNCIONAL_TFG.md`
 - `docs/DESPLIEGUE_Y_OPERACION.md`
 - `docs/BIBLIOGRAFIA_Y_FUENTES.md`
+
+## Contrato local de optimizacion y almacenamiento
+
+Antes de llamar a Google se validan coordenadas de todas las paradas; una
+ubicacion ausente es error de datos y puede detener la generacion. Los segmentos
+se forman por proximidad y capacidad, despues Google optimiza cada bloque.
+`RouteDay` guarda `optimization_status`, `optimization_message` y `optimized_at`.
+La metadata representa el ultimo resultado, no una auditoria completa.
+
+La factura PDF de ventas sigue generandose bajo demanda con WeasyPrint.
+Las facturas de recogidas al por mayor son archivos aportados por el usuario,
+almacenados en `MEDIA_ROOT/bulk_collections/invoices/`; requieren copia de
+medios junto con los datos para su restauracion.

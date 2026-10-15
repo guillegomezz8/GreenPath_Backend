@@ -1,11 +1,11 @@
 # Indice de Documentacion GreenPath
 
-Fecha de revision: 2026-08-11
+Fecha de revision: 2026-10-09
 
 Este documento sirve como mapa de lectura de la documentacion del proyecto.
 Actualmente la documentacion central del sistema se mantiene de forma unificada en la carpeta `docs/` del backend y cubre negocio, requisitos, arquitectura, API, frontend, testing, integraciones, planificacion, despliegue, manual de usuario, bibliografia, modelo de datos y analisis profundo del motor de rutas.
 
-En la revision actual el paquete documental suma `18` documentos principales, con un reparto deliberado entre:
+En la revision actual el paquete documental suma `19` documentos principales, con un reparto deliberado entre:
 
 - documentacion funcional y de negocio
 - documentacion tecnica y de integracion
@@ -43,6 +43,7 @@ Si vienes nuevo al proyecto, el orden recomendado es:
 16. `docs/BIBLIOGRAFIA_Y_FUENTES.md`
 17. `docs/UML_BD.md`
 18. `docs/ANALISIS_GENERACION_OPTIMIZACION_RUTAS.md`
+19. `docs/EXPORTACION_JSON.md`
 
 ## 2. Descripcion de cada documento
 
@@ -335,3 +336,22 @@ Lee en este orden:
 12. `docs/BIBLIOGRAFIA_Y_FUENTES.md`
 13. `docs/UML_BD.md`
 14. `docs/ANALISIS_GENERACION_OPTIMIZACION_RUTAS.md`
+
+## Revision de coherencia del backend (2026-10-09)
+
+La documentacion tecnica y funcional se ha contrastado con modelos,
+serializers, viewsets, servicios, migraciones y tests del repositorio.
+La revision cubre:
+
+- recogidas al por mayor, indicadores de empresa y factura adjunta;
+- litros finales pagables, descuento automatico e importe sin doble deduccion;
+- capacidad por defecto de ruta, seleccion por proximidad y segmentacion;
+- validacion de coordenadas, fallback local y metadata de optimizacion;
+- conversion fisica `L`/`KG`, exclusion de `UD` y costes/cantidades;
+- ocho decimales en precios de venta, arranque y migraciones explicitas;
+- exportacion del modelo `wholesale.bulkcollection` y copia de medios;
+- suite de pruebas que incluye el modulo al por mayor.
+
+[Exportacion JSON](EXPORTACION_JSON.md) describe copias de negocio y limites de
+restauracion. Los documentos de bibliografia y planificacion/costes mantienen
+sus estimaciones y referencias; esta revision no recalcula esos datos.

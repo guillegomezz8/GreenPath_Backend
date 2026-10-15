@@ -1,6 +1,6 @@
 # Analisis profundo de generacion y optimizacion de rutas
 
-Fecha de revision: 2026-05-27
+Fecha de revision: 2026-10-09
 
 ## 1. Objetivo
 
@@ -118,7 +118,7 @@ Campos clave:
 Observaciones:
 
 - Actualmente la ruta tiene un unico trabajador asignado.
-- La capacidad no vive en `Route`; se resuelve por `RouteDay` o por camion del trabajador.
+- `Route.default_capacity_liters` fija capacidad por defecto; `RouteDay` puede sobrescribirla y el camion se usa como ultima alternativa.
 - `week_start` y `week_end` permiten semanas operativas no necesariamente de lunes a domingo.
 
 ### 4.2 `RouteZoneDay`
@@ -252,7 +252,7 @@ Responsabilidad:
 
 - crear o reutilizar `RouteDay`
 - generar paradas
-- aplicar capacidad
+- segmentar por capacidad tras seleccionar paradas
 - optimizar con Google si procede
 - crear solicitudes
 
@@ -317,7 +317,7 @@ Reglas:
 - `days` no puede tener fechas duplicadas.
 - Las fechas de `days` deben caer dentro de la semana iniciada en `week_start_date`.
 - `max_clients_per_day` tiene minimo 1 y maximo 100.
-- `daily_capacity_liters` acepta valor 0, que en la practica desactiva el filtro de capacidad.
+- `daily_capacity_liters` acepta valor 0, que en la practica desactiva la division por capacidad.
 
 Observacion de frontend:
 
@@ -464,11 +464,12 @@ Esto evita que una zona compartida en varios dias meta al mismo cliente repetido
 
 ## 8. Asignacion de capacidad
 
-La capacidad puede venir de tres sitios, en orden practico:
+La capacidad puede venir de cuatro sitios, en orden practico:
 
 1. `daily_capacity_liters` enviado al generar la semana.
 2. `days[]` con capacidad por fecha.
-3. capacidad del camion asociado al trabajador de la ruta.
+3. `Route.default_capacity_liters`.
+4. capacidad del camion asociado al trabajador de la ruta.
 
 La resolucion por defecto se hace con:
 
@@ -479,7 +480,7 @@ La resolucion por defecto se hace con:
 La capacidad por defecto mira:
 
 ```text
-route.worker.truck.capacity_liters
+route.default_capacity_liters si existe; si no, route.worker.truck.capacity_liters
 ```
 
 Si existe, se asigna al `RouteDay`.
@@ -487,11 +488,11 @@ Si existe, se asigna al `RouteDay`.
 Si no existe:
 
 - `daily_capacity_liters` puede quedar `None`
-- el filtro de capacidad puede no aplicarse
+- la segmentacion puede trabajar sin limite de capacidad
 
 Punto importante:
 
-- si capacidad es `0`, el filtro de capacidad no limita, porque la condicion es `capacity_limit > 0`
+- si capacidad es `0`, la agrupacion no limita litros y devuelve un unico segmento
 
 ## 9. Generacion de paradas por dia
 
@@ -663,7 +664,7 @@ Prioridad:
 2. media de `Collection.estimated_liters` no canceladas
 3. `60.00` litros por defecto
 
-El resultado se usa para decidir si una parada cabe en la capacidad diaria.
+El resultado se usa para agrupar las paradas seleccionadas en segmentos por capacidad.
 
 ### 9.8 Aplicacion de limite de clientes
 
@@ -688,30 +689,16 @@ Nota:
 
 ### 9.9 Aplicacion de capacidad diaria
 
-El sistema calcula:
+La seleccion actual (`_select_clients_for_route_day`) no filtra clientes por
+litros. Elige por proximidad desde hub y desde la ultima parada seleccionada,
+con desempate segun el orden previo de candidatos, y limita por
+`max_clients_per_day`, clientes existentes y reservas semanales.
 
-```python
-current_planned_liters = suma(_planned_stop_liters(row) para paradas existentes)
-```
-
-Para cada cliente candidato:
-
-```python
-if capacity_limit > 0 and current_planned_liters + planned_liters > capacity_limit:
-    skip
-```
-
-Comportamiento:
-
-- si una parada no cabe, se omite
-- el sistema sigue probando los siguientes clientes
-- no genera automaticamente otro `RouteDay` para el excedente
-- no crea un segundo viaje persistente
-
-Consecuencia:
-
-- puede haber clientes que no entren en la semana por capacidad
-- esos clientes podrian entrar en otra semana o si se aumenta capacidad
+Los litros previstos se usan despues en `_order_rows_into_capacity_segments`:
+elige la parada mas cercana que cabe en el segmento y vuelve al hub para
+comenzar otro cuando no cabe ninguna. Una parada individual mayor que la
+capacidad puede formar un segmento propio; no se excluye por ese motivo.
+No se persisten viajes o descargas reales.
 
 ### 9.10 Insercion
 
@@ -743,18 +730,14 @@ La optimizacion actual es una optimizacion de orden de paradas ya seleccionadas.
 
 ### 10.1 Condiciones para intentar optimizar
 
-La optimizacion se omite si:
+Se validan coordenadas de todas las paradas antes de consultar Google.
+Si falta alguna, se guarda `FAILED` y se lanza `ValueError`; el endpoint puede
+responder `400` y revertir su transaccion. En generacion tambien se rechazan
+clientes de la empresa pendientes por frecuencia sin ubicacion y no reservados,
+antes del filtro espacial, cuando hay zonas con geometria valida.
 
-- hay menos de 2 paradas en la jornada
-- hay menos de 2 paradas con ubicacion
-- no hay hub de empresa con `location`
-- no hay `GOOGLE_MAPS_API_KEY`
-
-En esos casos:
-
-- se conserva el orden actual
-- se escribe log
-- la generacion no falla
+Menos de dos paradas registra `OPTIMIZED` sin llamada externa. Falta de hub o
+API key registra `FAILED` y conserva el orden sin interrumpir la generacion.
 
 ### 10.2 Segmentacion previa por capacidad
 
@@ -762,15 +745,16 @@ Antes de llamar a Google, el backend divide la jornada en segmentos con:
 
 - `RouteDay.daily_capacity_liters`
 - litros previstos por parada
-- orden actual de `RouteDayClient`
+- proximidad al hub y a la ultima parada elegida, con desempate por orden actual
 
 Funcion implicada:
 
-- `_split_route_day_clients_by_capacity(...)`
+- `_order_rows_into_capacity_segments(...)` para la optimizacion
+- `_split_route_day_clients_by_capacity(...)` para el plan operativo
 
 Regla:
 
-- si la siguiente parada supera la capacidad acumulada del segmento, se abre un nuevo segmento
+- se elige la parada mas cercana que cabe; si no cabe ninguna restante, se abre un nuevo segmento desde el hub
 - si la capacidad es `0` o `None`, se considera sin limite y se optimiza un unico segmento
 - si una parada individual supera la capacidad, queda igualmente en un segmento propio
 
@@ -811,21 +795,10 @@ Observacion importante:
 
 ### 10.4 Paradas sin ubicacion
 
-La generacion automatica solo selecciona clientes con ubicacion, pero pueden existir paradas sin coordenadas por datos legacy o carga manual.
-
-En optimizacion:
-
-- se excluyen de la llamada a Google
-- se conservan en su posicion relativa dentro del segmento
-- las paradas con ubicacion se reinsertan en los huecos disponibles
-
-Ejemplo conceptual:
-
-```text
-Antes:       A(ubicada) -> B(sin ubicacion) -> C(ubicada)
-Google:      C -> A
-Resultado:   C -> B(sin ubicacion) -> A
-```
+`_raise_for_route_day_clients_without_location` rechaza esas paradas.
+El flujo activo no las fusiona con el resultado de Google. El helper
+`_merge_optimized_located_rows_preserving_unlocated` existe en el archivo,
+pero no lo usa `optimize_route_day_with_google`.
 
 ### 10.5 Interpretacion de respuesta
 
@@ -846,7 +819,7 @@ El backend:
 1. valida que `waypoint_order` tenga tantos indices como paradas ubicadas del segmento
 2. valida que todos los indices sean enteros dentro de rango
 3. reordena las paradas ubicadas
-4. fusiona el resultado con las paradas sin ubicacion
+4. concatena bloques y segmentos (las paradas sin ubicacion ya se han rechazado)
 5. actualiza `RouteDayClient.order`
 
 ### 10.6 Actualizacion segura del orden
@@ -873,7 +846,7 @@ Si Google falla:
 
 El backend:
 
-- conserva el orden del segmento afectado
+- conserva el orden local del bloque afectado, calculado por proximidad/capacidad antes de Google
 - no rompe la generacion completa
 - deja logs de aviso o error
 
@@ -896,7 +869,7 @@ No optimiza:
 - turnos del trabajador
 - costes economicos reales
 - prediccion de trafico por hora
-- reasignacion automatica de clientes omitidos por capacidad
+- reasignacion automatica de clientes omitidos por limite de clientes
 
 ## 11. Plan operativo por capacidad
 
@@ -1252,7 +1225,7 @@ Responsabilidad:
 Generacion:
 
 - calcula semana sugerida segun `week_start`
-- sugiere capacidad por camion o por jornadas ya existentes
+- sugiere capacidad por defecto de ruta, camion o jornadas ya existentes
 - comprueba si hay paradas existentes en la semana
 - solo muestra `regenerate` si hay paradas existentes
 - envia `daily_capacity_liters`, `regenerate` y `auto_estimate_without_contact`
@@ -1378,12 +1351,12 @@ Estado actual:
 
 - las paradas se agrupan por capacidad antes de llamar a Google
 - Google optimiza cada segmento con salida y vuelta al hub
-- si falla un segmento, se conserva su orden previo
+- si falla un bloque, se conserva su orden local calculado por proximidad/capacidad
 
 Riesgo residual:
 
 - no reparte demanda entre varios trabajadores
-- no reubica automaticamente clientes omitidos por capacidad
+- no reubica automaticamente clientes omitidos por limite de clientes
 - no considera ventanas horarias, turnos, tiempo de servicio ni trafico por hora
 
 Esta limitacion es aceptable para una `v1` operativa, pero debe nombrarse como optimizacion de orden segmentada, no como optimizacion logistica integral.
@@ -1394,7 +1367,7 @@ La seleccion de paradas recorre clientes ordenados por prioridad y los inserta s
 
 Riesgo:
 
-- una combinacion distinta de clientes podria llenar mejor la capacidad diaria
+- una seleccion distinta podria reducir distancia total y numero de retornos al hub
 - clientes grandes pueden quedar fuera aunque varios pequenos entren
 - no existe redistribucion automatica entre dias de la semana
 
@@ -1434,23 +1407,11 @@ Mejora:
 
 ### 18.6 Paradas sin ubicacion
 
-La generacion automatica exige ubicacion, pero datos legacy o carga manual podrian producir paradas sin coordenadas.
-
-Estado actual:
-
-- `optimize_route_day_with_google` ignora esas paradas al llamar a Google
-- conserva su posicion relativa al fusionar el resultado optimizado
-- la navegacion externa solo incluye paradas ubicadas
-
-Riesgo:
-
-- el trabajador puede necesitar gestionar una parada que no aparece en Google Maps
-- la segmentacion de navegacion puede diferir de la segmentacion operativa completa si faltan ubicaciones
-
-Mejora:
-
-- mostrar alerta de "paradas sin ubicacion" en detalle y ejecucion
-- bloquear o revisar manualmente rutas con paradas no navegables
+La generacion y optimizacion validan coordenadas y pueden devolver error.
+La navegacion externa solo incluye paradas ubicadas. Datos legacy o cambios
+posteriores de coordenadas requieren corregir el cliente antes de regenerar.
+Conviene mostrar el motivo de validacion en la interfaz para facilitar esa
+correccion. No se debe interpretar el rechazo como fallback de Google.
 
 ### 18.7 Limites practicos de Google
 
@@ -1503,19 +1464,12 @@ Mejora:
 - permitir incluirla solo con confirmacion manual
 - proponer cambio de camion o division manual de la recogida
 
-### 18.10 Observabilidad limitada de la optimizacion
+### 18.10 Observabilidad de la optimizacion
 
-Actualmente el resultado de optimizacion se refleja en el orden final, pero no se persiste un objeto de auditoria.
-
-Riesgo:
-
-- cuesta explicar por que una ruta no se optimizo
-- no hay metrica historica de fallos de Google, tiempo de respuesta o segmentos afectados
-
-Mejora:
-
-- guardar `optimization_status`, `optimization_reason` y `optimized_at` en `RouteDay`
-- registrar numero de segmentos, paradas optimizadas y paradas excluidas por ubicacion
+`RouteDay` ya persiste `optimization_status`, `optimization_message` y
+`optimized_at`, y la API los devuelve en generacion y detalle operativo.
+El registro conserva el ultimo resultado; aun no existe historico de intentos,
+latencia ni detalle por bloque. Esos datos serian una ampliacion futura.
 
 ## 19. Alternativas de mejora evaluadas
 
@@ -1526,9 +1480,9 @@ Es la opcion mas conservadora.
 Cambios:
 
 - sacar Google de la transaccion principal
-- persistir estado de optimizacion
+- ampliar el estado de optimizacion ya persistido con detalle por bloque
 - mostrar avisos de paradas sin ubicacion
-- avisar de clientes omitidos por capacidad
+- avisar de clientes omitidos por limite de clientes
 - anadir tests de respuesta invalida y timeout de Google
 
 Ventaja:
@@ -1541,7 +1495,7 @@ Coste:
 
 - no resuelve reparto multi-vehiculo ni ventanas horarias
 
-### 19.2 Anadir heuristica local de fallback
+### 19.2 Mejorar la heuristica local de fallback
 
 Si Google no esta configurado o falla, se podria aplicar una heuristica local.
 
@@ -1634,9 +1588,9 @@ Coste:
 ### Prioridad alta
 
 1. Sacar la llamada externa a Google fuera de la transaccion principal o hacerla asincrona.
-2. Anadir tests de fallback de Google cuando devuelve error, timeout o estructura invalida.
-3. Persistir o devolver metadata de optimizacion: aplicada, omitida, motivo y numero de segmentos.
-4. Avisar en frontend cuando hay paradas sin ubicacion o paradas omitidas por capacidad.
+2. Ampliar los tests existentes de fallback y validacion de Google con mas variantes de error.
+3. Ampliar la metadata ya persistida con numero de segmentos y detalle por bloque.
+4. Avisar en frontend cuando hay paradas sin ubicacion o paradas omitidas por limite de clientes.
 
 ### Prioridad media
 
@@ -1648,7 +1602,7 @@ Coste:
 
 ### Prioridad baja
 
-1. Crear heuristica local de fallback cuando Google no este disponible.
+1. Mejorar la heuristica local de proximidad/capacidad ya utilizada antes de Google.
 2. Cachear respuestas o matrices de distancia por coordenadas cercanas.
 3. Persistir eventos reales de retorno a hub si la operativa lo necesita.
 4. Evaluar OR-Tools solo cuando haya necesidad real de multi-vehiculo, ventanas horarias o optimizacion global.
@@ -1662,7 +1616,7 @@ El flujo principal actual, `generate-week`, esta bien estructurado para el uso o
 - respeta rango de ruta y dias operativos
 - evita duplicados semanales
 - filtra clientes por zona, empresa y frecuencia
-- aplica capacidad y maximo de clientes
+- aplica maximo de clientes y usa capacidad para segmentar
 - optimiza con Google sin romper si falla
 - crea solicitudes y automatiza autoestimacion
 - preserva jornadas ya operadas
@@ -1754,7 +1708,7 @@ Si una ruta no genera paradas, revisar:
 - los clientes estan dentro del poligono
 - la frecuencia permite recogerlos en esa fecha
 - no estan ya asignados en la misma semana
-- la capacidad no los deja fuera
+- no se alcanzo el limite de clientes (la capacidad se usa para segmentar)
 - no se alcanzo `max_clients_per_day`
 
 Si una ruta no se optimiza, revisar:

@@ -1,6 +1,6 @@
 # Memoria Funcional TFG - GreenPath
 
-Fecha de revision: 2026-05-27
+Fecha de revision: 2026-10-09
 
 ## 1. Introduccion
 
@@ -403,3 +403,22 @@ El resto de documentos del proyecto sirven como anexos tecnicos y funcionales de
 - `docs/MANUAL_USUARIO.md`
 - `docs/HISTORIAS_USUARIO.md`
 - `docs/PLANIFICACION_Y_COSTES.md`
+
+## Ampliacion del alcance implementado
+
+La plataforma incluye recogidas al por mayor: el owner registra compras
+directas con cantidad en `KG`, `L` o `UD`, factura adjunta y calculo automatico
+de uno de los valores cantidad/precio/importe. Cada empresa puede habilitar
+los modulos de recogidas desde Django Admin.
+
+La consolidacion ordinaria usa litros finales pagables y calcula la diferencia
+con estimacion como descuento informativo con motivo, evitando doble deduccion.
+Las ventas admiten precios unitarios de ocho decimales y mantienen importes
+finales de dos. El resumen economico incorpora compras facturables y
+conversion `L`/`KG` por densidad; `UD` no tiene equivalencia fisica.
+
+La capacidad de ruta es configurable y puede heredarse del camion. La capacidad
+segmenta jornadas y retornos al hub; el limite de clientes actua por separado.
+La optimizacion deja estado, mensaje y fecha, y valida coordenadas antes de
+consultar Google. Estos detalles completan el alcance tecnico y funcional que
+se debe explicar en la defensa.

@@ -1,6 +1,6 @@
 # Historias de Usuario GreenPath
 
-Fecha de revision: 2026-05-27
+Fecha de revision: 2026-10-09
 
 ## 0. Contexto del backlog
 
@@ -242,7 +242,7 @@ Como sistema quiero optimizar orden con Google sin romper operacion cuando falle
 
 Criterios de aceptacion:
 1. Si Google responde, se aplica orden optimizado.
-2. Si Google falla o falta API key, se mantiene orden actual.
+2. Si falta API key se mantiene el orden y se registra `FAILED`; si Google falla se usa el orden local por proximidad/capacidad de cada bloque y se registra `FALLBACK`.
 3. El flujo de generacion no se interrumpe por este fallo.
 
 ### US-PLT-003B (P1) Alinear plan operativo y navegacion externa
@@ -1041,3 +1041,30 @@ Este documento resulta especialmente util para:
 - mapear historias a casos de uso, pruebas y pantallas
 - demostrar trazabilidad entre necesidad de negocio y solucion implementada
 - defender que la complejidad del proyecto viene tanto de la logica funcional como de las integraciones tecnicas
+
+## Historias complementarias del alcance actual
+
+### US-ACT-001 Compra directa al por mayor
+
+Como owner quiero registrar compras en `KG`, `L` o `UD` con factura opcional y
+calculo del valor restante para mantener costes y cantidades trazables.
+
+Criterios: cliente de la empresa, modulo habilitado, entradas positivas,
+cantidad entera para `UD`, adjunto PDF/JPEG/PNG hasta 10 MiB y permisos owner.
+
+### US-ACT-002 Consolidacion de litros finales
+
+Como operador quiero introducir litros finales y que el sistema calcule el
+descuento para evitar una doble deduccion al obtener el importe.
+
+Criterios: descuento positivo requiere motivo; importe usa medicion final;
+confirmada exige medicion; cancelada tiene importe cero.
+
+### US-ACT-003 Planificacion con retornos al hub
+
+Como owner quiero fijar capacidad de ruta y consultar el resultado de
+optimizacion para preparar jornadas que puedan requerir varios tramos.
+
+Criterios: jornada prevalece sobre ruta y camion; capacidad segmenta sin excluir
+por litros; seleccion respeta limite de clientes; se registra estado, mensaje
+y fecha de optimizacion; coordenadas ausentes se validan antes de Google.
